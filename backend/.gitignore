@@ -1,0 +1,27 @@
+node_modules/
+.env
+.env.local
+.env.production
+.env.staging
+*.log
+logs/
+dist/
+build/
+.nyc_output/
+coverage/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Test files
+test-results/
+playwright-report/
