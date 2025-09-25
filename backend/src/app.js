@@ -9,8 +9,8 @@ import { rateLimiter } from './middlewares/rateLimiter.js';
 // Importar rutas
 import healthRoutes from './routes/healthRoutes.js';
 import { publicRoutes as propertyPublicRoutes, privateRoutes as propertyPrivateRoutes } from './routes/propertyRoutes.js';
-// import { publicRoutes as messagePublicRoutes, privateRoutes as messagePrivateRoutes } from './routes/messageRoutes.js';
-// import imageRoutes from './routes/imageRoutes.js';
+import { publicRoutes as messagePublicRoutes, privateRoutes as messagePrivateRoutes } from './routes/messageRoutes.js';
+import { imagePublicRoutes, imagePrivateRoutes } from './routes/imageRoutes.js';
 
 const app = express();
 
@@ -39,22 +39,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Rate limiting para rutas públicas
 app.use('/api/', rateLimiter);
 
-// Auth0 JWT middleware (comentado hasta configurar Auth0)
-// const checkJwt = auth({
-//   audience: process.env.AUTH0_AUDIENCE,
-//   issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
-// });
+// Middleware de autenticación (configurado en authMiddleware.js)
+import { checkJwt } from './middlewares/authMiddleware.js';
 
 // Rutas públicas
 app.use('/api', healthRoutes);
 app.use('/api/v1', propertyPublicRoutes);
-// app.use('/api/v1', messagePublicRoutes);
+app.use('/api/v1', messagePublicRoutes);
+app.use('/api/v1', imagePublicRoutes);
 
 // Rutas protegidas (requieren JWT)
-// app.use('/api/v1', checkJwt);
+app.use('/api/v1', checkJwt);
 app.use('/api/v1', propertyPrivateRoutes);
-// app.use('/api/v1', imageRoutes);
-// app.use('/api/v1', messagePrivateRoutes);
+app.use('/api/v1', messagePrivateRoutes);
+app.use('/api/v1', imagePrivateRoutes);
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {

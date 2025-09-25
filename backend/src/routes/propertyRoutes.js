@@ -1,52 +1,84 @@
 import { Router } from 'express';
 import propertyController from '../controllers/propertyController.js';
+import { 
+  validatePropertyCreation, 
+  validateUUID
+} from '../middlewares/validationMiddleware.js';
 
 // Rutas públicas para propiedades
 const publicRoutes = Router();
 
 /**
- * @route GET /api/v1/properties
+ * @route GET /api/v1/viviendas
  * @desc Obtener lista de propiedades publicadas
  * @access Public
  */
-publicRoutes.get('/properties', propertyController.getProperties);
+publicRoutes.get('/viviendas', propertyController.getProperties);
 
 /**
- * @route GET /api/v1/properties/:id
+ * @route GET /api/v1/viviendas/stats
+ * @desc Obtener estadísticas de propiedades
+ * @access Public
+ */
+publicRoutes.get('/viviendas/stats', propertyController.getStats);
+
+/**
+ * @route GET /api/v1/viviendas/:id
  * @desc Obtener detalles de una propiedad específica
  * @access Public
  */
-publicRoutes.get('/properties/:id', propertyController.getPropertyById);
+publicRoutes.get('/viviendas/:id', validateUUID('id'), propertyController.getPropertyById);
 
 /**
- * @route POST /api/v1/properties/search
+ * @route GET /api/v1/viviendas/:id/similar
+ * @desc Obtener propiedades similares
+ * @access Public
+ */
+publicRoutes.get('/viviendas/:id/similar', validateUUID('id'), propertyController.getSimilarProperties);
+
+/**
+ * @route POST /api/v1/viviendas/search
  * @desc Buscar propiedades con filtros
  * @access Public
  */
-publicRoutes.post('/properties/search', propertyController.searchProperties);
+publicRoutes.post('/viviendas/search', propertyController.searchProperties);
 
 // Rutas privadas para propiedades (requieren autenticación)
 const privateRoutes = Router();
 
 /**
- * @route POST /api/v1/properties
+ * @route POST /api/v1/viviendas
  * @desc Crear nueva propiedad
  * @access Private (Seller, Admin)
  */
-privateRoutes.post('/properties', propertyController.createProperty);
+privateRoutes.post('/viviendas', validatePropertyCreation, propertyController.createProperty);
 
 /**
- * @route PUT /api/v1/properties/:id
+ * @route PUT /api/v1/viviendas/:id
  * @desc Actualizar propiedad existente
  * @access Private (Owner, Admin)
  */
-privateRoutes.put('/properties/:id', propertyController.updateProperty);
+privateRoutes.put('/viviendas/:id', 
+  validateUUID('id'), 
+  validatePropertyCreation, 
+  propertyController.updateProperty
+);
 
 /**
- * @route DELETE /api/v1/properties/:id
+ * @route PATCH /api/v1/viviendas/:id/publish
+ * @desc Cambiar estado de publicación
+ * @access Private (Owner, Admin)
+ */
+privateRoutes.patch('/viviendas/:id/publish', 
+  validateUUID('id'), 
+  propertyController.togglePublish
+);
+
+/**
+ * @route DELETE /api/v1/viviendas/:id
  * @desc Eliminar propiedad
  * @access Private (Admin only)
  */
-privateRoutes.delete('/properties/:id', propertyController.deleteProperty);
+privateRoutes.delete('/viviendas/:id', validateUUID('id'), propertyController.deleteProperty);
 
 export { publicRoutes, privateRoutes };

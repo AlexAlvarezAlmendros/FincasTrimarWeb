@@ -3,7 +3,7 @@ import { logger } from '../utils/logger.js';
 
 /**
  * Controlador para gestión de viviendas
- * Sigue la nomenclatura camelCase para archivos
+ * Maneja las peticiones HTTP para las operaciones de propiedades
  */
 
 const propertyController = {
@@ -13,13 +13,27 @@ const propertyController = {
    */
   async getProperties(req, res, next) {
     try {
-      const filters = req.query;
-      const properties = await propertyService.searchProperties(filters);
+      const filters = {
+        q: req.query.q,
+        minPrice: req.query.minPrice ? parseInt(req.query.minPrice) : undefined,
+        maxPrice: req.query.maxPrice ? parseInt(req.query.maxPrice) : undefined,
+        rooms: req.query.rooms ? parseInt(req.query.rooms) : undefined,
+        bathRooms: req.query.bathRooms ? parseInt(req.query.bathRooms) : undefined,
+        tipoInmueble: req.query.tipoInmueble,
+        tipoVivienda: req.query.tipoVivienda,
+        provincia: req.query.provincia,
+        poblacion: req.query.poblacion,
+        published: req.query.published !== undefined ? req.query.published === 'true' : true,
+        page: req.query.page ? parseInt(req.query.page) : 1,
+        pageSize: req.query.pageSize ? parseInt(req.query.pageSize) : 20
+      };
+      
+      const result = await propertyService.searchProperties(filters);
       
       res.json({
         success: true,
-        data: properties,
-        count: properties.length
+        data: result.data,
+        pagination: result.pagination
       });
     } catch (error) {
       logger.error('Error getting properties:', error);
@@ -35,16 +49,6 @@ const propertyController = {
     try {
       const { id } = req.params;
       const property = await propertyService.getPropertyById(id);
-      
-      if (!property) {
-        return res.status(404).json({
-          success: false,
-          error: {
-            code: 'PROPERTY_NOT_FOUND',
-            message: 'Propiedad no encontrada'
-          }
-        });
-      }
 
       res.json({
         success: true,
@@ -63,15 +67,54 @@ const propertyController = {
   async searchProperties(req, res, next) {
     try {
       const filters = req.body;
-      const results = await propertyService.searchProperties(filters);
+      const result = await propertyService.searchProperties(filters);
       
       res.json({
         success: true,
-        data: results,
-        count: results.length
+        data: result.data,
+        pagination: result.pagination
       });
     } catch (error) {
       logger.error('Error searching properties:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/v1/properties/:id/similar
+   * Obtiene propiedades similares
+   */
+  async getSimilarProperties(req, res, next) {
+    try {
+      const { id } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit) : 4;
+      
+      const similarProperties = await propertyService.getSimilarProperties(id, limit);
+      
+      res.json({
+        success: true,
+        data: similarProperties
+      });
+    } catch (error) {
+      logger.error('Error getting similar properties:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/v1/properties/stats
+   * Obtiene estadísticas de propiedades
+   */
+  async getStats(req, res, next) {
+    try {
+      const stats = await propertyService.getStats();
+      
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      logger.error('Error getting property stats:', error);
       next(error);
     }
   },
@@ -118,12 +161,22 @@ const propertyController = {
 
   /**
    * DELETE /api/v1/properties/:id
-   * Elimina propiedad
+   * Elimina propiedad (solo Admin)
    */
   async deleteProperty(req, res, next) {
     try {
       const { id } = req.params;
-      await propertyService.deleteProperty(id);
+      const deleted = await propertyService.deleteProperty(id);
+      
+      if (!deleted) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'PROPERTY_NOT_FOUND',
+            message: 'Propiedad no encontrada'
+          }
+        });
+      }
       
       res.json({
         success: true,
@@ -131,6 +184,28 @@ const propertyController = {
       });
     } catch (error) {
       logger.error('Error deleting property:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * PATCH /api/v1/properties/:id/publish
+   * Cambia el estado de publicación de una propiedad
+   */
+  async togglePublish(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { published } = req.body;
+      
+      const updatedProperty = await propertyService.togglePublishStatus(id, published);
+      
+      res.json({
+        success: true,
+        data: updatedProperty,
+        message: `Propiedad ${published ? 'publicada' : 'despublicada'} correctamente`
+      });
+    } catch (error) {
+      logger.error('Error toggling publish status:', error);
       next(error);
     }
   }

@@ -1,3 +1,9 @@
+import { 
+  propertySchema, 
+  searchFiltersSchema, 
+  messageSchema 
+} from '../schemas/validationSchemas.js';
+
 /**
  * Middleware de validación usando Zod
  * Sigue la nomenclatura camelCase para archivos de middleware
@@ -42,27 +48,36 @@ export const validateSchema = (schema, property = 'body') => {
 /**
  * Middleware específico para validar el cuerpo de creación de propiedades
  */
-export const validatePropertyCreation = (req, res, next) => {
-  // Importar aquí para evitar dependencias circulares
-  import('../schemas/validationSchemas.js').then(({ propertySchema }) => {
-    validateSchema(propertySchema, 'body')(req, res, next);
-  }).catch(next);
-};
+export const validatePropertyCreation = validateSchema(propertySchema, 'body');
 
 /**
- * Middleware específico para validar filtros de búsqueda
+ * Middleware específico para validar filtros de búsqueda en query params
  */
-export const validateSearchFilters = (req, res, next) => {
-  import('../schemas/validationSchemas.js').then(({ searchFiltersSchema }) => {
-    validateSchema(searchFiltersSchema, 'query')(req, res, next);
-  }).catch(next);
-};
+export const validateSearchFilters = validateSchema(searchFiltersSchema, 'query');
 
 /**
  * Middleware específico para validar mensajes de contacto
  */
-export const validateMessage = (req, res, next) => {
-  import('../schemas/validationSchemas.js').then(({ messageSchema }) => {
-    validateSchema(messageSchema, 'body')(req, res, next);
-  }).catch(next);
+export const validateMessage = validateSchema(messageSchema, 'body');
+
+/**
+ * Middleware para validar UUID en parámetros
+ */
+export const validateUUID = (paramName = 'id') => {
+  return (req, res, next) => {
+    const uuid = req.params[paramName];
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    
+    if (!uuidRegex.test(uuid)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_UUID',
+          message: `El parámetro ${paramName} debe ser un UUID válido`
+        }
+      });
+    }
+    
+    next();
+  };
 };

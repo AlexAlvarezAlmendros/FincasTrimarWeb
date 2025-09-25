@@ -1,44 +1,265 @@
+import viviendaRepository from '../repos/viviendaRepository.js';
+import imagenesViviendaRepository from '../repos/imagenesViviendaRepository.js';
+import { logger } from '../utils/logger.js';
+
 /**
  * Servicio para gestión de viviendas
- * Sigue la nomenclatura camelCase para archivos de servicio
+ * Implementa la lógica de negocio para las operaciones de propiedades
  */
-
 class PropertyService {
-  constructor() {
-    // TODO: Inicializar con dependencias (db, logger, etc.)
+  
+  /**
+   * Busca propiedades según los filtros especificados
+   */
+  async searchProperties(filters = {}) {
+    try {
+      logger.info('Buscando propiedades con filtros:', filters);
+      
+      const result = await viviendaRepository.findAll({
+        q: filters.q,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        rooms: filters.rooms,
+        bathRooms: filters.bathRooms,
+        tipoInmueble: filters.tipoInmueble,
+        tipoVivienda: filters.tipoVivienda,
+        provincia: filters.provincia,
+        poblacion: filters.poblacion,
+        published: filters.published !== undefined ? filters.published : true,
+        page: filters.page || 1,
+        pageSize: filters.pageSize || 20
+      });
+      
+      // Agregar imagen principal a cada propiedad
+      for (const property of result.data) {
+        const mainImage = await imagenesViviendaRepository.getMainImage(property.id);
+        property.mainImage = mainImage?.url || null;
+        property.imageCount = (await imagenesViviendaRepository.findByViviendaId(property.id)).length;
+      }
+      
+      return result;
+    } catch (error) {
+      logger.error('Error en PropertyService.searchProperties:', error);
+      throw error;
+    }
   }
 
   /**
-   * Busca propiedades según los filtros especificados
-   * @param {Object} _filters - Filtros de búsqueda
-   * @param {string} _filters.location - Ubicación de la propiedad
-   * @param {number} _filters.minPrice - Precio mínimo
-   * @param {number} _filters.maxPrice - Precio máximo
-   * @returns {Promise<Array>} Lista de propiedades encontradas
+   * Obtiene una propiedad por ID con todas sus imágenes
    */
-  async searchProperties(_filters) {
-    // TODO: Implementar lógica de búsqueda
-    throw new Error('searchProperties method must be implemented');
+  async getPropertyById(id) {
+    try {
+      logger.info(`Obteniendo propiedad con ID: ${id}`);
+      
+      const property = await viviendaRepository.findById(id);
+      
+      if (!property) {
+        const error = new Error('Propiedad no encontrada');
+        error.statusCode = 404;
+        error.code = 'PROPERTY_NOT_FOUND';
+        throw error;
+      }
+      
+      // Las imágenes ya vienen incluidas en findById del repository
+      return property;
+    } catch (error) {
+      logger.error('Error en PropertyService.getPropertyById:', error);
+      throw error;
+    }
   }
 
-  async getPropertyById(_id) {
-    // TODO: Implementar obtención por ID
-    throw new Error('getPropertyById method must be implemented');
+  /**
+   * Crea una nueva propiedad
+   */
+  async createProperty(propertyData) {
+    try {
+      logger.info('Creando nueva propiedad:', { name: propertyData.name });
+      
+      // Validaciones de negocio
+      if (!propertyData.name || propertyData.name.trim().length < 5) {
+        const error = new Error('El nombre de la propiedad debe tener al menos 5 caracteres');
+        error.statusCode = 400;
+        error.code = 'INVALID_PROPERTY_NAME';
+        throw error;
+      }
+      
+      if (!propertyData.price || propertyData.price <= 0) {
+        const error = new Error('El precio debe ser mayor a cero');
+        error.statusCode = 400;
+        error.code = 'INVALID_PRICE';
+        throw error;
+      }
+      
+      // Por defecto, las propiedades nuevas no están publicadas
+      propertyData.published = propertyData.published || false;
+      propertyData.estadoVenta = propertyData.estadoVenta || 'Disponible';
+      
+      const newProperty = await viviendaRepository.create(propertyData);
+      
+      logger.info(`Propiedad creada exitosamente con ID: ${newProperty.id}`);
+      return newProperty;
+    } catch (error) {
+      logger.error('Error en PropertyService.createProperty:', error);
+      throw error;
+    }
   }
 
-  async createProperty(_propertyData) {
-    // TODO: Implementar creación
-    throw new Error('createProperty method must be implemented');
+  /**
+   * Actualiza una propiedad existente
+   */
+  async updateProperty(id, propertyData) {
+    try {
+      logger.info(`Actualizando propiedad ID: ${id}`);
+      
+      // Verificar que la propiedad existe
+      const existingProperty = await viviendaRepository.findById(id);
+      if (!existingProperty) {
+        const error = new Error('Propiedad no encontrada');
+        error.statusCode = 404;
+        error.code = 'PROPERTY_NOT_FOUND';
+        throw error;
+      }
+      
+      // Validaciones de negocio
+      if (propertyData.name && propertyData.name.trim().length < 5) {
+        const error = new Error('El nombre de la propiedad debe tener al menos 5 caracteres');
+        error.statusCode = 400;
+        error.code = 'INVALID_PROPERTY_NAME';
+        throw error;
+      }
+      
+      if (propertyData.price !== undefined && propertyData.price <= 0) {
+        const error = new Error('El precio debe ser mayor a cero');
+        error.statusCode = 400;
+        error.code = 'INVALID_PRICE';
+        throw error;
+      }
+      
+      // Merge con datos existentes
+      const updateData = {
+        ...existingProperty,
+        ...propertyData
+      };
+      
+      const updatedProperty = await viviendaRepository.update(id, updateData);
+      
+      logger.info(`Propiedad actualizada exitosamente: ${id}`);
+      return updatedProperty;
+    } catch (error) {
+      logger.error('Error en PropertyService.updateProperty:', error);
+      throw error;
+    }
   }
 
-  async updateProperty(_id, _propertyData) {
-    // TODO: Implementar actualización
-    throw new Error('updateProperty method must be implemented');
+  /**
+   * Elimina una propiedad
+   */
+  async deleteProperty(id) {
+    try {
+      logger.info(`Eliminando propiedad ID: ${id}`);
+      
+      // Verificar que la propiedad existe
+      const existingProperty = await viviendaRepository.findById(id);
+      if (!existingProperty) {
+        const error = new Error('Propiedad no encontrada');
+        error.statusCode = 404;
+        error.code = 'PROPERTY_NOT_FOUND';
+        throw error;
+      }
+      
+      // Las imágenes se eliminan automáticamente por CASCADE
+      const deleted = await viviendaRepository.delete(id);
+      
+      if (deleted) {
+        logger.info(`Propiedad eliminada exitosamente: ${id}`);
+      }
+      
+      return deleted;
+    } catch (error) {
+      logger.error('Error en PropertyService.deleteProperty:', error);
+      throw error;
+    }
   }
-
-  async deleteProperty(_id) {
-    // TODO: Implementar eliminación
-    throw new Error('deleteProperty method must be implemented');
+  
+  /**
+   * Cambia el estado de publicación de una propiedad
+   */
+  async togglePublishStatus(id, published) {
+    try {
+      logger.info(`Cambiando estado de publicación para propiedad ${id} a: ${published}`);
+      
+      const updatedProperty = await viviendaRepository.updatePublishStatus(id, published);
+      
+      if (!updatedProperty) {
+        const error = new Error('Propiedad no encontrada');
+        error.statusCode = 404;
+        error.code = 'PROPERTY_NOT_FOUND';
+        throw error;
+      }
+      
+      return updatedProperty;
+    } catch (error) {
+      logger.error('Error en PropertyService.togglePublishStatus:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obtiene propiedades similares a una dada
+   */
+  async getSimilarProperties(propertyId, limit = 4) {
+    try {
+      const property = await viviendaRepository.findById(propertyId);
+      
+      if (!property) {
+        return [];
+      }
+      
+      // Buscar propiedades similares basándose en ubicación y tipo
+      const similarProperties = await viviendaRepository.findAll({
+        poblacion: property.poblacion,
+        tipoVivienda: property.tipoVivienda,
+        tipoAnuncio: property.tipoAnuncio,
+        published: true,
+        pageSize: limit + 1 // +1 para excluir la propiedad actual
+      });
+      
+      // Filtrar la propiedad actual y agregar imágenes principales
+      const filtered = similarProperties.data.filter(p => p.id !== propertyId);
+      
+      for (const prop of filtered.slice(0, limit)) {
+        const mainImage = await imagenesViviendaRepository.getMainImage(prop.id);
+        prop.mainImage = mainImage?.url || null;
+      }
+      
+      return filtered.slice(0, limit);
+    } catch (error) {
+      logger.error('Error en PropertyService.getSimilarProperties:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obtiene estadísticas básicas de propiedades
+   */
+  async getStats() {
+    try {
+      const published = await viviendaRepository.findAll({ published: true, pageSize: 1 });
+      const drafts = await viviendaRepository.findAll({ published: false, pageSize: 1 });
+      const forSale = await viviendaRepository.findAll({ tipoAnuncio: 'Venta', published: true, pageSize: 1 });
+      const forRent = await viviendaRepository.findAll({ tipoAnuncio: 'Alquiler', published: true, pageSize: 1 });
+      
+      return {
+        total: published.pagination.total + drafts.pagination.total,
+        published: published.pagination.total,
+        drafts: drafts.pagination.total,
+        forSale: forSale.pagination.total,
+        forRent: forRent.pagination.total
+      };
+    } catch (error) {
+      logger.error('Error en PropertyService.getStats:', error);
+      throw error;
+    }
   }
 }
 
