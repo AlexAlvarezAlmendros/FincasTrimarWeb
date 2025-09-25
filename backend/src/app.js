@@ -2,16 +2,15 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
-import { auth } from 'express-oauth2-jwt-bearer';
 import { logger } from './utils/logger.js';
-import { errorHandler } from './middlewares/error-handler.js';
-import { rateLimiter } from './middlewares/rate-limiter.js';
+import { errorHandler } from './middlewares/errorHandler.js';
+import { rateLimiter } from './middlewares/rateLimiter.js';
 
 // Importar rutas
-import healthRoutes from './routes/health.js';
-// import viviendas from './routes/viviendas.js';
-// import mensajes from './routes/mensajes.js';
-// import images from './routes/images.js';
+import healthRoutes from './routes/healthRoutes.js';
+import { publicRoutes as propertyPublicRoutes, privateRoutes as propertyPrivateRoutes } from './routes/propertyRoutes.js';
+// import { publicRoutes as messagePublicRoutes, privateRoutes as messagePrivateRoutes } from './routes/messageRoutes.js';
+// import imageRoutes from './routes/imageRoutes.js';
 
 const app = express();
 
@@ -48,14 +47,14 @@ app.use('/api/', rateLimiter);
 
 // Rutas públicas
 app.use('/api', healthRoutes);
-// app.use('/api/v1', viviendas.publicRoutes);
-// app.use('/api/v1', mensajes.publicRoutes);
+app.use('/api/v1', propertyPublicRoutes);
+// app.use('/api/v1', messagePublicRoutes);
 
 // Rutas protegidas (requieren JWT)
 // app.use('/api/v1', checkJwt);
-// app.use('/api/v1', viviendas.privateRoutes);
-// app.use('/api/v1', images.privateRoutes);
-// app.use('/api/v1', mensajes.privateAdminRoutes);
+app.use('/api/v1', propertyPrivateRoutes);
+// app.use('/api/v1', imageRoutes);
+// app.use('/api/v1', messagePrivateRoutes);
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {

@@ -1,12 +1,12 @@
 import { Auth0Provider } from '@auth0/auth0-react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home from '@/pages/Home';
-import Listado from '@/pages/Listado';
-import Detalle from '@/pages/Detalle';
-import Vender from '@/pages/Vender';
-import Contacto from '@/pages/Contacto';
-import Admin from '@/pages/Admin';
-import RequireAuth from '@/components/RequireAuth';
+import Home from '../pages/Home';
+import Listado from '../pages/Listado';
+import Detalle from '../pages/Detalle';
+import Vender from '../pages/Vender';
+import Contacto from '../pages/Contacto';
+import Admin from '../pages/Admin';
+import RequireAuth from '../components/RequireAuth';
 
 export default function App() {
   return (

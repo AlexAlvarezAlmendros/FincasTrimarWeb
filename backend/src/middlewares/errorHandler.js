@@ -16,8 +16,8 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   // Determinar código de estado
-  const statusCode = err.statusCode || err.status || 500;
-  const errorCode = err.code || 'INTERNAL_SERVER_ERROR';
+  let statusCode = err.statusCode || err.status || 500;
+  let errorCode = err.code || 'INTERNAL_SERVER_ERROR';
   let message = err.message || 'Error interno del servidor';
 
   // No exponer detalles internos en producción
