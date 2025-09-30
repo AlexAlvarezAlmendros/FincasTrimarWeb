@@ -6,7 +6,7 @@
 
 /* Hero Section */
 .hero {
-  padding: var(--spacing-3xl) 0;
+  padding: var(--spacing-3xl) 82px;
   background: url('./img/HeaderImage.png');
   background-size: cover;
   background-position: center;
@@ -21,7 +21,6 @@
 
 .hero-content {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 0 var(--spacing-lg);
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -215,6 +214,7 @@
 
 /* Sell Promotion Section */
 .sell-promotion {
+  padding: var(--spacing-3xl) 82px;
   background: url('./img/VenderImage.png');
   background-size: cover;
   background-position: center;
