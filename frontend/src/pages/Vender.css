@@ -76,7 +76,6 @@
   position: relative;
   margin-top: -250px; /* Superposición negativa */
   z-index: 10;
-  padding: 0 0 80px 0;
 }
 
 .form-container {
@@ -255,6 +254,90 @@
   border-radius: 4px;
 }
 
+/* Information Section */
+.info-section {
+  padding: 80px 0;
+  background: #F7F9FC;
+  border-radius: 20px;
+  margin: 48px 0;
+}
+
+.info-content {
+  text-align: center;
+}
+
+.info-title {
+  font-family: "Poppins", "Inter", system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 48px 0;
+  line-height: 1.2;
+}
+
+.info-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.info-card {
+  background: #FFFFFF;
+  border: 1px solid #EEF2F7;
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.info-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #CBD5E1;
+}
+
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #3A8DFF, #2F78DB);
+  border-radius: 50%;
+  margin: 0 auto 24px auto;
+  color: #FFFFFF;
+  transition: transform 0.3s ease;
+}
+
+.info-card:hover .info-icon {
+  transform: scale(1.1);
+}
+
+.info-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.info-card-title {
+  font-family: "Poppins", "Inter", system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 16px 0;
+  line-height: 1.3;
+}
+
+.info-card-description {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #475569;
+  margin: 0;
+}
+
 /* Spacer Section */
 .spacer-section {
   height: 48px;
@@ -341,6 +424,44 @@
   .spacer-section {
     height: 24px;
   }
+  
+  /* Info Section - Tablet */
+  .info-section {
+    padding: 60px 0;
+    margin: 32px 0;
+  }
+  
+  .info-title {
+    font-size: 28px;
+    margin-bottom: 40px;
+  }
+  
+  .info-cards {
+    gap: 24px;
+  }
+  
+  .info-card {
+    padding: 28px 20px;
+  }
+  
+  .info-icon {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 20px;
+  }
+  
+  .info-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .info-card-title {
+    font-size: 18px;
+  }
+  
+  .info-card-description {
+    font-size: 15px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -379,6 +500,48 @@
   .spacer-section {
     height: 16px;
   }
+  
+  /* Info Section - Mobile */
+  .info-section {
+    padding: 40px 0;
+    margin: 24px 0;
+    border-radius: 16px;
+  }
+  
+  .info-title {
+    font-size: 24px;
+    margin-bottom: 32px;
+  }
+  
+  .info-cards {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .info-card {
+    padding: 24px 16px;
+    border-radius: 16px;
+  }
+  
+  .info-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 16px;
+  }
+  
+  .info-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .info-card-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .info-card-description {
+    font-size: 14px;
+  }
 }
 
 /* High contrast mode support */
@@ -399,6 +562,14 @@
   .submit-button:hover:not(:disabled) {
     background: #333333;
   }
+  
+  .info-card {
+    border-color: #000000;
+  }
+  
+  .info-icon {
+    background: #000000;
+  }
 }
 
 /* Reduced motion support */
@@ -406,7 +577,9 @@
   .form-input,
   .submit-button,
   .phone-link,
-  .form-card {
+  .form-card,
+  .info-card,
+  .info-icon {
     transition: none;
   }
   
@@ -415,6 +588,14 @@
   }
   
   .form-card:hover {
+    transform: none;
+  }
+  
+  .info-card:hover {
+    transform: none;
+  }
+  
+  .info-card:hover .info-icon {
     transform: none;
   }
 }

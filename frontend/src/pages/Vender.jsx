@@ -135,6 +135,55 @@ export default function Vender() {
         </div>
       </section>
 
+      {/* Information Section */}
+      <section className="info-section" aria-labelledby="info-title">
+        <div className="container">
+          <div className="info-content">
+            <h2 id="info-title" className="info-title">
+              Nuestro compromiso contigo
+            </h2>
+            <div className="info-cards">
+              <div className="info-card">
+                <div className="info-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 1v6"/>
+                  </svg>
+                </div>
+                <h3 className="info-card-title">Sin exclusividad</h3>
+                <p className="info-card-description">
+                  No trabajamos con contratos de exclusividad. Mantienes tu libertad para trabajar con quien desees.
+                </p>
+              </div>
+              <div className="info-card">
+                <div className="info-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                </div>
+                <h3 className="info-card-title">Trato personalizado</h3>
+                <p className="info-card-description">
+                  Cada cliente es único. Ofrecemos un servicio cercano y personalizado adaptado a tus necesidades específicas.
+                </p>
+              </div>
+              <div className="info-card">
+                <div className="info-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 11H5a2 2 0 0 0-2 2v3c0 1.1.9 2 2 2h2l3 3h1V8h-1l-3 3z"/>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07M18.07 6.93a10 10 0 0 1 0 10.14"/>
+                  </svg>
+                </div>
+                <h3 className="info-card-title">Nos ocupamos de todo</h3>
+                <p className="info-card-description">
+                  Desde la valoración hasta la firma, gestionamos todos los aspectos de la venta para que no te preocupes por nada.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Spacer section to ensure proper spacing */}
       <section className="spacer-section"></section>
     </div>
