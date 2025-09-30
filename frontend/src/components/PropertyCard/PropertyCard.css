@@ -13,18 +13,29 @@ Sigue el sistema de diseño definido en las instrucciones
   display: flex;
   gap: var(--spacing-md);
   padding: var(--spacing-md);
+  cursor: pointer;
 }
 
 .property-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--color-neutral-300);
+  transform: translateY(-2px);
+}
+
+.property-card:focus {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+.property-card:active {
+  transform: translateY(0);
 }
 
 .property-card__image-container {
   position: relative;
   flex-shrink: 0;
-  width: 120px;
-  height: 120px;
+  width: 30%;
+  height: 100%;
 }
 
 .property-card__image {
@@ -64,6 +75,7 @@ Sigue el sistema de diseño definido en las instrucciones
   /* Truncar a 2 líneas */
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -141,4 +153,90 @@ Sigue el sistema de diseño definido en las instrucciones
 .chip--purple {
   background: var(--color-info);
   color: white;
+}
+
+/* Responsive Design - Mobile */
+@media (max-width: 768px) {
+  .property-card {
+    flex-direction: column;
+    padding: var(--spacing-md);
+    gap: 0;
+  }
+
+  .property-card__image-container {
+    width: 100%;
+    height: 200px;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .property-card__image {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .property-card__image-count {
+    position: absolute;
+    bottom: var(--spacing-sm);
+    right: var(--spacing-sm);
+  }
+
+  .property-card__content {
+    gap: var(--spacing-sm);
+  }
+
+  .property-card__title {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .property-card__description {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .property-card__specs-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .property-card__tags {
+    justify-content: flex-start;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .property-card__footer {
+    justify-content: stretch;
+    margin-top: 0;
+  }
+
+  .property-card__price-btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .property-card {
+    padding: var(--spacing-sm);
+  }
+
+  .property-card__image-container {
+    height: 180px;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .property-card__content {
+    gap: var(--spacing-xs);
+  }
+
+  .property-card__title {
+    font-size: var(--font-size-md);
+  }
+
+  .property-card__specs-grid {
+    gap: var(--spacing-xs);
+  }
 }

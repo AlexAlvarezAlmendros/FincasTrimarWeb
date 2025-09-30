@@ -1,7 +1,5 @@
-/**
- * Componente PropertyCard
- * Sigue la nomenclatura PascalCase para componentes
- */
+import './PropertyCard.css';
+
 const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-ES', {
@@ -16,14 +14,37 @@ const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
     }
   };
 
-  const handleDetailsClick = () => {
+  const handleDetailsClick = (e) => {
+    e.preventDefault();
     if (onDetailsClick) {
       onDetailsClick(property.id);
     }
   };
 
+  const handleCardClick = (e) => {
+    // Evitar navegación si se hace clic en la imagen (para galería)
+    if (e.target.closest('.property-card__image-container')) {
+      return;
+    }
+    handleDetailsClick(e);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleDetailsClick(e);
+    }
+  };
+
   return (
-    <article className="property-card">
+    <article 
+      className="property-card" 
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`Ver detalles de ${property.name}`}
+    >
       <div className="property-card__image-container">
         <img 
           src={property.mainImage || '/placeholder-house.jpg'} 

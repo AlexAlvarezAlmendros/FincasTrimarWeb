@@ -1,0 +1,49 @@
+/* ==============================================
+   Layout Principal
+============================================== */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-neutral-0);
+}
+
+/* ==============================================
+   Contenido Principal
+============================================== */
+
+.main-content {
+  flex: 1;
+  padding-top: var(--header-height, 80px); /* Espacio para header fijo */
+  min-height: calc(100vh - var(--header-height, 80px) - var(--footer-height, 200px));
+}
+
+/* ==============================================
+   Responsive
+============================================== */
+
+@media (max-width: 768px) {
+  .main-content {
+    padding-top: var(--header-height-mobile, 70px);
+    min-height: calc(100vh - var(--header-height-mobile, 70px) - var(--footer-height-mobile, 160px));
+  }
+}
+
+/* ==============================================
+   Estados y Transiciones
+============================================== */
+
+.main-content {
+  transition: padding-top 0.3s ease;
+}
+
+/* Para casos donde el header sea transparente o tenga overlay */
+.layout.header-overlay .main-content {
+  padding-top: 0;
+}
+
+/* Para casos donde se necesite espacio extra */
+.layout.header-extended .main-content {
+  padding-top: calc(var(--header-height, 80px) + 20px);
+}

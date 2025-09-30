@@ -1,0 +1,425 @@
+/* ==============================================
+   Variables CSS para el Footer
+============================================== */
+
+:root {
+  --footer-height: 320px;
+  --footer-height-mobile: 280px;
+}
+
+/* ==============================================
+   Footer Principal
+============================================== */
+
+.footer {
+  background-color: var(--color-neutral-800);
+  color: var(--color-neutral-100);
+  margin-top: auto;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-lg);
+}
+
+/* ==============================================
+   Contenido Principal del Footer
+============================================== */
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  gap: var(--spacing-3xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.footer-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==============================================
+   Sección Sobre Nosotros
+============================================== */
+
+.footer-about {
+  max-width: 400px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.footer-logo {
+  font-size: 32px;
+  margin-right: var(--spacing-sm);
+}
+
+.footer-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-0);
+  margin: 0;
+  font-family: var(--font-family-heading);
+}
+
+.footer-description {
+  line-height: 1.6;
+  color: var(--color-neutral-300);
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+}
+
+.footer-social {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-neutral-700);
+  color: var(--color-neutral-100);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.social-link:hover {
+  background-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ==============================================
+   Sección Enlaces
+============================================== */
+
+.footer-section-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-0);
+  margin-bottom: var(--spacing-lg);
+  font-family: var(--font-family-heading);
+}
+
+.footer-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-nav li {
+  margin-bottom: var(--spacing-sm);
+}
+
+.footer-link {
+  color: var(--color-neutral-300);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  transition: color 0.2s ease;
+  display: inline-block;
+}
+
+.footer-link:hover {
+  color: var(--color-primary);
+  transform: translateX(4px);
+}
+
+/* ==============================================
+   Sección Newsletter
+============================================== */
+
+.newsletter-description {
+  color: var(--color-neutral-300);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin-bottom: var(--spacing-lg);
+}
+
+.newsletter-form {
+  margin-bottom: var(--spacing-xl);
+}
+
+.newsletter-input-group {
+  display: flex;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.newsletter-input {
+  flex: 1;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  background-color: var(--color-neutral-0);
+  color: var(--color-neutral-800);
+  font-size: var(--font-size-sm);
+  outline: none;
+}
+
+.newsletter-input::placeholder {
+  color: var(--color-neutral-500);
+}
+
+.newsletter-button {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  background-color: var(--color-primary);
+  color: var(--color-neutral-0);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.newsletter-button:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.newsletter-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.newsletter-button--loading {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.newsletter-message {
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+
+.newsletter-message--success {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.newsletter-message--error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ==============================================
+   Información de Contacto
+============================================== */
+
+.footer-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.contact-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.contact-text {
+  color: var(--color-neutral-300);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  transition: color 0.2s ease;
+}
+
+.contact-text:hover {
+  color: var(--color-primary);
+}
+
+/* ==============================================
+   Línea Divisoria
+============================================== */
+
+.footer-divider {
+  height: 1px;
+  background-color: var(--color-neutral-700);
+  margin: var(--spacing-xl) 0;
+}
+
+/* ==============================================
+   Pie de Página
+============================================== */
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.footer-copyright p {
+  margin: 0;
+  color: var(--color-neutral-400);
+  font-size: var(--font-size-xs);
+}
+
+.footer-legal {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.legal-link {
+  color: var(--color-neutral-400);
+  text-decoration: none;
+  font-size: var(--font-size-xs);
+  transition: color 0.2s ease;
+}
+
+.legal-link:hover {
+  color: var(--color-primary);
+}
+
+/* ==============================================
+   Responsive Design
+============================================== */
+
+@media (max-width: 1024px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-2xl);
+  }
+  
+  .footer-newsletter {
+    grid-column: 1 / -1;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-container {
+    padding: var(--spacing-2xl) var(--spacing-md) var(--spacing-lg);
+  }
+  
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+    text-align: center;
+  }
+  
+  .footer-about {
+    max-width: none;
+  }
+  
+  .footer-brand {
+    justify-content: center;
+  }
+  
+  .footer-social {
+    justify-content: center;
+  }
+  
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-sm);
+  }
+  
+  .footer-legal {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .newsletter-input-group {
+    flex-direction: column;
+    border-radius: var(--radius-md);
+  }
+  
+  .newsletter-input,
+  .newsletter-button {
+    border-radius: 0;
+  }
+  
+  .newsletter-input {
+    border-top-left-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-md);
+  }
+  
+  .newsletter-button {
+    border-bottom-left-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-container {
+    padding: var(--spacing-xl) var(--spacing-sm) var(--spacing-md);
+  }
+  
+  .footer-title {
+    font-size: var(--font-size-xl);
+  }
+  
+  .footer-logo {
+    font-size: 28px;
+  }
+  
+  .social-link {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+/* ==============================================
+   Estados y Animaciones
+============================================== */
+
+.footer {
+  transition: all 0.3s ease;
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .social-link,
+  .footer-link,
+  .newsletter-button {
+    transition: none;
+  }
+  
+  .newsletter-button--loading {
+    animation: none;
+  }
+}
+
+/* Alto contraste */
+@media (prefers-contrast: high) {
+  .footer {
+    background-color: #000000;
+    color: #ffffff;
+  }
+  
+  .footer-divider {
+    background-color: #ffffff;
+  }
+}
