@@ -321,6 +321,12 @@
   height: 32px;
 }
 
+.info-icon .fa-handshake,
+.info-icon .fa-users,
+.info-icon .fa-cogs {
+  font-size: 32px;
+}
+
 .info-card-title {
   font-family: "Poppins", "Inter", system-ui, sans-serif;
   font-size: 20px;
@@ -455,6 +461,12 @@
     height: 28px;
   }
   
+  .info-icon .fa-handshake,
+  .info-icon .fa-users,
+  .info-icon .fa-cogs {
+    font-size: 28px;
+  }
+  
   .info-card-title {
     font-size: 18px;
   }
@@ -464,6 +476,7 @@
   }
 }
 
+/* Mobile Responsive - IMPORTANTE: Mantener border-radius en elementos redefinidos */
 @media (max-width: 480px) {
   .hero-section {
     padding: 40px 0 80px 0;
@@ -532,6 +545,12 @@
   .info-icon svg {
     width: 24px;
     height: 24px;
+  }
+  
+  .info-icon .fa-handshake,
+  .info-icon .fa-users,
+  .info-icon .fa-cogs {
+    font-size: 24px;
   }
   
   .info-card-title {
@@ -604,4 +623,30 @@
 .form-card:focus-within {
   outline: 2px solid #3A8DFF;
   outline-offset: 4px;
+}
+
+/* DIAGNÓSTICO TEMPORAL - Forzar border-radius en todas las resoluciones */
+.form-card,
+.info-card,
+.info-section {
+  border-radius: 20px !important;
+}
+
+.submit-button {
+  border-radius: 9999px !important;
+}
+
+.form-input {
+  border-radius: 12px !important;
+}
+
+@media (max-width: 480px) {
+  .form-card {
+    border-radius: 16px !important;
+  }
+  
+  .info-card,
+  .info-section {
+    border-radius: 16px !important;
+  }
 }
