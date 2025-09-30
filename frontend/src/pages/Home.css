@@ -6,8 +6,17 @@
 
 /* Hero Section */
 .hero {
-  background: var(--color-neutral-50);
   padding: var(--spacing-3xl) 0;
+  background: url('./img/HeaderImage.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100%;
+  min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
 }
 
 .hero-content {
@@ -191,128 +200,31 @@
 .properties-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  max-width: 100%;
   gap: var(--spacing-xl);
 }
 
-/* Property Card */
-.property-card {
-  background: var(--color-neutral-0);
-  border: 1px solid var(--color-neutral-200);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  display: flex;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
+/* Limitar a máximo 2 columnas */
+@media (min-width: 769px) {
+  .properties-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.property-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-  border-color: var(--color-neutral-300);
-}
-
-.property-image {
-  flex-shrink: 0;
-  width: 120px;
-  height: 90px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.property-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.property-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.property-title {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-neutral-800);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin: 0;
-}
-
-.property-specs {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.spec-row {
-  display: flex;
-  gap: var(--spacing-md);
-}
-
-.spec {
-  font-size: var(--font-size-xs);
-  color: var(--color-neutral-600);
-}
-
-.property-tags {
-  display: flex;
-  gap: var(--spacing-xs);
-  flex-wrap: wrap;
-}
-
-.chip {
-  padding: 2px var(--spacing-xs);
-  border-radius: var(--radius-pill);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  border: 1px solid transparent;
-}
-
-.chip-green {
-  background: #dcfce7;
-  color: #166534;
-  border-color: #bbf7d0;
-}
-
-.chip-yellow {
-  background: #fef3c7;
-  color: #92400e;
-  border-color: #fed7aa;
-}
-
-.chip-purple {
-  background: #e0e7ff;
-  color: #5b21b6;
-  border-color: #c7d2fe;
-}
-
-.property-price {
-  margin-top: auto;
-  text-align: right;
-}
-
-.price-amount {
-  background: var(--color-neutral-100);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-md);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-neutral-800);
-  font-size: var(--font-size-sm);
-}
+/* Property Card styles are now handled by the PropertyCard component */
 
 /* Sell Promotion Section */
 .sell-promotion {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  padding: var(--spacing-3xl) 0;
+  background: url('./img/VenderImage.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100%;
+  min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
 }
 
 .promotion-content {
@@ -392,15 +304,6 @@
   .properties-grid {
     grid-template-columns: 1fr;
     gap: var(--spacing-md);
-  }
-
-  .property-card {
-    flex-direction: column;
-  }
-
-  .property-image {
-    width: 100%;
-    height: 200px;
   }
 
   .promotion-content {

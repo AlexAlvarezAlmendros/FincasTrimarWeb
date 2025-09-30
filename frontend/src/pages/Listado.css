@@ -193,160 +193,19 @@
 /* Properties Grid */
 .properties-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  max-width: 100%;
   gap: var(--spacing-xl);
 }
 
-/* Property Card */
-.property-card {
-  background: var(--color-neutral-0);
-  border: 1px solid var(--color-neutral-200);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: all 0.3s ease;
+/* Limitar a máximo 2 columnas */
+@media (min-width: 769px) {
+  .properties-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.property-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-  border-color: var(--color-neutral-300);
-}
-
-.property-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-}
-
-.property-image {
-  width: 100%;
-  height: 240px;
-  overflow: hidden;
-  position: relative;
-}
-
-.property-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.property-card:hover .property-image img {
-  transform: scale(1.05);
-}
-
-.property-info {
-  padding: var(--spacing-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.property-title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-neutral-800);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin: 0 0 var(--spacing-xs) 0;
-}
-
-.property-description {
-  font-size: var(--font-size-sm);
-  color: var(--color-neutral-600);
-  line-height: 1.4;
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.property-specs {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-sm);
-}
-
-.spec-row {
-  display: flex;
-  gap: var(--spacing-lg);
-}
-
-.spec {
-  font-size: var(--font-size-xs);
-  color: var(--color-neutral-600);
-  font-weight: var(--font-weight-medium);
-}
-
-.property-tags {
-  display: flex;
-  gap: var(--spacing-xs);
-  flex-wrap: wrap;
-  margin-bottom: var(--spacing-md);
-}
-
-.chip {
-  padding: 4px var(--spacing-sm);
-  border-radius: var(--radius-pill);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
-.chip-green {
-  background: #dcfce7;
-  color: #166534;
-  border-color: #bbf7d0;
-}
-
-.chip-yellow {
-  background: #fef3c7;
-  color: #92400e;
-  border-color: #fed7aa;
-}
-
-.chip-purple {
-  background: #e0e7ff;
-  color: #5b21b6;
-  border-color: #c7d2fe;
-}
-
-.chip-blue {
-  background: #dbeafe;
-  color: #1e40af;
-  border-color: #93c5fd;
-}
-
-.chip-orange {
-  background: #fed7aa;
-  color: #ea580c;
-  border-color: #fdba74;
-}
-
-.chip-gray {
-  background: var(--color-neutral-100);
-  color: var(--color-neutral-600);
-  border-color: var(--color-neutral-200);
-}
-
-.property-price {
-  margin-top: auto;
-  text-align: right;
-}
-
-.price-amount {
-  background: var(--color-primary);
-  color: var(--color-neutral-0);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-md);
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-md);
-  display: inline-block;
-}
+/* Property Card styles are now handled by the PropertyCard component */
 
 /* No Results */
 .no-results {
@@ -399,11 +258,6 @@
     grid-template-columns: 1fr;
     gap: var(--spacing-lg);
   }
-
-  .property-card {
-    margin: 0 -var(--spacing-md);
-    border-radius: 0;
-  }
 }
 
 @media (max-width: 480px) {
@@ -425,13 +279,7 @@
     padding: 0 var(--spacing-md);
   }
 
-  .property-info {
-    padding: var(--spacing-md);
-  }
 
-  .property-title {
-    font-size: var(--font-size-md);
-  }
 }
 
 /* Accessibility improvements */
@@ -446,11 +294,7 @@
   box-shadow: 0 0 0 2px rgba(58, 141, 255, 0.1);
 }
 
-.property-link:focus {
-  outline: 2px solid var(--color-primary-focus);
-  outline-offset: 2px;
-  border-radius: var(--radius-lg);
-}
+/* Property link focus styles are now handled by the PropertyCard component */
 
 /* Animation for filter toggle */
 .advanced-filters {

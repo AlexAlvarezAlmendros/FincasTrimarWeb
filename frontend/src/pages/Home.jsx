@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import PropertyCard from '../components/PropertyCard/PropertyCard';
 import './Home.css';
 
 export default function Home() {
+  const navigate = useNavigate();
   const [searchFilters, setSearchFilters] = useState({
     location: '',
     type: 'all'
@@ -21,6 +23,15 @@ export default function Home() {
     console.log('Searching with filters:', searchFilters);
   };
 
+  const handleImageClick = (images) => {
+    // TODO: Implementar galería de imágenes
+    console.log('Opening image gallery:', images);
+  };
+
+  const handleDetailsClick = (propertyId) => {
+    navigate(`/viviendas/${propertyId}`);
+  };
+
   // Datos mock para las viviendas recientes
   const recentProperties = [
     {
@@ -29,13 +40,15 @@ export default function Home() {
       shortDescription: 'Precioso piso en zona premium',
       price: 240000,
       rooms: 3,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 0,
       squaredMeters: 102,
       poblacion: 'Igualada',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Piso',
       tipoAnuncio: 'Venta',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '2',
@@ -43,13 +56,15 @@ export default function Home() {
       shortDescription: 'Perfecto para familias',
       price: 350000,
       rooms: 4,
-      bathRooms: 3,
+      bathrooms: 3,
       garage: 2,
       squaredMeters: 180,
       poblacion: 'Barcelona',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Chalet',
       tipoAnuncio: 'Venta',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '3',
@@ -57,13 +72,15 @@ export default function Home() {
       shortDescription: 'Vistas espectaculares',
       price: 450000,
       rooms: 3,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 1,
       squaredMeters: 120,
       poblacion: 'Sitges',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Ático',
       tipoAnuncio: 'Venta',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '4',
@@ -71,13 +88,15 @@ export default function Home() {
       shortDescription: 'Encanto y modernidad',
       price: 280000,
       rooms: 4,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 1,
       squaredMeters: 150,
       poblacion: 'Vilafranca',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Casa',
       tipoAnuncio: 'Venta',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '5',
@@ -85,13 +104,15 @@ export default function Home() {
       shortDescription: 'Diseño contemporáneo',
       price: 320000,
       rooms: 2,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 1,
       squaredMeters: 85,
       poblacion: 'Barcelona',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Loft',
       tipoAnuncio: 'Venta',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '6',
@@ -99,13 +120,15 @@ export default function Home() {
       shortDescription: 'A 5 minutos de la playa',
       price: 380000,
       rooms: 3,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 0,
       squaredMeters: 95,
       poblacion: 'Castelldefels',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Piso',
       tipoAnuncio: 'Venta',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     }
   ];
 
@@ -121,9 +144,6 @@ export default function Home() {
             <p className="hero-subtitle">
               Ofrecemos el servicio completo de venta, <strong>compra o alquiler de tu vivienda</strong>
             </p>
-          </div>
-          <div className="hero-image">
-            <img src="/api/placeholder/600/400" alt="Casa moderna con fachada elegante" />
           </div>
         </div>
 
@@ -177,36 +197,12 @@ export default function Home() {
           
           <div className="properties-grid">
             {recentProperties.map((property) => (
-              <article key={property.id} className="property-card">
-                <div className="property-image">
-                  <img src={property.imageUrl} alt={property.name} loading="lazy" />
-                </div>
-                
-                <div className="property-info">
-                  <h3 className="property-title">{property.name}</h3>
-                  
-                  <div className="property-specs">
-                    <div className="spec-row">
-                      <span className="spec">{property.rooms} Habitaciones</span>
-                      <span className="spec">{property.garage} Garajes</span>
-                    </div>
-                    <div className="spec-row">
-                      <span className="spec">{property.squaredMeters} m²</span>
-                      <span className="spec">{property.bathRooms} Baños</span>
-                    </div>
-                  </div>
-                  
-                  <div className="property-tags">
-                    <span className="chip chip-green">Vivienda</span>
-                    <span className="chip chip-yellow">{property.tipoVivienda}</span>
-                    <span className="chip chip-purple">{property.tipoAnuncio}</span>
-                  </div>
-                  
-                  <div className="property-price">
-                    <span className="price-amount">{property.price.toLocaleString('es-ES')} €</span>
-                  </div>
-                </div>
-              </article>
+              <PropertyCard
+                key={property.id}
+                property={property}
+                onImageClick={handleImageClick}
+                onDetailsClick={handleDetailsClick}
+              />
             ))}
           </div>
         </div>
@@ -214,18 +210,13 @@ export default function Home() {
 
       {/* Sell Promotion Section */}
       <section className="sell-promotion">
-        <div className="container">
           <div className="promotion-content">
             <div className="promotion-text">
               <h2>Vende tu inmueble hoy mismo</h2>
               <p>Ofrecemos el mejor servicio para la venta de tu propiedad con garantías de éxito.</p>
               <Link to="/vender" className="cta-button">CONTÁCTANOS</Link>
             </div>
-            <div className="promotion-image">
-              <img src="/api/placeholder/400/300" alt="Edificio moderno para venta" />
-            </div>
           </div>
-        </div>
       </section>
     </div>
   );

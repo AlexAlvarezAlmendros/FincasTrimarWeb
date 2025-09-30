@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import PropertyCard from '../components/PropertyCard/PropertyCard';
 import './Listado.css';
 
 export default function Listado() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     location: '',
     type: 'all',
@@ -25,17 +27,19 @@ export default function Listado() {
       shortDescription: 'Precioso piso en una de las mejores zonas de Igualada',
       price: 240000,
       rooms: 3,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 0,
       squaredMeters: 102,
       provincia: 'Barcelona',
       poblacion: 'Igualada',
       calle: 'C/ Major',
       numero: '12',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Piso',
       tipoAnuncio: 'Venta',
       estado: 'BuenEstado',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '2',
@@ -43,17 +47,19 @@ export default function Listado() {
       shortDescription: 'Perfecto para familias, zona tranquila',
       price: 350000,
       rooms: 4,
-      bathRooms: 3,
+      bathrooms: 3,
       garage: 2,
       squaredMeters: 180,
       provincia: 'Barcelona',
       poblacion: 'Sant Cugat',
       calle: 'Avda. Catalunya',
       numero: '45',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Chalet',
       tipoAnuncio: 'Venta',
       estado: 'ObraNueva',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '3',
@@ -61,17 +67,19 @@ export default function Listado() {
       shortDescription: 'Vistas espectaculares al mar',
       price: 450000,
       rooms: 3,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 1,
       squaredMeters: 120,
       provincia: 'Barcelona',
       poblacion: 'Sitges',
       calle: 'Passeig Marítim',
       numero: '8',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Ático',
       tipoAnuncio: 'Venta',
       estado: 'BuenEstado',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '4',
@@ -79,17 +87,19 @@ export default function Listado() {
       shortDescription: 'Encanto tradicional con comodidades modernas',
       price: 280000,
       rooms: 4,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 1,
       squaredMeters: 150,
       provincia: 'Barcelona',
       poblacion: 'Vilafranca del Penedès',
       calle: 'C/ Sant Antoni',
       numero: '23',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Casa',
       tipoAnuncio: 'Venta',
       estado: 'AReformar',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '5',
@@ -97,17 +107,19 @@ export default function Listado() {
       shortDescription: 'Diseño contemporáneo y funcional',
       price: 320000,
       rooms: 2,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 1,
       squaredMeters: 85,
       provincia: 'Barcelona',
       poblacion: 'Barcelona',
       calle: 'C/ Diagonal',
       numero: '567',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Loft',
       tipoAnuncio: 'Venta',
       estado: 'ObraNueva',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     },
     {
       id: '6',
@@ -115,17 +127,19 @@ export default function Listado() {
       shortDescription: 'A 5 minutos caminando de la playa',
       price: 380000,
       rooms: 3,
-      bathRooms: 2,
+      bathrooms: 2,
       garage: 0,
       squaredMeters: 95,
       provincia: 'Barcelona',
       poblacion: 'Castelldefels',
       calle: 'Avda. del Mar',
       numero: '156',
+      tipoInmueble: 'Vivienda',
       tipoVivienda: 'Piso',
       tipoAnuncio: 'Venta',
       estado: 'BuenEstado',
-      imageUrl: '/api/placeholder/300/200'
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     }
   ];
 
@@ -160,6 +174,15 @@ export default function Listado() {
       maxPrice: '',
       rooms: 'all'
     });
+  };
+
+  const handleImageClick = (images) => {
+    // TODO: Implementar galería de imágenes
+    console.log('Opening image gallery:', images);
+  };
+
+  const handleDetailsClick = (propertyId) => {
+    navigate(`/viviendas/${propertyId}`);
   };
 
   const getEstadoChipClass = (estado) => {
@@ -316,42 +339,12 @@ export default function Listado() {
             <>
               <div className="properties-grid">
                 {filteredProperties.map((property) => (
-                  <article key={property.id} className="property-card">
-                    <Link to={`/viviendas/${property.id}`} className="property-link">
-                      <div className="property-image">
-                        <img src={property.imageUrl} alt={property.name} loading="lazy" />
-                      </div>
-                      
-                      <div className="property-info">
-                        <h3 className="property-title">{property.name}</h3>
-                        <p className="property-description">{property.shortDescription}</p>
-                        
-                        <div className="property-specs">
-                          <div className="spec-row">
-                            <span className="spec">{property.rooms} Habitaciones</span>
-                            <span className="spec">{property.garage} Garajes</span>
-                          </div>
-                          <div className="spec-row">
-                            <span className="spec">{property.squaredMeters} m²</span>
-                            <span className="spec">{property.bathRooms} Baños</span>
-                          </div>
-                        </div>
-                        
-                        <div className="property-tags">
-                          <span className="chip chip-green">Vivienda</span>
-                          <span className="chip chip-yellow">{property.tipoVivienda}</span>
-                          <span className="chip chip-purple">{property.tipoAnuncio}</span>
-                          <span className={`chip ${getEstadoChipClass(property.estado)}`}>
-                            {property.estado.replace('BuenEstado', 'Buen Estado').replace('AReformar', 'A Reformar').replace('ObraNueva', 'Obra Nueva')}
-                          </span>
-                        </div>
-                        
-                        <div className="property-price">
-                          <span className="price-amount">{property.price.toLocaleString('es-ES')} €</span>
-                        </div>
-                      </div>
-                    </Link>
-                  </article>
+                  <PropertyCard
+                    key={property.id}
+                    property={property}
+                    onImageClick={handleImageClick}
+                    onDetailsClick={handleDetailsClick}
+                  />
                 ))}
               </div>
 
