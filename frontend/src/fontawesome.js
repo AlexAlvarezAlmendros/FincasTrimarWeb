@@ -10,7 +10,11 @@ import {
   faHandshake,
   faUsers,
   faCogs,
-  faFileLines
+  faFileLines,
+  faMagnifyingGlass,
+  faFilter,
+  faPhone,
+  faEnvelope
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -24,5 +28,9 @@ library.add(
   faHandshake,
   faUsers,
   faCogs,
-  faFileLines
+  faFileLines,
+  faMagnifyingGlass,
+  faFilter,
+  faPhone,
+  faEnvelope
 )

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
+import CustomSelect from '../components/CustomSelect/CustomSelect';
+import LocationAutocomplete from '../components/LocationAutocomplete/LocationAutocomplete';
 import './Home.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export default function Home() {
   const navigate = useNavigate();
   const [searchFilters, setSearchFilters] = useState({
     location: '',
-    type: 'all'
+    type: 'all',
+    operation: 'Venta' // COMPRA/ALQUILER
   });
 
   const handleFilterChange = (field, value) => {
@@ -19,8 +23,32 @@ export default function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // TODO: Implementar búsqueda
-    console.log('Searching with filters:', searchFilters);
+    
+    // Construir query params para el listado
+    const params = new URLSearchParams();
+    
+    if (searchFilters.location && searchFilters.location.trim()) {
+      params.append('q', searchFilters.location.trim());
+    }
+    
+    if (searchFilters.type && searchFilters.type !== 'all') {
+      params.append('tipo', searchFilters.type);
+    }
+    
+    if (searchFilters.operation && searchFilters.operation !== 'Venta') {
+      params.append('tipoAnuncio', searchFilters.operation);
+    }
+    
+    // Navegar al listado con los filtros
+    const queryString = params.toString();
+    navigate(`/viviendas${queryString ? `?${queryString}` : ''}`);
+  };
+
+  const handleTabChange = (operation) => {
+    setSearchFilters(prev => ({
+      ...prev,
+      operation: operation === 'COMPRA' ? 'Venta' : 'Alquiler'
+    }));
   };
 
   const handleImageClick = (images) => {
@@ -31,6 +59,18 @@ export default function Home() {
   const handleDetailsClick = (propertyId) => {
     navigate(`/viviendas/${propertyId}`);
   };
+
+  // Opciones para el select de tipo de vivienda
+  const typeOptions = [
+    { value: 'all', label: 'Tipo de vivienda' },
+    { value: 'Piso', label: 'Piso' },
+    { value: 'Casa', label: 'Casa' },
+    { value: 'Chalet', label: 'Chalet' },
+    { value: 'Ático', label: 'Ático' },
+    { value: 'Dúplex', label: 'Dúplex' },
+    { value: 'Loft', label: 'Loft' },
+    { value: 'Villa', label: 'Villa' },
+  ];
 
   // Datos mock para las viviendas recientes
   const recentProperties = [
@@ -151,36 +191,43 @@ export default function Home() {
         <div className="search-container">
           <form className="search-bar" onSubmit={handleSearch}>
             <div className="search-tabs">
-              <button type="button" className="tab active">COMPRA</button>
-              <button type="button" className="tab">ALQUILER</button>
+              <button 
+                type="button" 
+                className={`tab ${searchFilters.operation === 'Venta' ? 'active' : ''}`}
+                onClick={() => handleTabChange('COMPRA')}
+              >
+                COMPRA
+              </button>
+              <button 
+                type="button" 
+                className={`tab ${searchFilters.operation === 'Alquiler' ? 'active' : ''}`}
+                onClick={() => handleTabChange('ALQUILER')}
+              >
+                ALQUILER
+              </button>
             </div>
             
             <div className="search-fields">
               <div className="search-field">
-                <div className="field-icon">📍</div>
-                <input
-                  type="text"
-                  placeholder="Ubicación"
+                <div className="field-icon"><FontAwesomeIcon icon="fa-solid fa-location-dot" /></div>
+                <LocationAutocomplete
                   value={searchFilters.location}
-                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  onChange={(value) => handleFilterChange('location', value)}
+                  placeholder="Ubicación"
                 />
               </div>
               
               <div className="search-field">
-                <select
+                <CustomSelect
                   value={searchFilters.type}
-                  onChange={(e) => handleFilterChange('type', e.target.value)}
-                >
-                  <option value="all">Tipo de vivienda</option>
-                  <option value="piso">Piso</option>
-                  <option value="casa">Casa</option>
-                  <option value="chalet">Chalet</option>
-                  <option value="atico">Ático</option>
-                </select>
+                  onChange={(value) => handleFilterChange('type', value)}
+                  options={typeOptions}
+                  placeholder="Tipo de vivienda"
+                />
               </div>
               
               <button type="submit" className="search-button">
-                <span>🔍</span>
+                <span><FontAwesomeIcon icon="fa-solid fa-magnifying-glass" /></span>
               </button>
             </div>
           </form>
