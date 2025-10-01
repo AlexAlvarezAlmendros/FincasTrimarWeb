@@ -340,7 +340,7 @@ export default function Listado() {
         return false;
       }
     }
-    if (filters.type !== 'all' && property.tipoVivienda !== filters.type) {
+    if (filters.type !== 'all' && property.tipoVivienda.toLowerCase() !== filters.type.toLowerCase()) {
       return false;
     }
     if (filters.minPrice && property.price < parseInt(filters.minPrice)) {
