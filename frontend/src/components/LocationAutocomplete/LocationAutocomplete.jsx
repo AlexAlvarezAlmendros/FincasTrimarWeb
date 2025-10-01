@@ -607,7 +607,7 @@ const LocationAutocomplete = ({
 
         const filtered = mockLocations
           .filter(location => location.toLowerCase().includes(input.toLowerCase()))
-          .slice(0, 4) // Aumentamos a 8 resultados para más opciones
+          .slice(0, 8) // Aumentamos a 8 resultados para más opciones
           .map((location, index) => ({
             place_id: `mock_${index}`,
             description: location,
