@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Contacto.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export default function Contacto() {
   const [formData, setFormData] = useState({
@@ -67,101 +68,83 @@ export default function Contacto() {
             {/* Contact Information */}
             <div className="contact-info">
               <div className="info-card">
-                <h3>Información de contacto</h3>
+                <div className="info-header">
+                  <h3>¿Cómo podemos ayudarte?</h3>
+                  <p className="info-subtitle">
+                    Múltiples formas de contactar con nosotros
+                  </p>
+                </div>
                 
                 <div className="contact-methods">
-                  <div className="contact-method">
-                    <div className="method-icon">📍</div>
+                  <div className="contact-method featured-method">
+                    <div className="method-icon phone-icon">
+                      <span><FontAwesomeIcon icon="phone" /></span>
+                    </div>
                     <div className="method-content">
-                      <h4>Oficina principal</h4>
-                      <p>
-                        Carrer Major, 123<br />
-                        08700 Igualada, Barcelona<br />
-                        España
-                      </p>
+                      <div className="method-header">
+                        <h4>Llámanos directamente</h4>
+                        <span className="method-badge">Inmediato</span>
+                      </div>
+                      <div className="method-details">
+                        <a href="tel:+34615840273" className="primary-contact">
+                          615 84 02 73
+                        </a>
+                        <div className="contact-hours">
+                          <span className="hour-item"><FontAwesomeIcon icon="calendar-alt" /> Lun - Vie: 9:00 - 18:00</span>
+                          <span className="hour-item"><FontAwesomeIcon icon="clock" /> Sáb: 10:00 - 14:00</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   <div className="contact-method">
-                    <div className="method-icon">📞</div>
+                    <div className="method-icon email-icon">
+                      <span><FontAwesomeIcon icon="envelope" /></span>
+                    </div>
                     <div className="method-content">
-                      <h4>Teléfono</h4>
-                      <p>
-                        <a href="tel:+34615840273">615 84 02 73</a><br />
-                        <span className="method-note">Lunes a Viernes: 9:00 - 18:00</span>
-                      </p>
+                      <div className="method-header">
+                        <h4>Escríbenos un email</h4>
+                        <span className="method-badge response-badge">24h respuesta</span>
+                      </div>
+                      <div className="method-details">
+                        <a href="mailto:info@fincastrimar.com" className="primary-contact">
+                          info@fincastrimar.com
+                        </a>
+                        <p className="method-description">
+                          Para consultas detalladas, envío de documentos y solicitudes específicas
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   <div className="contact-method">
-                    <div className="method-icon">✉️</div>
-                    <div className="method-content">
-                      <h4>Email</h4>
-                      <p>
-                        <a href="mailto:info@fincastrimar.com">info@fincastrimar.com</a><br />
-                        <span className="method-note">Respuesta en 24h</span>
-                      </p>
+                    <div className="method-icon whatsapp-icon">
+                      <span>💬</span>
                     </div>
-                  </div>
-
-                  <div className="contact-method">
-                    <div className="method-icon">🕒</div>
                     <div className="method-content">
-                      <h4>Horario de atención</h4>
-                      <p>
-                        Lunes a Viernes: 9:00 - 18:00<br />
-                        Sábados: 10:00 - 14:00<br />
-                        <span className="method-note">Citas concertadas</span>
-                      </p>
+                      <div className="method-header">
+                        <h4>WhatsApp Business</h4>
+                        <span className="method-badge whatsapp-badge">Rápido</span>
+                      </div>
+                      <div className="method-details">
+                        <a href="https://wa.me/34615840273" className="primary-contact" target="_blank" rel="noopener noreferrer">
+                          Iniciar chat
+                        </a>
+                        <p className="method-description">
+                          Consultas rápidas, fotos de propiedades y respuestas inmediatas
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="social-media">
-                  <h4>Síguenos en redes sociales</h4>
-                  <div className="social-links">
-                    <a 
-                      href="https://facebook.com/fincastrimar" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="social-link"
-                      aria-label="Facebook"
-                    >
-                      📘 Facebook
-                    </a>
-                    <a 
-                      href="https://instagram.com/fincastrimar" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="social-link"
-                      aria-label="Instagram"
-                    >
-                      📷 Instagram
-                    </a>
-                    <a 
-                      href="https://linkedin.com/company/fincastrimar" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="social-link"
-                      aria-label="LinkedIn"
-                    >
-                      💼 LinkedIn
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Map */}
-              <div className="map-container">
-                <h3>Nuestra ubicación</h3>
-                <div className="map">
-                  <img 
-                    src="/api/placeholder/400/300" 
-                    alt="Mapa de ubicación de Fincas Trimar en Igualada"
-                    className="map-image"
-                  />
-                  <div className="map-overlay">
-                    <p>📍 Carrer Major, 123 - Igualada</p>
+                <div className="contact-footer">
+                  <div className="emergency-contact">
+                    <h4>🚨 Urgencias fuera de horario</h4>
+                    <p>
+                      Para emergencias relacionadas con propiedades en gestión, 
+                      contacta por WhatsApp las 24h
+                    </p>
                   </div>
                 </div>
               </div>

@@ -68,7 +68,7 @@
 }
 
 /* Contact Form Section - Superpuesta */
-.contact-form-section {
+.vender-form-section {
   position: relative;
   margin-top: -250px; /* Superposición negativa */
   z-index: 10;
