@@ -35,6 +35,11 @@
 /* ==============================================
    Brand (Logo)
 ============================================== */
+.header-logo-image{
+  width: 100px;
+  height: auto;
+  object-fit: contain;
+}
 
 .header-brand {
   display: flex;
@@ -57,6 +62,9 @@
 .brand-icon {
   font-size: 28px;
   margin-right: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .brand-text {

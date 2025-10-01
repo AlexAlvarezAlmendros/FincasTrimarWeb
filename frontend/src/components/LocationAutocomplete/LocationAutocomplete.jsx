@@ -1,23 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import './LocationAutocomplete.css';
-
-// Debug: Exponer función para testing en consola del navegador
-if (typeof window !== 'undefined') {
-  window.testLocationAutocomplete = (searchTerm = 'Sitges') => {
-    console.log(`🔍 TESTING LocationAutocomplete con: "${searchTerm}"`);
-    console.log('🏠 Incluye pueblos pequeños como:');
-    console.log('- Sitges, Calella, Cadaqués (costa)');
-    console.log('- Begur, Tossa de Mar, Altafulla (pueblos)');
-    console.log('- Igualada, Vic, Berga (interior)');
-    console.log('\n� Ejecuta en consola: testLocationAutocomplete("sitges")');
-  };
-  
-  // Ejecutar automáticamente al cargar
-  setTimeout(() => {
-    console.log('🚀 LocationAutocomplete cargado. Prueba: testLocationAutocomplete("cadaques")');
-  }, 1000);
-}
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 const LocationAutocomplete = ({ 
   value, 
@@ -711,7 +695,7 @@ const LocationAutocomplete = ({
   return (
     <div className={`location-autocomplete ${className}`}>
       <div className="location-input-container">
-        <div className="field-icon">📍</div>
+        <div className="field-icon"><FontAwesomeIcon icon="fa-solid fa-location-dot" /></div>
         <input
           ref={inputRef}
           type="text"

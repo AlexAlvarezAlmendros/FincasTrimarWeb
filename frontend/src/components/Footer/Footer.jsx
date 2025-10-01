@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import './Footer.css';
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 /**
  * Footer principal de la aplicación
  * Incluye información de la empresa, enlaces útiles y newsletter
@@ -44,9 +44,13 @@ const Footer = () => {
           <div className="footer-section footer-about">
             <div className="footer-brand">
               <div className="footer-logo">
-                🏠
+                <img 
+                  src="./img/logo.svg" 
+                  alt="Fincas Trimar Logo" 
+                  className="footer-logo-image"
+                />
               </div>
-              <h3 className="footer-title">Fincas Trimar</h3>
+              <h3 className="footer-title">Finques Trimar</h3>
             </div>
             
             <p className="footer-description">
@@ -55,43 +59,6 @@ const Footer = () => {
               de manera rápida y eficiente.
             </p>
             
-            {/* Redes sociales */}
-            <div className="footer-social">
-              <a 
-                href="https://facebook.com/fincastrimar" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="social-link"
-                aria-label="Síguenos en Facebook"
-              >
-                📘
-              </a>
-              <a 
-                href="https://instagram.com/fincastrimar" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="social-link"
-                aria-label="Síguenos en Instagram"
-              >
-                📷
-              </a>
-              <a 
-                href="https://linkedin.com/company/fincastrimar" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="social-link"
-                aria-label="Conéctate en LinkedIn"
-              >
-                💼
-              </a>
-              <a 
-                href="tel:+34615840273" 
-                className="social-link"
-                aria-label="Llámanos"
-              >
-                📞
-              </a>
-            </div>
           </div>
 
           {/* Enlaces útiles */}
@@ -116,16 +83,6 @@ const Footer = () => {
               <li>
                 <Link to="/sobre-nosotros" className="footer-link">
                   Sobre Nosotros
-                </Link>
-              </li>
-              <li>
-                <Link to="/servicios" className="footer-link">
-                  Servicios
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog" className="footer-link">
-                  Blog Inmobiliario
                 </Link>
               </li>
             </ul>
@@ -155,7 +112,7 @@ const Footer = () => {
                   disabled={isSubmitting}
                   aria-label="Suscribirse al newsletter"
                 >
-                  {isSubmitting ? '⏳' : '✉️'}
+                  {isSubmitting ? <FontAwesomeIcon icon="fa-solid fa-spinner" spin /> : <FontAwesomeIcon icon="fa-solid fa-envelope" />}
                 </button>
               </div>
               
@@ -168,17 +125,17 @@ const Footer = () => {
             
             <div className="footer-contact-info">
               <div className="contact-item">
-                <span className="contact-icon">📍</span>
+                <span className="contact-icon"><FontAwesomeIcon icon="fa-solid fa-map-marker-alt" /></span>
                 <span className="contact-text">Igualada, Barcelona</span>
               </div>
               <div className="contact-item">
-                <span className="contact-icon">📞</span>
+                <span className="contact-icon"><FontAwesomeIcon icon="fa-solid fa-phone" /></span>
                 <a href="tel:+34615840273" className="contact-text">
                   615 84 02 73
                 </a>
               </div>
               <div className="contact-item">
-                <span className="contact-icon">✉️</span>
+                <span className="contact-icon"><FontAwesomeIcon icon="fa-solid fa-envelope" /></span>
                 <a href="mailto:info@fincastrimar.com" className="contact-text">
                   info@fincastrimar.com
                 </a>

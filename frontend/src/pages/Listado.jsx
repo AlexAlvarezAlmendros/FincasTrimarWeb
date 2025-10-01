@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
 import LocationAutocomplete from '../components/LocationAutocomplete/LocationAutocomplete';
 import CustomSelect from '../components/CustomSelect/CustomSelect';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import './Listado.css';
 
 export default function Listado() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [filters, setFilters] = useState({
     location: '',
     type: 'all',
@@ -24,11 +26,13 @@ export default function Listado() {
   // Opciones para los selectores personalizados
   const typeOptions = [
     { value: 'all', label: 'Tipo de vivienda' },
-    { value: 'piso', label: 'Piso' },
-    { value: 'casa', label: 'Casa' },
-    { value: 'chalet', label: 'Chalet' },
-    { value: 'ático', label: 'Ático' },
-    { value: 'loft', label: 'Loft' }
+    { value: 'Piso', label: 'Piso' },
+    { value: 'Casa', label: 'Casa' },
+    { value: 'Chalet', label: 'Chalet' },
+    { value: 'Ático', label: 'Ático' },
+    { value: 'Dúplex', label: 'Dúplex' },
+    { value: 'Loft', label: 'Loft' },
+    { value: 'Villa', label: 'Villa' }
   ];
 
   const roomOptions = [
@@ -239,6 +243,27 @@ export default function Listado() {
     }
   ];
 
+  // Efecto para procesar query parameters desde la URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    
+    const newFilters = {
+      location: searchParams.get('q') || '',
+      type: searchParams.get('tipo') || 'all',
+      minPrice: searchParams.get('minPrice') || '',
+      maxPrice: searchParams.get('maxPrice') || '',
+      rooms: searchParams.get('rooms') || 'all',
+      bathrooms: searchParams.get('bathrooms') || 'all',
+      garage: searchParams.get('garage') || 'all',
+      minSquareMeters: searchParams.get('minSquareMeters') || '',
+      maxSquareMeters: searchParams.get('maxSquareMeters') || '',
+      estado: searchParams.get('estado') || 'all',
+      tipoAnuncio: searchParams.get('tipoAnuncio') || 'all'
+    };
+
+    setFilters(newFilters);
+  }, [location.search]);
+
   useEffect(() => {
     // Simular carga de datos
     setLoading(true);
@@ -315,7 +340,7 @@ export default function Listado() {
         return false;
       }
     }
-    if (filters.type !== 'all' && property.tipoVivienda.toLowerCase() !== filters.type) {
+    if (filters.type !== 'all' && property.tipoVivienda.toLowerCase() !== filters.type.toLowerCase()) {
       return false;
     }
     if (filters.minPrice && property.price < parseInt(filters.minPrice)) {
@@ -349,9 +374,7 @@ export default function Listado() {
       return false;
     }
     if (filters.tipoAnuncio !== 'all') {
-      const propertyType = property.tipoAnuncio.toLowerCase();
-      const filterType = filters.tipoAnuncio.toLowerCase();
-      if (propertyType !== filterType) return false;
+      if (property.tipoAnuncio !== filters.tipoAnuncio) return false;
     }
     return true;
   });
@@ -389,7 +412,7 @@ export default function Listado() {
                   onClick={handleSearch}
                   title="Buscar"
                 >
-                  🔍
+                  <FontAwesomeIcon icon="fa-solid fa-magnifying-glass" />
                 </button>
                 <button 
                   type="button" 
@@ -397,10 +420,10 @@ export default function Listado() {
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                   title="Filtros avanzados"
                 >
-                  ⚙️
+                  <FontAwesomeIcon icon="fa-solid fa-filter" />
                 </button>
                 <Link to="/admin" className="icon-button" title="Añadir vivienda">
-                  ➕
+                  <FontAwesomeIcon icon="fa-solid fa-plus" />
                 </Link>
               </div>
             </div>

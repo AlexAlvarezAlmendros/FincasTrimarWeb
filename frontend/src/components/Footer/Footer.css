@@ -267,6 +267,11 @@
 /* ==============================================
    Pie de Página
 ============================================== */
+.footer-logo-image{
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+}
 
 .footer-bottom {
   display: flex;
