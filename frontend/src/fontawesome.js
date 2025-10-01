@@ -14,7 +14,8 @@ import {
   faMagnifyingGlass,
   faFilter,
   faPhone,
-  faEnvelope
+  faEnvelope,
+  faClock
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -32,5 +33,6 @@ library.add(
   faMagnifyingGlass,
   faFilter,
   faPhone,
-  faEnvelope
+  faEnvelope,
+  faClock
 )

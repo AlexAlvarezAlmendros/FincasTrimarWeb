@@ -59,7 +59,7 @@ export default function Vender() {
       </section>
 
       {/* Overlapping Contact Form Section */}
-      <section className="contact-form-section" aria-labelledby="form-title">
+      <section className="vender-form-section" aria-labelledby="form-title">
         <div className="container">
           <div className="form-container">
             <div className="form-card">
