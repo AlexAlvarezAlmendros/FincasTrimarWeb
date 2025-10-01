@@ -1,5 +1,11 @@
 /* Reset y variables CSS basadas en el sistema de diseño */
 :root {
+  /* Layout */
+  --header-height: 80px;
+  --header-height-mobile: 70px;
+  --footer-height: 200px;
+  --footer-height-mobile: 160px;
+  
   /* Colors */
   --color-primary: #3A8DFF;
   --color-primary-hover: #2F78DB;

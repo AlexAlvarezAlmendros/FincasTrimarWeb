@@ -155,3 +155,11 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+frontend/test-locations.js
+frontend/DROPDOWN_STYLES_SUMMARY.md
+frontend/ESTRATEGIA_CSS_AISLAMIENTO.md
+.gitignore
+frontend/MIGRACION_CSS_MODULES.md
+.gitignore
+frontend/GOOGLE_MAPS_SETUP.md
+frontend/test-autocomplete.html

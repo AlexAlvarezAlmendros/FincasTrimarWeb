@@ -67,9 +67,9 @@ export default function Vender() {
                 <strong>Agenda una llamada y te informaremos de todo. Sin Compromiso</strong>
               </p>
               
-              <form onSubmit={handleSubmit} className="contact-form" noValidate>
-                <div className="form-group">
-                  <label htmlFor="nombre" className="form-label">
+              <form onSubmit={handleSubmit} className="vender-contact-form" noValidate>
+                <div className="vender-form-group">
+                  <label htmlFor="nombre" className="vender-form-label">
                     Tu nombre *
                   </label>
                   <input
@@ -80,13 +80,13 @@ export default function Vender() {
                     onChange={handleInputChange}
                     required
                     aria-required="true"
-                    className="form-input"
+                    className="vender-form-input"
                     placeholder="Introduce tu nombre completo"
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="telefono" className="form-label">
+                <div className="vender-form-group">
+                  <label htmlFor="telefono" className="vender-form-label">
                     Tu teléfono *
                   </label>
                   <input
@@ -97,7 +97,7 @@ export default function Vender() {
                     onChange={handleInputChange}
                     required
                     aria-required="true"
-                    className="form-input"
+                    className="vender-form-input"
                     placeholder="Introduce tu número de teléfono"
                   />
                 </div>
