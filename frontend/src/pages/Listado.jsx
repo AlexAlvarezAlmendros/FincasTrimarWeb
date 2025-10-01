@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
+import LocationAutocomplete from '../components/LocationAutocomplete/LocationAutocomplete';
+import CustomSelect from '../components/CustomSelect/CustomSelect';
 import './Listado.css';
 
 export default function Listado() {
@@ -10,8 +12,62 @@ export default function Listado() {
     type: 'all',
     minPrice: '',
     maxPrice: '',
-    rooms: 'all'
+    rooms: 'all',
+    bathrooms: 'all',
+    garage: 'all',
+    minSquareMeters: '',
+    maxSquareMeters: '',
+    estado: 'all',
+    tipoAnuncio: 'all'
   });
+
+  // Opciones para los selectores personalizados
+  const typeOptions = [
+    { value: 'all', label: 'Tipo de vivienda' },
+    { value: 'piso', label: 'Piso' },
+    { value: 'casa', label: 'Casa' },
+    { value: 'chalet', label: 'Chalet' },
+    { value: 'ático', label: 'Ático' },
+    { value: 'loft', label: 'Loft' }
+  ];
+
+  const roomOptions = [
+    { value: 'all', label: 'Cualquiera' },
+    { value: '1', label: '1 habitación' },
+    { value: '2', label: '2 habitaciones' },
+    { value: '3', label: '3 habitaciones' },
+    { value: '4', label: '4 habitaciones' },
+    { value: '5', label: '5+ habitaciones' }
+  ];
+
+  const bathroomOptions = [
+    { value: 'all', label: 'Cualquiera' },
+    { value: '1', label: '1 baño' },
+    { value: '2', label: '2 baños' },
+    { value: '3', label: '3 baños' },
+    { value: '4', label: '4+ baños' }
+  ];
+
+  const garageOptions = [
+    { value: 'all', label: 'Cualquiera' },
+    { value: '0', label: 'Sin garaje' },
+    { value: '1', label: '1 plaza' },
+    { value: '2', label: '2 plazas' },
+    { value: '3', label: '3+ plazas' }
+  ];
+
+  const estadoOptions = [
+    { value: 'all', label: 'Cualquier estado' },
+    { value: 'ObraNueva', label: 'Obra nueva' },
+    { value: 'BuenEstado', label: 'Buen estado' },
+    { value: 'AReformar', label: 'A reformar' }
+  ];
+
+  const tipoAnuncioOptions = [
+    { value: 'all', label: 'Venta y Alquiler' },
+    { value: 'venta', label: 'Venta' },
+    { value: 'alquiler', label: 'Alquiler' }
+  ];
 
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [properties, setProperties] = useState([]);
@@ -140,6 +196,46 @@ export default function Listado() {
       estado: 'BuenEstado',
       mainImage: './img/houses.webp',
       images: ['./img/houses.webp']
+    },
+    {
+      id: '7',
+      name: 'Casa de alquiler con piscina 200 m²',
+      shortDescription: 'Perfecta para vacaciones familiares',
+      price: 1200,
+      rooms: 5,
+      bathrooms: 3,
+      garage: 2,
+      squaredMeters: 200,
+      provincia: 'Barcelona',
+      poblacion: 'Calafell',
+      calle: 'C/ del Mar',
+      numero: '78',
+      tipoInmueble: 'Vivienda',
+      tipoVivienda: 'Casa',
+      tipoAnuncio: 'Alquiler',
+      estado: 'BuenEstado',
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
+    },
+    {
+      id: '8',
+      name: 'Estudio céntrico para reformar 45 m²',
+      shortDescription: 'Gran potencial de inversión',
+      price: 90000,
+      rooms: 1,
+      bathrooms: 1,
+      garage: 0,
+      squaredMeters: 45,
+      provincia: 'Barcelona',
+      poblacion: 'Mataró',
+      calle: 'C/ Real',
+      numero: '34',
+      tipoInmueble: 'Vivienda',
+      tipoVivienda: 'Piso',
+      tipoAnuncio: 'Venta',
+      estado: 'AReformar',
+      mainImage: './img/houses.webp',
+      images: ['./img/houses.webp']
     }
   ];
 
@@ -162,8 +258,13 @@ export default function Listado() {
   };
 
   const handleSearch = () => {
-    // TODO: Implementar búsqueda real
-    console.log('Searching with filters:', filters);
+    // Simulamos una búsqueda aplicando los filtros
+    setLoading(true);
+    setTimeout(() => {
+      // En una implementación real, aquí se haría la llamada a la API
+      console.log('Searching with filters:', filters);
+      setLoading(false);
+    }, 300);
   };
 
   const resetFilters = () => {
@@ -172,7 +273,13 @@ export default function Listado() {
       type: 'all',
       minPrice: '',
       maxPrice: '',
-      rooms: 'all'
+      rooms: 'all',
+      bathrooms: 'all',
+      garage: 'all',
+      minSquareMeters: '',
+      maxSquareMeters: '',
+      estado: 'all',
+      tipoAnuncio: 'all'
     });
   };
 
@@ -195,8 +302,18 @@ export default function Listado() {
   };
 
   const filteredProperties = properties.filter(property => {
-    if (filters.location && !property.poblacion.toLowerCase().includes(filters.location.toLowerCase())) {
-      return false;
+    if (filters.location) {
+      const locationFilter = filters.location.toLowerCase();
+      const poblacion = property.poblacion.toLowerCase();
+      const provincia = property.provincia.toLowerCase();
+      const calle = property.calle.toLowerCase();
+      
+      // Buscar en población, provincia y calle
+      if (!poblacion.includes(locationFilter) && 
+          !provincia.includes(locationFilter) && 
+          !calle.includes(locationFilter)) {
+        return false;
+      }
     }
     if (filters.type !== 'all' && property.tipoVivienda.toLowerCase() !== filters.type) {
       return false;
@@ -207,8 +324,34 @@ export default function Listado() {
     if (filters.maxPrice && property.price > parseInt(filters.maxPrice)) {
       return false;
     }
-    if (filters.rooms !== 'all' && property.rooms !== parseInt(filters.rooms)) {
+    if (filters.rooms !== 'all') {
+      const roomFilter = parseInt(filters.rooms);
+      if (roomFilter === 5 && property.rooms < 5) return false;
+      if (roomFilter !== 5 && property.rooms !== roomFilter) return false;
+    }
+    if (filters.bathrooms !== 'all') {
+      const bathroomFilter = parseInt(filters.bathrooms);
+      if (bathroomFilter === 4 && property.bathrooms < 4) return false;
+      if (bathroomFilter !== 4 && property.bathrooms !== bathroomFilter) return false;
+    }
+    if (filters.garage !== 'all') {
+      const garageFilter = parseInt(filters.garage);
+      if (garageFilter === 3 && property.garage < 3) return false;
+      if (garageFilter !== 3 && property.garage !== garageFilter) return false;
+    }
+    if (filters.minSquareMeters && property.squaredMeters < parseInt(filters.minSquareMeters)) {
       return false;
+    }
+    if (filters.maxSquareMeters && property.squaredMeters > parseInt(filters.maxSquareMeters)) {
+      return false;
+    }
+    if (filters.estado !== 'all' && property.estado !== filters.estado) {
+      return false;
+    }
+    if (filters.tipoAnuncio !== 'all') {
+      const propertyType = property.tipoAnuncio.toLowerCase();
+      const filterType = filters.tipoAnuncio.toLowerCase();
+      if (propertyType !== filterType) return false;
     }
     return true;
   });
@@ -222,27 +365,20 @@ export default function Listado() {
             <div className="main-filters">
               <div className="filter-group">
                 <div className="filter-field">
-                  <div className="field-icon">📍</div>
-                  <input
-                    type="text"
-                    placeholder="Ubicación"
+                  <LocationAutocomplete
                     value={filters.location}
-                    onChange={(e) => handleFilterChange('location', e.target.value)}
+                    onChange={(value) => handleFilterChange('location', value)}
+                    placeholder="Ubicación"
                   />
                 </div>
                 
                 <div className="filter-field">
-                  <select
+                  <CustomSelect
                     value={filters.type}
-                    onChange={(e) => handleFilterChange('type', e.target.value)}
-                  >
-                    <option value="all">Tipo de vivienda</option>
-                    <option value="piso">Piso</option>
-                    <option value="casa">Casa</option>
-                    <option value="chalet">Chalet</option>
-                    <option value="ático">Ático</option>
-                    <option value="loft">Loft</option>
-                  </select>
+                    onChange={(value) => handleFilterChange('type', value)}
+                    options={typeOptions}
+                    placeholder="Tipo de vivienda"
+                  />
                 </div>
               </div>
 
@@ -295,17 +431,72 @@ export default function Listado() {
                   
                   <div className="filter-field">
                     <label>Habitaciones</label>
-                    <select
+                    <CustomSelect
                       value={filters.rooms}
-                      onChange={(e) => handleFilterChange('rooms', e.target.value)}
-                    >
-                      <option value="all">Cualquiera</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5+</option>
-                    </select>
+                      onChange={(value) => handleFilterChange('rooms', value)}
+                      options={roomOptions}
+                      placeholder="Habitaciones"
+                    />
+                  </div>
+
+                  <div className="filter-field">
+                    <label>Baños</label>
+                    <CustomSelect
+                      value={filters.bathrooms}
+                      onChange={(value) => handleFilterChange('bathrooms', value)}
+                      options={bathroomOptions}
+                      placeholder="Baños"
+                    />
+                  </div>
+
+                  <div className="filter-field">
+                    <label>Garaje</label>
+                    <CustomSelect
+                      value={filters.garage}
+                      onChange={(value) => handleFilterChange('garage', value)}
+                      options={garageOptions}
+                      placeholder="Garaje"
+                    />
+                  </div>
+
+                  <div className="filter-field">
+                    <label>Metros mínimos</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={filters.minSquareMeters}
+                      onChange={(e) => handleFilterChange('minSquareMeters', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="filter-field">
+                    <label>Metros máximos</label>
+                    <input
+                      type="number"
+                      placeholder="999"
+                      value={filters.maxSquareMeters}
+                      onChange={(e) => handleFilterChange('maxSquareMeters', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="filter-field">
+                    <label>Estado</label>
+                    <CustomSelect
+                      value={filters.estado}
+                      onChange={(value) => handleFilterChange('estado', value)}
+                      options={estadoOptions}
+                      placeholder="Estado"
+                    />
+                  </div>
+
+                  <div className="filter-field">
+                    <label>Tipo de operación</label>
+                    <CustomSelect
+                      value={filters.tipoAnuncio}
+                      onChange={(value) => handleFilterChange('tipoAnuncio', value)}
+                      options={tipoAnuncioOptions}
+                      placeholder="Operación"
+                    />
                   </div>
                   
                   <div className="filter-actions">
@@ -326,7 +517,11 @@ export default function Listado() {
           <div className="results-header">
             <h1>Viviendas disponibles</h1>
             <p className="results-count">
-              {loading ? 'Cargando...' : `${filteredProperties.length} viviendas encontradas`}
+              {loading ? 'Cargando...' : (
+                filteredProperties.length === properties.length 
+                  ? `${filteredProperties.length} viviendas disponibles`
+                  : `${filteredProperties.length} de ${properties.length} viviendas (filtradas)`
+              )}
             </p>
           </div>
 

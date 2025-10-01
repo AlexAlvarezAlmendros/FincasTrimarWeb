@@ -1,0 +1,207 @@
+/* CustomSelect Component Styles */
+
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: var(--font-size-md);
+  color: var(--color-neutral-800);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.custom-select.disabled .custom-select-trigger {
+  color: var(--color-neutral-400);
+  cursor: not-allowed;
+}
+
+.custom-select-value {
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-select-arrow {
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+  color: var(--color-neutral-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-select-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.custom-select:hover .custom-select-trigger {
+  color: var(--color-brand-primary);
+}
+
+.custom-select:hover .custom-select-arrow {
+  color: var(--color-brand-primary);
+}
+
+.custom-select.disabled:hover .custom-select-trigger,
+.custom-select.disabled:hover .custom-select-arrow {
+  color: var(--color-neutral-400);
+}
+
+/* Focus states */
+.custom-select-trigger:focus {
+  color: var(--color-brand-primary);
+}
+
+.custom-select-trigger:focus .custom-select-arrow {
+  color: var(--color-brand-primary);
+}
+
+/* Dropdown */
+.custom-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  right: -1px;
+  z-index: 1000;
+  background: var(--color-neutral-0);
+  border: 1px solid var(--color-neutral-300);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-select-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.custom-select-option {
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid var(--color-neutral-100);
+  font-size: var(--font-size-md);
+  color: var(--color-neutral-800);
+}
+
+.custom-select-option:last-child {
+  border-bottom: none;
+}
+
+.custom-select-option:hover,
+.custom-select-option.highlighted {
+  background: var(--color-neutral-50);
+  color: var(--color-brand-primary);
+}
+
+.custom-select-option.selected {
+  background: var(--color-brand-primary);
+  color: var(--color-neutral-0);
+  font-weight: var(--font-weight-medium);
+}
+
+.custom-select-option.selected:hover {
+  background: var(--color-brand-primary);
+  color: var(--color-neutral-0);
+}
+
+/* Scrollbar personalizada */
+.custom-select-options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-select-options::-webkit-scrollbar-track {
+  background: var(--color-neutral-100);
+}
+
+.custom-select-options::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 3px;
+}
+
+.custom-select-options::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400);
+}
+
+/* Integración con filtros avanzados */
+.advanced-filters .custom-select .custom-select-trigger {
+  font-size: var(--font-size-sm);
+}
+
+.advanced-filters .custom-select .custom-select-option {
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .custom-select-options {
+    max-height: 160px;
+  }
+  
+  .custom-select-option {
+    padding: var(--spacing-md) var(--spacing-sm);
+    font-size: var(--font-size-md);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .custom-select-dropdown {
+    border-color: #000000;
+    border-width: 2px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .custom-select-option {
+    border-bottom-color: #000000;
+  }
+  
+  .custom-select-option:hover,
+  .custom-select-option.highlighted {
+    background: #000000;
+    color: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .custom-select-arrow,
+  .custom-select-trigger,
+  .custom-select-option {
+    transition: none;
+  }
+  
+  .custom-select-dropdown {
+    animation: none;
+  }
+}

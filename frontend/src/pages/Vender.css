@@ -6,11 +6,7 @@
   position: relative;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
+/* .container eliminado - usar el global de index.css */
 
 /* Hero Section */
 .hero-section {
@@ -111,18 +107,18 @@
 }
 
 /* Form Styles */
-.contact-form {
+.vender-contact-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.form-group {
+.vender-form-group {
   text-align: left;
 }
 
-.form-label {
+.vender-form-label {
   display: block;
   font-family: "Inter", system-ui, sans-serif;
   font-size: 14px;
@@ -131,7 +127,7 @@
   margin-bottom: 8px;
 }
 
-.form-input {
+.vender-form-input {
   width: 100%;
   padding: 12px 16px;
   border: 1px solid #CBD5E1;
@@ -144,21 +140,21 @@
   box-sizing: border-box;
 }
 
-.form-input:focus {
+.vender-form-input:focus {
   outline: none;
   border-color: #3A8DFF;
   box-shadow: 0 0 0 2px rgba(58, 141, 255, 0.1);
 }
 
-.form-input::placeholder {
+.vender-form-input::placeholder {
   color: #94A3B8;
 }
 
-.form-input:invalid {
+.vender-form-input:invalid {
   border-color: #EF4444;
 }
 
-.form-input:invalid:focus {
+.vender-form-input:invalid:focus {
   border-color: #EF4444;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
 }
@@ -418,7 +414,7 @@
     font-size: 16px;
   }
   
-  .contact-form {
+  .vender-contact-form {
     gap: 12px;
   }
   
@@ -500,7 +496,7 @@
     margin: 0 4px;
   }
   
-  .form-input {
+  .vender-form-input {
     padding: 10px 14px;
     font-size: 15px;
   }
@@ -565,11 +561,11 @@
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .form-input {
+  .vender-form-input {
     border-color: #000000;
   }
   
-  .form-input:focus {
+  .vender-form-input:focus {
     border-color: #000000;
     box-shadow: 0 0 0 2px #000000;
   }
@@ -593,7 +589,7 @@
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .form-input,
+  .vender-form-input,
   .submit-button,
   .phone-link,
   .form-card,
@@ -623,30 +619,4 @@
 .form-card:focus-within {
   outline: 2px solid #3A8DFF;
   outline-offset: 4px;
-}
-
-/* DIAGNÓSTICO TEMPORAL - Forzar border-radius en todas las resoluciones */
-.form-card,
-.info-card,
-.info-section {
-  border-radius: 20px !important;
-}
-
-.submit-button {
-  border-radius: 9999px !important;
-}
-
-.form-input {
-  border-radius: 12px !important;
-}
-
-@media (max-width: 480px) {
-  .form-card {
-    border-radius: 16px !important;
-  }
-  
-  .info-card,
-  .info-section {
-    border-radius: 16px !important;
-  }
 }

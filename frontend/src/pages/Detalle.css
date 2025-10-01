@@ -382,7 +382,7 @@
 /* Sidebar */
 .sidebar {
   position: sticky;
-  top: var(--spacing-lg);
+  top: calc(var(--header-height, 80px) + var(--spacing-lg));
 }
 
 .contact-form-container {
@@ -671,6 +671,11 @@
 }
 
 @media (max-width: 768px) {
+  /* Sidebar ya es position: static desde 1024px, pero por si se redefine */
+  .sidebar {
+    top: calc(var(--header-height-mobile, 70px) + var(--spacing-lg));
+  }
+  
   .property-header {
     padding: var(--spacing-lg);
   }

@@ -11,7 +11,7 @@
   border-bottom: 1px solid var(--color-neutral-200);
   padding: var(--spacing-lg) 0;
   position: sticky;
-  top: 0;
+  top: var(--header-height, 80px);
   z-index: 100;
 }
 
@@ -46,6 +46,12 @@
   padding: var(--spacing-sm) var(--spacing-md);
   flex: 1;
   min-width: 0;
+  transition: all 0.2s ease;
+}
+
+.filter-field:hover {
+  border-color: var(--color-neutral-400);
+  background: var(--color-neutral-0);
 }
 
 .filter-field label {
@@ -71,10 +77,96 @@
   font-size: var(--font-size-md);
   color: var(--color-neutral-800);
   min-width: 0;
+  cursor: pointer;
+  text-align: right;
+}
+
+/* Estilos específicos para select */
+.filter-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  padding-right: 40px;
+  transition: all 0.2s ease;
+}
+
+.filter-field select:hover {
+  color: var(--color-brand-primary);
+}
+
+.filter-field select:focus {
+  color: var(--color-brand-primary);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233A8DFF' stroke-width='2'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+/* Estilos para las opciones del select */
+.filter-field select option {
+  background: var(--color-neutral-0);
+  color: var(--color-neutral-800);
+  padding: 8px 12px;
+  font-size: var(--font-size-md);
+}
+
+.filter-field select option:hover,
+.filter-field select option:focus {
+  background: var(--color-brand-primary);
+  color: var(--color-neutral-0);
 }
 
 .filter-field input::placeholder {
   color: var(--color-neutral-500);
+  text-align: right;
+}
+
+/* Location Autocomplete Integration */
+.filter-field .location-autocomplete {
+  flex: 1;
+  min-width: 0;
+}
+
+/* CustomSelect Integration */
+.filter-field .custom-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.filter-field .custom-select .custom-select-trigger {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: var(--font-size-md);
+  color: var(--color-neutral-800);
+  padding: 0;
+  text-align: right;
+}
+
+.advanced-filters .filter-field .custom-select .custom-select-trigger {
+  font-size: var(--font-size-sm);
+}
+
+.filter-field .location-autocomplete .location-input-container {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.filter-field .location-autocomplete .location-input-container:focus-within {
+  border: none;
+  box-shadow: none;
+}
+
+.filter-field .location-autocomplete .location-input {
+  padding: 0;
+  text-align: right;
+}
+
+.filter-field .location-autocomplete .field-icon {
+  padding: 0;
+  margin-right: var(--spacing-sm);
 }
 
 .filter-actions {
@@ -114,13 +206,95 @@
 
 .advanced-filters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--spacing-md);
   align-items: end;
 }
 
+/* Estilos mejorados para los campos de filtros avanzados */
+.advanced-filters .filter-field {
+  background: var(--color-neutral-0);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.advanced-filters .filter-field:hover {
+  border-color: var(--color-neutral-400);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.advanced-filters .filter-field:focus-within {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 2px rgba(58, 141, 255, 0.1);
+}
+
+.advanced-filters .filter-field label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-neutral-600);
+  margin-bottom: var(--spacing-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.advanced-filters .filter-field input,
+.advanced-filters .filter-field select {
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-800);
+  padding: 0;
+  text-align: right;
+}
+
+.advanced-filters .filter-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0px center;
+  background-size: 16px 16px;
+  padding-right: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.advanced-filters .filter-field select:hover {
+  color: var(--color-brand-primary);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233A8DFF' stroke-width='2'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+.advanced-filters .filter-field select:focus {
+  color: var(--color-brand-primary);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233A8DFF' stroke-width='2'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+.advanced-filters .filter-field input::placeholder {
+  color: var(--color-neutral-500);
+  font-size: var(--font-size-sm);
+  text-align: right;
+}
+
+/* Efectos para inputs numéricos */
+.advanced-filters .filter-field input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.advanced-filters .filter-field input[type="number"]::-webkit-outer-spin-button,
+.advanced-filters .filter-field input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .reset-button {
-  background: var(--color-neutral-200);
+  background: var(--color-neutral-100);
   color: var(--color-neutral-700);
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-md);
@@ -129,10 +303,23 @@
   transition: all 0.2s ease;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .reset-button:hover {
-  background: var(--color-neutral-300);
+  background: var(--color-neutral-200);
+  border-color: var(--color-neutral-400);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.reset-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Results Section */
@@ -228,7 +415,17 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .advanced-filters-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
+  .filter-bar {
+    top: var(--header-height-mobile, 70px);
+  }
+  
   .main-filters {
     flex-direction: column;
     gap: var(--spacing-md);
@@ -246,6 +443,20 @@
 
   .advanced-filters-grid {
     grid-template-columns: 1fr;
+  }
+  
+  /* Ajustes móviles para campos de filtros avanzados */
+  .advanced-filters .filter-field {
+    padding: var(--spacing-md);
+  }
+  
+  .advanced-filters .filter-field label {
+    font-size: var(--font-size-sm);
+  }
+  
+  .advanced-filters .filter-field input,
+  .advanced-filters .filter-field select {
+    font-size: var(--font-size-md);
   }
 
   .results-header {
@@ -285,13 +496,52 @@
 /* Accessibility improvements */
 .icon-button:focus,
 .reset-button:focus {
-  outline: 2px solid var(--color-primary-focus);
+  outline: 2px solid var(--color-brand-primary);
   outline-offset: 2px;
 }
 
 .filter-field:focus-within {
-  border-color: var(--color-primary);
+  border-color: var(--color-brand-primary);
   box-shadow: 0 0 0 2px rgba(58, 141, 255, 0.1);
+}
+
+.advanced-filters .filter-field:focus-within {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 2px rgba(58, 141, 255, 0.1);
+}
+
+/* Support para high contrast mode */
+@media (prefers-contrast: high) {
+  .filter-field,
+  .advanced-filters .filter-field {
+    border-color: #000000;
+    border-width: 2px;
+  }
+  
+  .filter-field:focus-within,
+  .advanced-filters .filter-field:focus-within {
+    border-color: #000000;
+    box-shadow: 0 0 0 3px #000000;
+  }
+  
+  .filter-field select,
+  .advanced-filters .filter-field select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='3'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  }
+}
+
+/* Support para reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .filter-field,
+  .advanced-filters .filter-field,
+  .reset-button,
+  .icon-button {
+    transition: none;
+  }
+  
+  .reset-button:hover {
+    transform: none;
+  }
 }
 
 /* Property link focus styles are now handled by the PropertyCard component */

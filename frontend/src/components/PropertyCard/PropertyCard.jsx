@@ -1,4 +1,4 @@
-import './PropertyCard.css';
+import styles from './PropertyCard.module.css';
 
 const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
   const formatPrice = (price) => {
@@ -38,56 +38,54 @@ const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
 
   return (
     <article 
-      className="property-card" 
+      className={styles.propertyCard} 
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="button"
       aria-label={`Ver detalles de ${property.name}`}
     >
-      <div className="property-card__image-container">
+      <div className={styles.imageContainer}>
         <img 
           src={property.mainImage || '/placeholder-house.jpg'} 
           alt={property.name}
-          className="property-card__image"
+          className={styles.image}
           onClick={handleImageClick}
           loading="lazy"
         />
         {property.images?.length > 1 && (
-          <span className="property-card__image-count">
+          <span className={styles.imageCount}>
             Ver todas las imágenes
           </span>
         )}
       </div>
       
-      <div className="property-card__content">
-        <header className="property-card__header">
-          <h3 className="property-card__title">{property.name}</h3>
-          <p className="property-card__description">{property.shortDescription}</p>
+      <div className={styles.content}>
+        <header>
+          <h3 className={styles.title}>{property.name}</h3>
+          <p className={styles.description}>{property.shortDescription}</p>
         </header>
         
-        <div className="property-card__specs">
-          <div className="property-card__specs-grid">
-            <span>{property.rooms} Habitaciones</span>
-            <span>{property.garage} Garajes</span>
-            <span>{property.squaredMeters} M²</span>
-            <span>{property.bathrooms} Baños</span>
-          </div>
+        <div className={styles.specsGrid}>
+          <span>{property.rooms} Habitaciones</span>
+          <span>{property.garage} Garajes</span>
+          <span>{property.squaredMeters} M²</span>
+          <span>{property.bathrooms} Baños</span>
         </div>
         
-        <div className="property-card__tags">
-          <span className="chip chip--green">{property.tipoInmueble}</span>
-          <span className="chip chip--yellow">{property.tipoVivienda}</span>
-          <span className="chip chip--purple">{property.tipoAnuncio}</span>
+        <div className={styles.tags}>
+          <span className={`${styles.chip} ${styles.chipGreen}`}>{property.tipoInmueble}</span>
+          <span className={`${styles.chip} ${styles.chipYellow}`}>{property.tipoVivienda}</span>
+          <span className={`${styles.chip} ${styles.chipPurple}`}>{property.tipoAnuncio}</span>
         </div>
         
-        <footer className="property-card__footer">
+        <footer className={styles.footer}>
           <button 
-            className="property-card__price-btn"
+            className={styles.priceBtn}
             onClick={handleDetailsClick}
             aria-label={`Ver detalles de ${property.name}`}
           >
-            <span className="property-card__price">
+            <span className={styles.price}>
               {formatPrice(property.price)}
             </span>
           </button>
