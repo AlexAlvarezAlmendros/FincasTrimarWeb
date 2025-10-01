@@ -35,7 +35,7 @@ export default function Home() {
       params.append('tipo', searchFilters.type);
     }
     
-    if (searchFilters.operation && searchFilters.operation !== 'Venta') {
+    if (searchFilters.operation) {
       params.append('tipoAnuncio', searchFilters.operation);
     }
     
