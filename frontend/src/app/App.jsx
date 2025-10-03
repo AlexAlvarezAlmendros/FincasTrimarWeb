@@ -24,21 +24,24 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           {/* Todas las rutas principales usan el Layout */}
+          {/* Rutas públicas con Layout principal */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="viviendas" element={<Listado />} />
             <Route path="viviendas/:id" element={<Detalle />} />
             <Route path="vender" element={<Vender />} />
             <Route path="contacto" element={<Contacto />} />
-            <Route 
-              path="admin" 
-              element={
-                <RequireAuth roles={["Admin", "Seller"]}>
-                  <Admin />
-                </RequireAuth>
-              } 
-            />
           </Route>
+
+          {/* Rutas de administración con su propio Layout */}
+          <Route 
+            path="/admin/*" 
+            element={
+              <RequireAuth roles={["Admin", "Seller"]}>
+                <Admin />
+              </RequireAuth>
+            } 
+          />
           
           {/* Rutas adicionales sin Layout si es necesario */}
           {/* <Route path="/login" element={<LoginPage />} /> */}

@@ -1,13 +1,41 @@
-import { useAuth0 } from '@auth0/auth0-react';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import AdminLayout from '../components/Admin/AdminLayout/AdminLayout';
+import AdminDashboard from '../components/Admin/Dashboard';
 
+// Importar las nuevas pantallas de viviendas
+import PropertiesListPage from '../components/Admin/Properties/PropertiesListPage';
+import PropertyCreatePage from '../components/Admin/Properties/PropertyCreatePage';
+import DraftsPage from '../components/Admin/Properties/DraftsPage';
+
+// Importar otras páginas del admin
+import MessagesPage from '../components/Admin/Messages/MessagesPage';
+import AnalyticsPage from '../components/Admin/Analytics/AnalyticsPage';
+import UsersPage from '../components/Admin/Users/UsersPage';
+import SettingsPage from '../components/Admin/Settings/SettingsPage';
+
+// Componente principal que incluye el layout y las rutas
 export default function Admin() {
-  const { user } = useAuth0();
-  
   return (
-    <div className="container" style={{ padding: '2rem' }}>
-      <h1>Panel de Administración</h1>
-      <p>Bienvenido, {user?.name}</p>
-      <p>Página en construcción - Panel de administración para gestionar viviendas y mensajes.</p>
-    </div>
+    <Routes>
+      <Route path="/" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="dashboard" element={<Navigate to="/admin" replace />} />
+        
+        {/* Rutas de viviendas separadas */}
+        <Route path="viviendas" element={<PropertiesListPage />} />
+        <Route path="viviendas/crear" element={<PropertyCreatePage />} />
+        <Route path="viviendas/borradores" element={<DraftsPage />} />
+        <Route path="viviendas/:id/edit" element={<PropertyCreatePage />} />
+        
+        {/* Otras rutas del admin */}
+        <Route path="mensajes" element={<MessagesPage />} />
+        <Route path="mensajes/*" element={<MessagesPage />} />
+        <Route path="analiticas" element={<AnalyticsPage />} />
+        <Route path="usuarios" element={<UsersPage />} />
+        <Route path="configuracion" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Route>
+    </Routes>
   );
 }

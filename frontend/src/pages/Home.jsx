@@ -205,6 +205,13 @@ export default function Home() {
               >
                 ALQUILER
               </button>
+              <button 
+                type="button" 
+                className="tab tab-vender"
+                onClick={() => navigate('/vender')}
+              >
+                VENDER
+              </button>
             </div>
             
             <div className="search-fields">
