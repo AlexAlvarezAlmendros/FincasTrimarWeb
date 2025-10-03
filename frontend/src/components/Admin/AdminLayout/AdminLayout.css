@@ -1,0 +1,92 @@
+/* AdminLayout Styles */
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-neutral-50);
+}
+
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevent flex overflow */
+  transition: margin-left 0.3s ease;
+  margin-left: 280px; /* Sidebar width */
+}
+
+.sidebar-collapsed .admin-main {
+  margin-left: 80px; /* Collapsed sidebar width */
+}
+
+.admin-content {
+  flex: 1;
+  padding: var(--spacing-xl);
+  background: var(--color-neutral-50);
+  overflow-y: auto;
+}
+
+.admin-content-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .admin-main {
+    margin-left: 0;
+  }
+  
+  .sidebar-collapsed .admin-main {
+    margin-left: 0;
+  }
+  
+  .mobile-overlay {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-content {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-content {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Animation for smooth transitions */
+.admin-layout * {
+  transition: all 0.3s ease;
+}
+
+/* Focus management */
+.admin-layout:focus-within {
+  outline: none;
+}
+
+/* Print styles */
+@media print {
+  .admin-layout {
+    display: block;
+  }
+  
+  .admin-main {
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,345 @@
+/* AdminDashboard Component Styles */
+
+.admin-dashboard {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: var(--neutral-50);
+  min-height: calc(100vh - 70px);
+}
+
+/* Dashboard Loading */
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  color: var(--neutral-600);
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--neutral-200);
+  border-top: 3px solid var(--brand-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Dashboard Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.welcome-section {
+  flex: 1;
+}
+
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--neutral-800);
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.dashboard-subtitle {
+  color: var(--neutral-600);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Metrics Grids */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.secondary-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+/* Dashboard Content Grid */
+.dashboard-content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.dashboard-section {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--neutral-100);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--neutral-100);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--neutral-800);
+  margin: 0;
+}
+
+.section-link {
+  color: var(--brand-primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+}
+
+.section-link:hover {
+  color: var(--brand-primary-hover);
+  text-decoration: underline;
+}
+
+.section-content {
+  min-height: 200px;
+}
+
+/* Quick Actions Section */
+.quick-actions-section {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--neutral-100);
+}
+
+.quick-actions-section .section-title {
+  margin-bottom: 1.5rem;
+  color: var(--neutral-800);
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.quick-action-card {
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--neutral-100);
+  background: white;
+  text-decoration: none;
+  color: inherit;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--semantic-info));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.quick-action-card:hover {
+  border-color: var(--brand-primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.quick-action-card:hover::before {
+  transform: scaleX(1);
+}
+
+.action-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.quick-action-card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--neutral-800);
+  margin: 0 0 0.5rem 0;
+}
+
+.quick-action-card p {
+  color: var(--neutral-600);
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.btn--primary {
+  background: var(--brand-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--primary:hover {
+  background: var(--brand-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .dashboard-content-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 1rem;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+
+  .dashboard-subtitle {
+    font-size: 1rem;
+  }
+
+  .metrics-grid,
+  .secondary-metrics {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .dashboard-section {
+    padding: 1rem;
+  }
+
+  .quick-actions-section {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard {
+    padding: 0.75rem;
+  }
+
+  .dashboard-section {
+    padding: 1rem;
+  }
+
+  .quick-actions-section {
+    padding: 1.5rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+  }
+
+  .quick-action-card,
+  .btn {
+    transition: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.btn:focus-visible,
+.quick-action-card:focus-visible,
+.section-link:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .admin-dashboard {
+    padding: 0;
+    background: white;
+  }
+
+  .header-actions,
+  .quick-actions-section {
+    display: none;
+  }
+
+  .dashboard-section {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .dashboard-section {
+    border: 2px solid;
+  }
+
+  .quick-action-card {
+    border: 2px solid currentColor;
+  }
+}

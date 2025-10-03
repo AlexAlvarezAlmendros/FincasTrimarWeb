@@ -1,0 +1,219 @@
+/* SalesSummary Component Styles */
+
+.sales-summary-section {
+  margin-bottom: 2.5rem;
+}
+
+.summary-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  color: var(--neutral-800);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(30px, -30px);
+}
+
+.summary-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 150px;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  transform: translate(-50px, 50px);
+}
+
+.summary-card h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+  color: var(--neutral-800);
+  position: relative;
+  z-index: 1;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
+}
+
+.progress-label {
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.progress-track {
+  background: rgba(255, 255, 255, 0.2);
+  height: 8px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  background: white;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .summary-card {
+    padding: 1.5rem;
+  }
+
+  .summary-card h3 {
+    font-size: 1.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-stats {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .summary-card {
+    padding: 1.25rem;
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+  }
+
+  .progress-bar {
+    padding: 0.75rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none;
+  }
+  
+  .progress-fill::after {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .summary-card {
+    border: 2px solid white;
+  }
+
+  .progress-track {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* Print styles */
+@media print {
+  .summary-card {
+    background: white !important;
+    color: black !important;
+    border: 2px solid #ddd;
+  }
+
+  .summary-card h3,
+  .stat-label,
+  .stat-value,
+  .progress-label {
+    color: black !important;
+  }
+
+  .progress-track {
+    background: #f0f0f0 !important;
+    border: 1px solid #ddd;
+  }
+
+  .progress-fill {
+    background: #333 !important;
+  }
+
+  .progress-fill::after {
+    display: none;
+  }
+}

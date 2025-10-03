@@ -1,0 +1,51 @@
+.users-page {
+  padding: 2rem;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--neutral-800, #1F2937);
+  margin: 0 0 0.5rem 0;
+}
+
+.page-subtitle {
+  font-size: 1.1rem;
+  color: var(--neutral-600, #475569);
+  margin: 0;
+}
+
+.content-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: white;
+  border: 1px solid var(--neutral-200, #E5E7EB);
+  border-radius: 12px;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.content-placeholder h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--neutral-800, #1F2937);
+  margin: 0 0 1rem 0;
+}
+
+.content-placeholder p {
+  color: var(--neutral-600, #475569);
+  max-width: 500px;
+  line-height: 1.5;
+  margin: 0;
+}
