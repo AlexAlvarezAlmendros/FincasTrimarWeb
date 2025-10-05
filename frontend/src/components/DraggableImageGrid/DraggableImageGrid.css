@@ -1,0 +1,181 @@
+/**
+ * Estilos para el grid de imágenes con drag and drop
+ */
+
+.draggable-image-grid {
+  width: 100%;
+  margin-bottom: var(--spacing-xl, 24px);
+}
+
+.grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg, 16px);
+  padding-bottom: var(--spacing-sm, 8px);
+  border-bottom: 1px solid var(--neutral-100, #EEF2F7);
+}
+
+.grid-title {
+  margin: 0;
+  font-size: var(--font-size-lg, 18px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--neutral-800, #1F2937);
+}
+
+.grid-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  font-size: var(--font-size-sm, 14px);
+  color: var(--neutral-600, #475569);
+}
+
+.drag-instructions {
+  color: var(--brand-primary, #3A8DFF);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-lg, 16px);
+  min-height: 120px;
+}
+
+.drag-feedback {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--neutral-800, #1F2937);
+  color: var(--neutral-0, #FFFFFF);
+  padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
+  border-radius: var(--radius-md, 16px);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  box-shadow: var(--shadow-md, 0 6px 16px rgba(0,0,0,0.08));
+  z-index: 1001;
+  animation: slideIn 0.3s ease-out;
+}
+
+.drag-feedback i {
+  color: var(--brand-primary, #3A8DFF);
+}
+
+/* Estados de drag and drop en el grid */
+.images-grid.dragging {
+  opacity: 0.9;
+}
+
+/* Placeholder para drop zone */
+.drop-placeholder {
+  border: 2px dashed var(--brand-primary, #3A8DFF);
+  border-radius: var(--radius-md, 16px);
+  background: rgba(58, 141, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  color: var(--brand-primary, #3A8DFF);
+  font-weight: var(--font-weight-medium, 500);
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+/* Animaciones */
+@keyframes slideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .grid-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs, 4px);
+  }
+  
+  .images-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--spacing-md, 12px);
+  }
+  
+  .drag-feedback {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    font-size: var(--font-size-sm, 14px);
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  }
+  
+  .drag-instructions {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .images-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-sm, 8px);
+  }
+}
+
+/* Estado vacío */
+.images-grid:empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border: 2px dashed var(--neutral-300, #CBD5E1);
+  border-radius: var(--radius-md, 16px);
+  background: var(--neutral-50, #F7F9FC);
+  color: var(--neutral-600, #475569);
+  font-style: italic;
+}
+
+.images-grid:empty::after {
+  content: 'No hay imágenes guardadas';
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .drag-feedback {
+    animation: none;
+  }
+  
+  .drop-placeholder {
+    animation: none;
+  }
+}
+
+/* Estados de error */
+.grid-error {
+  padding: var(--spacing-lg, 16px);
+  background: var(--semantic-danger, #EF4444);
+  color: var(--neutral-0, #FFFFFF);
+  border-radius: var(--radius-md, 16px);
+  margin-bottom: var(--spacing-lg, 16px);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+}
+
+.grid-error i {
+  font-size: var(--font-size-lg, 18px);
+}

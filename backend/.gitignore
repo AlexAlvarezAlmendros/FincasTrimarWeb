@@ -25,3 +25,4 @@ Thumbs.db
 # Test files
 test-results/
 playwright-report/
+temp/

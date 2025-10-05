@@ -212,6 +212,87 @@ const propertyController = {
       logger.error('Error toggling publish status:', error);
       next(error);
     }
+  },
+
+  /**
+   * Obtener imágenes de una propiedad
+   */
+  async getPropertyImages(req, res, next) {
+    try {
+      const { id } = req.params;
+      const images = await propertyService.getPropertyImages(id);
+      
+      res.json({
+        success: true,
+        data: { images }
+      });
+    } catch (error) {
+      logger.error('Error getting property images:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * Añadir imágenes a una propiedad
+   */
+  async addPropertyImages(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { images } = req.body;
+      
+      const result = await propertyService.addPropertyImages(id, images);
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      logger.error('Error adding property images:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * Reordenar imágenes de una propiedad
+   */
+  async reorderPropertyImages(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { imageOrders } = req.body;
+      
+      logger.info(`🔄 Reordenando imágenes para propiedad ${id}:`, imageOrders);
+      
+      const result = await propertyService.reorderPropertyImages(id, imageOrders);
+      
+      res.json({
+        success: true,
+        data: result,
+        message: 'Imágenes reordenadas correctamente'
+      });
+    } catch (error) {
+      logger.error('Error reordering property images:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * Eliminar imagen de una propiedad
+   */
+  async deletePropertyImage(req, res, next) {
+    try {
+      const { id, imageId } = req.params;
+      
+      const result = await propertyService.deletePropertyImage(id, imageId);
+      
+      res.json({
+        success: true,
+        data: result,
+        message: 'Imagen eliminada correctamente'
+      });
+    } catch (error) {
+      logger.error('Error deleting property image:', error);
+      next(error);
+    }
   }
 };
 

@@ -1,0 +1,234 @@
+/**
+ * Estilos para el componente DraggableImageItem
+ * Incluye efectos visuales para drag and drop
+ */
+
+.draggable-image-item {
+  position: relative;
+  cursor: grab;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-md, 16px);
+  overflow: hidden;
+  background: var(--neutral-0, #FFFFFF);
+  border: 2px solid transparent;
+}
+
+.draggable-image-item:not(.dragging):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 6px 16px rgba(0,0,0,0.08));
+}
+
+.draggable-image-item.dragging {
+  opacity: 0.5;
+  transform: rotate(3deg) scale(0.95);
+  cursor: grabbing;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.draggable-image-item.drag-over {
+  border-color: var(--brand-primary, #3A8DFF);
+  background: var(--brand-primary, #3A8DFF);
+  transform: scale(1.05);
+}
+
+.draggable-image-item.drag-over::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(58, 141, 255, 0.1);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.image-preview {
+  position: relative;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.draggable-image-item:hover .image-preview img {
+  transform: scale(1.05);
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md, 12px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
+
+.draggable-image-item:hover .image-overlay {
+  opacity: 1;
+}
+
+.btn-remove {
+  background: var(--semantic-danger, #EF4444);
+  color: var(--neutral-0, #FFFFFF);
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-remove:hover {
+  background: #DC2626;
+  transform: scale(1.1);
+}
+
+.drag-handle {
+  background: var(--neutral-800, #1F2937);
+  color: var(--neutral-0, #FFFFFF);
+  border: none;
+  padding: 8px;
+  border-radius: var(--radius-xs, 8px);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+  background: var(--neutral-600, #475569);
+  transform: scale(1.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.image-order-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: var(--brand-primary, #3A8DFF);
+  color: var(--neutral-0, #FFFFFF);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 3;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.image-info {
+  padding: var(--spacing-md, 12px);
+  text-align: center;
+}
+
+.image-title {
+  font-size: var(--font-size-sm, 14px);
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--neutral-800, #1F2937);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.drag-hint {
+  font-size: 12px;
+  color: var(--neutral-600, #475569);
+  font-style: italic;
+}
+
+/* Estados de drag and drop */
+.draggable-image-item[draggable="true"] {
+  cursor: grab;
+}
+
+.draggable-image-item[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Animaciones */
+@keyframes dragInsert {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.drag-insert {
+  animation: dragInsert 0.3s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .image-overlay {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  .btn-remove,
+  .drag-handle {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+  }
+  
+  .image-order-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    top: 6px;
+    left: 6px;
+  }
+  
+  .drag-hint {
+    display: none;
+  }
+}
+
+/* Mejoras de accesibilidad */
+.draggable-image-item:focus-within {
+  outline: 2px solid var(--brand-primary, #3A8DFF);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draggable-image-item,
+  .image-preview img,
+  .image-overlay,
+  .btn-remove,
+  .drag-handle {
+    transition: none;
+  }
+  
+  .draggable-image-item.dragging {
+    transform: none;
+    opacity: 0.7;
+  }
+}

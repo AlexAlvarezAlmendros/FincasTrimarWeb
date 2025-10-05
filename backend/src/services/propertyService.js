@@ -94,11 +94,10 @@ class PropertyService {
         throw error;
       }
       
-      // Por defecto, las propiedades nuevas no están publicadas
-      propertyData.published = propertyData.published || false;
-      propertyData.estadoVenta = propertyData.estadoVenta || 'Disponible';
+      // Procesar y limpiar datos antes de crear la propiedad
+      const cleanedData = this.processPropertyData(propertyData);
       
-      const newProperty = await viviendaRepository.create(propertyData);
+      const newProperty = await viviendaRepository.create(cleanedData);
       
       logger.info(`Propiedad creada exitosamente con ID: ${newProperty.id}`);
       return newProperty;
@@ -139,13 +138,14 @@ class PropertyService {
         throw error;
       }
       
-      // Merge con datos existentes
-      const updateData = {
+      // Merge con datos existentes y procesar
+      const mergedData = {
         ...existingProperty,
         ...propertyData
       };
       
-      const updatedProperty = await viviendaRepository.update(id, updateData);
+      const cleanedData = this.processPropertyData(mergedData);
+      const updatedProperty = await viviendaRepository.update(id, cleanedData);
       
       logger.info(`Propiedad actualizada exitosamente: ${id}`);
       return updatedProperty;
@@ -262,6 +262,182 @@ class PropertyService {
       };
     } catch (error) {
       logger.error('Error en PropertyService.getStats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Procesa y limpia los datos de la propiedad antes de guardar
+   */
+  processPropertyData(propertyData) {
+    const processed = { ...propertyData };
+
+    // Limpiar y normalizar todos los campos
+    Object.keys(processed).forEach(key => {
+      const value = processed[key];
+      
+      // Convertir strings vacíos a null
+      if (value === '' || value === 'undefined' || value === 'null') {
+        processed[key] = null;
+      }
+      
+      // Eliminar campos undefined
+      if (value === undefined) {
+        processed[key] = null;
+      }
+    });
+
+    // Campos de texto opcionales - pueden ser null
+    const optionalStringFields = ['shortDescription', 'description', 'provincia', 'calle', 'numero', 'tipoVivienda', 'estado', 'planta', 'tipoAnuncio'];
+    optionalStringFields.forEach(field => {
+      if (!processed[field] || processed[field] === '') {
+        processed[field] = null;
+      }
+    });
+
+    // Campos de texto obligatorios - deben tener valor
+    const requiredStringFields = ['name', 'poblacion'];
+    requiredStringFields.forEach(field => {
+      if (!processed[field] || processed[field] === '') {
+        processed[field] = processed[field] || '';
+      }
+    });
+
+    // Campos numéricos - convertir y validar
+    const numericFields = ['rooms', 'bathRooms', 'garage'];
+    numericFields.forEach(field => {
+      const val = processed[field];
+      if (val === null || val === '' || val === undefined || isNaN(val)) {
+        processed[field] = 0;
+      } else {
+        processed[field] = parseInt(val, 10) || 0;
+      }
+    });
+
+    // Campos numéricos opcionales - pueden ser null
+    if (processed.squaredMeters === null || processed.squaredMeters === '' || processed.squaredMeters === undefined) {
+      processed.squaredMeters = null;
+    } else {
+      processed.squaredMeters = parseInt(processed.squaredMeters, 10) || null;
+    }
+
+    // Precio - obligatorio, debe ser número válido
+    if (typeof processed.price === 'string') {
+      processed.price = parseFloat(processed.price) || 0;
+    }
+    processed.price = Number(processed.price) || 0;
+
+    // Asegurar que características sea un array válido
+    if (!Array.isArray(processed.caracteristicas)) {
+      processed.caracteristicas = [];
+    }
+    
+    // Filtrar características vacías o inválidas
+    processed.caracteristicas = processed.caracteristicas.filter(c => c && typeof c === 'string' && c.trim() !== '');
+
+    // Valores booleanos y por defecto
+    processed.published = Boolean(processed.published);
+    processed.estadoVenta = processed.estadoVenta || 'Disponible';
+
+    // Log completo de los datos procesados
+    logger.info('🔧 Datos completamente procesados:', {
+      name: `${processed.name} (${typeof processed.name})`,
+      price: `${processed.price} (${typeof processed.price})`,
+      rooms: `${processed.rooms} (${typeof processed.rooms})`,
+      bathRooms: `${processed.bathRooms} (${typeof processed.bathRooms})`,
+      garage: `${processed.garage} (${typeof processed.garage})`,
+      squaredMeters: `${processed.squaredMeters} (${typeof processed.squaredMeters})`,
+      poblacion: `${processed.poblacion} (${typeof processed.poblacion})`,
+      caracteristicas: processed.caracteristicas,
+      published: `${processed.published} (${typeof processed.published})`
+    });
+
+    return processed;
+  }
+
+  /**
+   * Obtiene las imágenes de una propiedad
+   */
+  async getPropertyImages(propertyId) {
+    try {
+      logger.info(`Obteniendo imágenes para propiedad: ${propertyId}`);
+      
+      const property = await viviendaRepository.findById(propertyId);
+      if (!property) {
+        const error = new Error('Propiedad no encontrada');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      return property.imagenes || [];
+    } catch (error) {
+      logger.error('Error en PropertyService.getPropertyImages:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Añade imágenes a una propiedad
+   */
+  async addPropertyImages(propertyId, images) {
+    try {
+      logger.info(`Añadiendo imágenes a propiedad: ${propertyId}`, images);
+      
+      const result = await imagenesViviendaRepository.addImagesToProperty(propertyId, images);
+      
+      logger.info(`Imágenes añadidas exitosamente a propiedad: ${propertyId}`);
+      return result;
+    } catch (error) {
+      logger.error('Error en PropertyService.addPropertyImages:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reordena las imágenes de una propiedad
+   */
+  async reorderPropertyImages(propertyId, imageOrders) {
+    try {
+      logger.info(`Reordenando imágenes para propiedad: ${propertyId}`, imageOrders);
+      
+      // Verificar que la propiedad existe
+      const property = await viviendaRepository.findById(propertyId);
+      if (!property) {
+        const error = new Error('Propiedad no encontrada');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      // Actualizar orden de las imágenes
+      const result = await imagenesViviendaRepository.updateImageOrders(propertyId, imageOrders);
+      
+      logger.info(`Imágenes reordenadas exitosamente para propiedad: ${propertyId}`);
+      return result;
+    } catch (error) {
+      logger.error('Error en PropertyService.reorderPropertyImages:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina una imagen de una propiedad
+   */
+  async deletePropertyImage(propertyId, imageId) {
+    try {
+      logger.info(`Eliminando imagen ${imageId} de propiedad: ${propertyId}`);
+      
+      const result = await imagenesViviendaRepository.deleteImage(imageId);
+      
+      if (!result) {
+        const error = new Error('Imagen no encontrada');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      logger.info(`Imagen eliminada exitosamente: ${imageId}`);
+      return result;
+    } catch (error) {
+      logger.error('Error en PropertyService.deletePropertyImage:', error);
       throw error;
     }
   }

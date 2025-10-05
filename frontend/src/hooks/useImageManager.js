@@ -270,9 +270,9 @@ export const useImageManager = (propertyId = null, options = {}) => {
   }, [propertyId, onError]);
 
   /**
-   * Reordenar imágenes
+   * Reordenar imágenes - recibe el array completo ya reordenado
    */
-  const reorderImages = useCallback(async (fromIndex, toIndex, propId = propertyId) => {
+  const reorderImages = useCallback(async (reorderedImages, propId = propertyId) => {
     if (!propId) {
       throw new Error('ID de propiedad requerido para reordenar');
     }
@@ -281,13 +281,10 @@ export const useImageManager = (propertyId = null, options = {}) => {
       setIsReordering(true);
 
       // Actualizar orden local inmediatamente (optimistic update)
-      const newImages = [...images];
-      const [movedImage] = newImages.splice(fromIndex, 1);
-      newImages.splice(toIndex, 0, movedImage);
-      setImages(newImages);
+      setImages(reorderedImages);
 
       // Preparar datos para el backend
-      const imageOrders = newImages.map((img, index) => ({
+      const imageOrders = reorderedImages.map((img, index) => ({
         id: img.id,
         orden: index + 1
       }));
@@ -301,15 +298,42 @@ export const useImageManager = (propertyId = null, options = {}) => {
         throw new Error(response.error?.message || 'Error al reordenar imágenes');
       }
 
+      console.log('✅ Imágenes reordenadas correctamente');
       return response;
     } catch (error) {
       console.error('Error reordering images:', error);
       if (onError) onError(error);
+      
+      // Revertir cambio local en caso de error
+      setImages(images);
       throw error;
     } finally {
       setIsReordering(false);
     }
   }, [images, propertyId, onError]);
+
+  /**
+   * Reordenar archivos pendientes localmente (antes de subir)
+   */
+  const reorderPendingFiles = useCallback((reorderedFiles) => {
+    try {
+      // Validar que todos los archivos están en la lista actual
+      const currentIds = new Set(pendingFiles.map(f => f.id));
+      const reorderedIds = new Set(reorderedFiles.map(f => f.id));
+      
+      if (currentIds.size !== reorderedIds.size || 
+          ![...currentIds].every(id => reorderedIds.has(id))) {
+        throw new Error('Archivos no válidos para reordenar');
+      }
+
+      setPendingFiles(reorderedFiles);
+    } catch (error) {
+      console.error('Error reordering pending files:', error);
+      if (onError) {
+        onError(error);
+      }
+    }
+  }, [pendingFiles, onError]);
 
   /**
    * Limpiar archivos pendientes
@@ -322,6 +346,28 @@ export const useImageManager = (propertyId = null, options = {}) => {
     });
     setPendingFiles([]);
     setError(null);
+  }, [pendingFiles]);
+
+  /**
+   * Limpiar todo el estado de imágenes (guardadas y pendientes)
+   */
+  const clearAllImages = useCallback(() => {
+    // Limpiar archivos pendientes
+    pendingFiles.forEach(pf => {
+      if (pf.preview) {
+        URL.revokeObjectURL(pf.preview);
+      }
+    });
+    setPendingFiles([]);
+    
+    // Limpiar imágenes guardadas
+    setImages([]);
+    
+    // Resetear estados
+    setUploadState(ImageStates.IDLE);
+    setUploadProgress(0);
+    setError(null);
+    setIsReordering(false);
   }, [pendingFiles]);
 
   /**
@@ -365,7 +411,9 @@ export const useImageManager = (propertyId = null, options = {}) => {
     uploadPendingFiles,
     removeImage,
     reorderImages,
+    reorderPendingFiles,
     clearPendingFiles,
+    clearAllImages,
     checkImageServiceStatus,
 
     // Utilidades

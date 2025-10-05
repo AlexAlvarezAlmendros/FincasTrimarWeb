@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePropertiesApi, useImagesApi } from '../../hooks/admin/useAdminApi';
-import LocationAutocomplete from '../LocationAutocomplete/LocationAutocomplete';
-import CustomSelect from '../CustomSelect/CustomSelect';
+import LocationAutocomplete from '../../LocationAutocomplete/LocationAutocomplete';
+import CustomSelect from '../../CustomSelect/CustomSelect';
+import CharacteristicsSelector from '../../CharacteristicsSelector';
 import './PropertyForm.css';
 
 // Opciones para los selects
@@ -54,26 +55,7 @@ const ESTADO_VENTA_OPTIONS = [
   { value: 'Cerrada', label: 'Cerrada' }
 ];
 
-const CARACTERISTICAS_OPTIONS = [
-  { value: 'AireAcondicionado', label: 'Aire Acondicionado' },
-  { value: 'ArmariosEmpotrados', label: 'Armarios Empotrados' },
-  { value: 'Ascensor', label: 'Ascensor' },
-  { value: 'Balcón', label: 'Balcón' },
-  { value: 'Terraza', label: 'Terraza' },
-  { value: 'Exterior', label: 'Exterior' },
-  { value: 'Garaje', label: 'Garaje' },
-  { value: 'Jardín', label: 'Jardín' },
-  { value: 'Piscina', label: 'Piscina' },
-  { value: 'Trastero', label: 'Trastero' },
-  { value: 'ViviendaAccesible', label: 'Vivienda Accesible' },
-  { value: 'VistasAlMar', label: 'Vistas al Mar' },
-  { value: 'ViviendaDeLujo', label: 'Vivienda de Lujo' },
-  { value: 'VistasAMontaña', label: 'Vistas a Montaña' },
-  { value: 'FuegoATierra', label: 'Fuego a Tierra' },
-  { value: 'Calefacción', label: 'Calefacción' },
-  { value: 'Guardilla', label: 'Guardilla' },
-  { value: 'CocinaOffice', label: 'Cocina Office' }
-];
+
 
 // Valores iniciales del formulario
 const getInitialFormData = () => ({
@@ -307,10 +289,10 @@ const PropertyForm = () => {
     }));
   };
 
-  const handleCaracteristicasChange = (selectedOptions) => {
+  const handleCaracteristicasChange = (selectedCharacteristics) => {
     setFormData(prev => ({
       ...prev,
-      caracteristicas: selectedOptions.map(option => option.value)
+      caracteristicas: selectedCharacteristics
     }));
   };
 
@@ -704,19 +686,13 @@ const PropertyForm = () => {
 
         {/* Características Adicionales */}
         <div className="form-section">
-          <h2 className="section-title">Características Adicionales</h2>
-          
-          <div className="form-group">
-            <label>Características</label>
-            <CustomSelect
-              options={CARACTERISTICAS_OPTIONS}
-              value={formData.caracteristicas}
-              onChange={handleCaracteristicasChange}
-              placeholder="Selecciona características..."
-              isMulti
-              disabled={isLoading}
-            />
-          </div>
+          <CharacteristicsSelector
+            selectedCharacteristics={formData.caracteristicas}
+            onChange={handleCaracteristicasChange}
+            disabled={isLoading}
+            title="Características Adicionales"
+            subtitle="Selecciona todas las características que apliquen a esta vivienda. Estas características aparecerán destacadas en los listados y ayudarán a los usuarios a encontrar la propiedad perfecta."
+          />
         </div>
 
         {/* Imágenes */}

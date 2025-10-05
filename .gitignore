@@ -163,3 +163,6 @@ frontend/MIGRACION_CSS_MODULES.md
 .gitignore
 frontend/GOOGLE_MAPS_SETUP.md
 frontend/test-autocomplete.html
+backend/test-parser-corrected.js
+backend/test-parser-realistic.js
+backend/test-parser.js

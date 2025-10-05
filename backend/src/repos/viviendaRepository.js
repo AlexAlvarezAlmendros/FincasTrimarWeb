@@ -151,6 +151,41 @@ class ViviendaRepository {
       const fechaPublicacion = viviendaData.published ? new Date().toISOString() : null;
       const caracteristicasJson = JSON.stringify(viviendaData.caracteristicas || []);
       
+      // Preparar parámetros y validar cada uno
+      const params = [
+        id,                                           // 1: Id
+        viviendaData.name,                           // 2: Name
+        viviendaData.shortDescription || null,       // 3: ShortDescription
+        viviendaData.description || null,            // 4: Description
+        Number(viviendaData.price),                  // 5: Price
+        Number(viviendaData.rooms) || 0,             // 6: Rooms
+        Number(viviendaData.bathRooms) || 0,         // 7: BathRooms
+        Number(viviendaData.garage) || 0,            // 8: Garage
+        Number(viviendaData.squaredMeters) || null,  // 9: SquaredMeters
+        viviendaData.provincia || null,              // 10: Provincia
+        viviendaData.poblacion || null,              // 11: Poblacion
+        viviendaData.calle || null,                  // 12: Calle
+        viviendaData.numero || null,                 // 13: Numero
+        viviendaData.tipoInmueble || null,           // 14: TipoInmueble
+        viviendaData.tipoVivienda || null,           // 15: TipoVivienda
+        viviendaData.estado || null,                 // 16: Estado
+        viviendaData.planta || null,                 // 17: Planta
+        viviendaData.tipoAnuncio || null,            // 18: TipoAnuncio
+        viviendaData.estadoVenta || null,            // 19: EstadoVenta
+        caracteristicasJson,                         // 20: Caracteristicas
+        viviendaData.published ? 1 : 0,              // 21: Published
+        fechaPublicacion                             // 22: FechaPublicacion
+      ];
+
+      // Log detallado de parámetros para debugging
+      logger.info('🔍 Parámetros para INSERT:', params.map((param, index) => ({
+        index: index + 1,
+        value: param,
+        type: typeof param,
+        isNull: param === null,
+        isUndefined: param === undefined
+      })));
+
       await executeQuery(`
         INSERT INTO Vivienda (
           Id, Name, ShortDescription, Description, Price, Rooms, BathRooms,
@@ -158,15 +193,7 @@ class ViviendaRepository {
           TipoInmueble, TipoVivienda, Estado, Planta, TipoAnuncio,
           EstadoVenta, Caracteristicas, Published, FechaPublicacion
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        id, viviendaData.name, viviendaData.shortDescription, viviendaData.description,
-        viviendaData.price, viviendaData.rooms || 0, viviendaData.bathRooms || 0,
-        viviendaData.garage || 0, viviendaData.squaredMeters, viviendaData.provincia,
-        viviendaData.poblacion, viviendaData.calle, viviendaData.numero,
-        viviendaData.tipoInmueble, viviendaData.tipoVivienda, viviendaData.estado,
-        viviendaData.planta, viviendaData.tipoAnuncio, viviendaData.estadoVenta,
-        caracteristicasJson, viviendaData.published ? 1 : 0, fechaPublicacion
-      ]);
+      `, params);
       
       return await this.findById(id);
     } catch (error) {
