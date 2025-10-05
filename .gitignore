@@ -166,3 +166,5 @@ frontend/test-autocomplete.html
 backend/test-parser-corrected.js
 backend/test-parser-realistic.js
 backend/test-parser.js
+backend/test-images-query.js
+backend/test-db-quick.js

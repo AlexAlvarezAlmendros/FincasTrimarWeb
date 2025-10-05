@@ -18,6 +18,7 @@ import DraggableImageGrid from '../../DraggableImageGrid';
 import DraggablePendingGrid from '../../DraggablePendingGrid';
 import SuccessPopup from '../../SuccessPopup';
 import LoadingPopup from '../../LoadingPopup';
+import RichTextEditor from '../../RichTextEditor';
 import './PropertyCreatePage.css';
 
 // Componente de gestión de imágenes mejorado
@@ -170,6 +171,15 @@ const PropertyCreatePage = () => {
   // Estado para el popup de carga
   const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
   
+  // Función helper para obtener texto plano del HTML
+  const getPlainTextFromHtml = (html) => {
+    if (!html) return '';
+    // Crear un elemento temporal para extraer solo el texto
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+  
   // Hook para crear vivienda
   const {
     formData,
@@ -283,7 +293,14 @@ const PropertyCreatePage = () => {
     }
     
     if (extractedData.description) {
-      updateField('description', extractedData.description);
+      // Convertir texto plano a HTML básico para el editor rich text
+      const htmlDescription = extractedData.description
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => `<p>${line}</p>`)
+        .join('');
+      updateField('description', htmlDescription);
     }
     
     if (extractedData.price && extractedData.price > 0) {
@@ -462,17 +479,23 @@ const PropertyCreatePage = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="description">Descripción completa</label>
-              <textarea
-                id="description"
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) => updateField('description', e.target.value)}
+                onChange={(content) => {
+                  const plainText = getPlainTextFromHtml(content);
+                  if (plainText.length <= 2000) {
+                    updateField('description', content);
+                  }
+                }}
                 placeholder="Describe en detalle las características de la vivienda, su estado, orientación, servicios cercanos..."
-                rows="4"
-                maxLength="2000"
-                className="form-textarea"
+                disabled={isCreating}
+                height="250px"
+                error={getPlainTextFromHtml(formData.description).length > 2000 ? 
+                  'La descripción no puede exceder 2000 caracteres' : null
+                }
               />
               <small className="form-help">
-                Máximo 2000 caracteres ({formData.description.length}/2000)
+                Editor de texto enriquecido - Máximo 2000 caracteres ({getPlainTextFromHtml(formData.description).length}/2000)
               </small>
             </div>
           </div>
