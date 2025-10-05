@@ -67,10 +67,10 @@ const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
         </header>
         
         <div className={styles.specsGrid}>
-          <span>{property.rooms} Habitaciones</span>
-          <span>{property.garage} Garajes</span>
+          {property.rooms > 0 && <span>{property.rooms} Habitaciones</span>}
+          {property.garage > 0 && <span>{property.garage} Garajes</span>}
           <span>{property.squaredMeters} M²</span>
-          <span>{property.bathrooms} Baños</span>
+          {property.bathRooms > 0 && <span>{property.bathRooms} Baños</span>}
         </div>
         
         <div className={styles.tags}>

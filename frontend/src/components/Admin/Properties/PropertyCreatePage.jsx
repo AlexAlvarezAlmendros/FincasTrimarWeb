@@ -425,13 +425,13 @@ const PropertyCreatePage = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="bathrooms" className="form-label">
+              <label htmlFor="bathRooms" className="form-label">
                 Baños
               </label>
               <input
                 type="number"
-                id="bathrooms"
-                value={formData.bathrooms}
+                id="bathRooms"
+                value={formData.bathRooms}
                 onChange={(e) => updateField('bathRooms', parseInt(e.target.value) || '')}
                 onBlur={() => validation.handleFieldBlur('bathRooms')}
                 className={`form-input ${validation.hasFieldError('bathRooms') ? 'error' : ''}`}

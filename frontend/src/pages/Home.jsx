@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
 import CustomSelect from '../components/CustomSelect/CustomSelect';
 import LocationAutocomplete from '../components/LocationAutocomplete/LocationAutocomplete';
+import { useViviendas } from '../hooks/useViviendas';
 import './Home.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -13,6 +14,26 @@ export default function Home() {
     type: 'all',
     operation: 'Venta' // COMPRA/ALQUILER
   });
+
+  // Hook para obtener las viviendas más recientes
+  const {
+    viviendas,
+    isLoading,
+    isError,
+    error
+  } = useViviendas(
+    {
+      published: true,
+      pageSize: 6
+    },
+    {
+      enableCache: true,
+      autoFetch: true,
+      onError: (error) => {
+        console.error('Error loading recent properties:', error);
+      }
+    }
+  );
 
   const handleFilterChange = (field, value) => {
     setSearchFilters(prev => ({
@@ -72,105 +93,7 @@ export default function Home() {
     { value: 'Villa', label: 'Villa' },
   ];
 
-  // Datos mock para las viviendas recientes
-  const recentProperties = [
-    {
-      id: '1',
-      name: 'Piso reformado en centro histórico',
-      shortDescription: 'Precioso piso en zona premium',
-      price: 240000,
-      rooms: 3,
-      bathrooms: 2,
-      garage: 0,
-      squaredMeters: 102,
-      poblacion: 'Igualada',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Piso',
-      tipoAnuncio: 'Venta',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '2',
-      name: 'Chalet adosado con jardín',
-      shortDescription: 'Perfecto para familias',
-      price: 350000,
-      rooms: 4,
-      bathrooms: 3,
-      garage: 2,
-      squaredMeters: 180,
-      poblacion: 'Barcelona',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Chalet',
-      tipoAnuncio: 'Venta',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '3',
-      name: 'Ático con terraza panorámica',
-      shortDescription: 'Vistas espectaculares',
-      price: 450000,
-      rooms: 3,
-      bathrooms: 2,
-      garage: 1,
-      squaredMeters: 120,
-      poblacion: 'Sitges',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Ático',
-      tipoAnuncio: 'Venta',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '4',
-      name: 'Casa rústica renovada',
-      shortDescription: 'Encanto y modernidad',
-      price: 280000,
-      rooms: 4,
-      bathrooms: 2,
-      garage: 1,
-      squaredMeters: 150,
-      poblacion: 'Vilafranca',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Casa',
-      tipoAnuncio: 'Venta',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '5',
-      name: 'Loft moderno en distrito empresarial',
-      shortDescription: 'Diseño contemporáneo',
-      price: 320000,
-      rooms: 2,
-      bathrooms: 2,
-      garage: 1,
-      squaredMeters: 85,
-      poblacion: 'Barcelona',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Loft',
-      tipoAnuncio: 'Venta',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '6',
-      name: 'Piso luminoso cerca del mar',
-      shortDescription: 'A 5 minutos de la playa',
-      price: 380000,
-      rooms: 3,
-      bathrooms: 2,
-      garage: 0,
-      squaredMeters: 95,
-      poblacion: 'Castelldefels',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Piso',
-      tipoAnuncio: 'Venta',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    }
-  ];
+
 
   return (
     <div className="home">
@@ -249,16 +172,46 @@ export default function Home() {
             <Link to="/viviendas" className="view-all-link">VER TODO</Link>
           </div>
           
-          <div className="properties-grid">
-            {recentProperties.map((property) => (
-              <PropertyCard
-                key={property.id}
-                property={property}
-                onImageClick={handleImageClick}
-                onDetailsClick={handleDetailsClick}
-              />
-            ))}
-          </div>
+          {/* Loading state */}
+          {isLoading && (
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Cargando viviendas...</p>
+            </div>
+          )}
+          
+          {/* Error state */}
+          {isError && (
+            <div className="error-state">
+              <p>Error al cargar las viviendas: {error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="retry-button"
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
+          
+          {/* Properties grid */}
+          {!isLoading && !isError && (
+            <div className="properties-grid">
+              {viviendas.length > 0 ? (
+                viviendas.map((property) => (
+                  <PropertyCard
+                    key={property.id}
+                    property={property}
+                    onImageClick={handleImageClick}
+                    onDetailsClick={handleDetailsClick}
+                  />
+                ))
+              ) : (
+                <div className="empty-state">
+                  <p>No hay viviendas disponibles en este momento.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
