@@ -13,28 +13,34 @@ import {
 } from '../../../types/vivienda.types.js';
 import Auth0Debug from '../../Auth0Debug.jsx';
 import HtmlExtractor from '../../HtmlExtractor/HtmlExtractor.jsx';
+import CharacteristicsSelector from '../../CharacteristicsSelector';
+import DraggableImageGrid from '../../DraggableImageGrid';
+import DraggablePendingGrid from '../../DraggablePendingGrid';
+import SuccessPopup from '../../SuccessPopup';
+import LoadingPopup from '../../LoadingPopup';
 import './PropertyCreatePage.css';
 
 // Componente de gestión de imágenes mejorado
-const ImageUploadSection = ({ imageManager, isReadOnly = false }) => {
+const ImageUploadSection = ({ 
+  images,
+  pendingFiles,
+  uploadProgress,
+  error: imageError,
+  canAddMore,
+  totalImages,
+  remainingSlots,
+  addFiles,
+  removePendingFile,
+  removeImage,
+  uploadPendingFiles,
+  clearError,
+  isProcessing,
+  reorderImages,
+  reorderPendingFiles,
+  isReadOnly = false 
+}) => {
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
-
-  const {
-    images,
-    pendingFiles,
-    uploadProgress,
-    error: imageError,
-    canAddMore,
-    totalImages,
-    remainingSlots,
-    addFiles,
-    removePendingFile,
-    removeImage,
-    uploadPendingFiles,
-    clearError,
-    isProcessing
-  } = imageManager;
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -128,66 +134,23 @@ const ImageUploadSection = ({ imageManager, isReadOnly = false }) => {
         </div>
       )}
 
-      {/* Imágenes pendientes */}
-      {pendingFiles.length > 0 && (
-        <div className="pending-images">
-          <h4>Imágenes pendientes de subir</h4>
-          <div className="image-grid">
-            {pendingFiles.map((file) => (
-              <div key={file.id} className="image-item pending">
-                <div className="image-preview">
-                  <img src={file.preview} alt={file.name} />
-                  <div className="image-overlay">
-                    <button
-                      type="button"
-                      onClick={() => removePendingFile(file.id)}
-                      className="btn-remove"
-                      title="Eliminar"
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </div>
-                <div className="image-info">
-                  <span className="image-name">{file.name}</span>
-                  <span className="image-size">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Imágenes pendientes con drag & drop */}
+      <DraggablePendingGrid
+        pendingFiles={pendingFiles}
+        onRemove={removePendingFile}
+        onReorder={reorderPendingFiles}
+        title="Archivos pendientes de subir"
+      />
 
-      {/* Imágenes guardadas */}
+      {/* Imágenes guardadas con drag and drop */}
       {images.length > 0 && (
-        <div className="saved-images">
-          <h4>Imágenes guardadas</h4>
-          <div className="image-grid">
-            {images.map((image, index) => (
-              <div key={image.id} className="image-item saved">
-                <div className="image-preview">
-                  <img src={image.url} alt={`Imagen ${index + 1}`} />
-                  <div className="image-overlay">
-                    <button
-                      type="button"
-                      onClick={() => removeImage(image.id)}
-                      className="btn-remove"
-                      title="Eliminar"
-                      disabled={isReadOnly}
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </div>
-                <div className="image-info">
-                  <span className="image-order">Imagen {image.orden || index + 1}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <DraggableImageGrid
+          images={images}
+          onRemove={removeImage}
+          onReorder={reorderImages}
+          isReadOnly={isReadOnly}
+          title="Imágenes guardadas"
+        />
       )}
     </div>
   );
@@ -196,6 +159,16 @@ const ImageUploadSection = ({ imageManager, isReadOnly = false }) => {
 const PropertyCreatePage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  
+  // Estado para el popup de éxito
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successData, setSuccessData] = useState(null);
+  
+  // Estado para resetear el HtmlExtractor
+  const [htmlExtractorReset, setHtmlExtractorReset] = useState(0);
+  
+  // Estado para el popup de carga
+  const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
   
   // Hook para crear vivienda
   const {
@@ -211,17 +184,19 @@ const PropertyCreatePage = () => {
       console.log('Vivienda creada exitosamente:', data);
       
       // Si hay imágenes pendientes, subirlas después de crear la vivienda
-      if (data?.id && imageManager.pendingFiles.length > 0) {
+      if (data?.id && pendingFiles.length > 0) {
         try {
-          await imageManager.uploadPendingFiles(data.id);
+          setLoadingMessage('Subiendo imágenes...');
+          await uploadPendingFiles(data.id);
           console.log('Imágenes subidas exitosamente');
         } catch (imgError) {
           console.error('Error subiendo imágenes:', imgError);
         }
       }
       
-      // Opcional: redirigir después de crear
-      // navigate('/admin/viviendas');
+      // Guardar datos de éxito y mostrar popup
+      setSuccessData(data);
+      setShowSuccessPopup(true);
     },
     onError: (err) => {
       console.error('Error creando vivienda:', err);
@@ -237,9 +212,31 @@ const PropertyCreatePage = () => {
     }
   });
 
+  // Extraer funciones necesarias del imageManager
+  const {
+    images,
+    pendingFiles,
+    uploadProgress,
+    error: imageError,
+    canAddMore,
+    totalImages,
+    remainingSlots,
+    addFiles,
+    removePendingFile,
+    removeImage,
+    uploadPendingFiles,
+    clearError,
+    isProcessing,
+    reorderImages,
+    reorderPendingFiles,
+    clearPendingFiles,
+    clearAllImages
+  } = imageManager;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setLoadingMessage('Subiendo vivienda...');
       await createVivienda();
     } catch (error) {
       // Error ya manejado por el hook
@@ -249,7 +246,27 @@ const PropertyCreatePage = () => {
   const handleReset = () => {
     if (window.confirm('¿Estás seguro de que quieres resetear el formulario?')) {
       resetForm();
+      clearAllImages();
+      setHtmlExtractorReset(prev => prev + 1);
     }
+  };
+
+  // Función para manejar el cierre del popup de éxito y resetear para crear otra vivienda
+  const handleSuccessPopupClose = () => {
+    setShowSuccessPopup(false);
+    setSuccessData(null);
+    
+    // Resetear el formulario para crear otra vivienda
+    resetForm();
+    
+    // Limpiar todas las imágenes (pendientes y guardadas)
+    clearAllImages();
+    
+    // Resetear el componente HtmlExtractor
+    setHtmlExtractorReset(prev => prev + 1);
+    
+    // Scroll hacia arriba para mejor UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Función para manejar los datos extraídos del HTML de Idealista
@@ -373,7 +390,10 @@ const PropertyCreatePage = () => {
 
       {/* Extractor de HTML de Idealista */}
       {!id && (
-        <HtmlExtractor onDataExtracted={handleDataExtracted} />
+        <HtmlExtractor 
+          onDataExtracted={handleDataExtracted} 
+          resetTrigger={htmlExtractorReset}
+        />
       )}
 
       {error && (
@@ -693,8 +713,32 @@ const PropertyCreatePage = () => {
         </div>
 
         <div className="form-section">
+          <CharacteristicsSelector
+            selectedCharacteristics={formData.caracteristicas || []}
+            onChange={(characteristics) => updateField('caracteristicas', characteristics)}
+            disabled={isCreating}
+            title="✨ Características Adicionales"
+            subtitle="Selecciona todas las características que apliquen a esta vivienda. Estas aparecerán destacadas en el anuncio para ayudar a los usuarios a encontrar la propiedad perfecta."
+          />
+        </div>
+
+        <div className="form-section">
           <ImageUploadSection 
-            imageManager={imageManager}
+            images={images}
+            pendingFiles={pendingFiles}
+            uploadProgress={uploadProgress}
+            error={imageError}
+            canAddMore={canAddMore}
+            totalImages={totalImages}
+            remainingSlots={remainingSlots}
+            addFiles={addFiles}
+            removePendingFile={removePendingFile}
+            removeImage={removeImage}
+            uploadPendingFiles={uploadPendingFiles}
+            clearError={clearError}
+            isProcessing={isProcessing}
+            reorderImages={reorderImages}
+            reorderPendingFiles={reorderPendingFiles}
             isReadOnly={false}
           />
         </div>
@@ -765,6 +809,30 @@ const PropertyCreatePage = () => {
         <summary>Información de Debug</summary>
         <pre>{JSON.stringify(formData, null, 2)}</pre>
       </details>
+
+      {/* Popup de carga */}
+      <LoadingPopup
+        isVisible={isCreating || isProcessing}
+        title={loadingMessage}
+        message={
+          isCreating ? 
+            "Guardando los datos de la vivienda en la base de datos..." : 
+            isProcessing ? 
+              "Procesando y subiendo las imágenes seleccionadas..." : 
+              "Finalizando el proceso..."
+        }
+        progress={isProcessing && uploadProgress > 0 ? uploadProgress : null}
+      />
+
+      {/* Popup de éxito */}
+      <SuccessPopup
+        isVisible={showSuccessPopup}
+        onClose={handleSuccessPopupClose}
+        title="¡Vivienda creada exitosamente!"
+        message={`La vivienda "${successData?.name || 'Nueva vivienda'}" ha sido guardada correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`}
+        autoClose={true}
+        autoCloseDelay={4000}
+      />
     </div>
   );
 };

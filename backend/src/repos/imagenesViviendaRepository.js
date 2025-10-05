@@ -203,6 +203,82 @@ class ImagenesViviendaRepository {
   }
   
   /**
+   * Añade imágenes a una propiedad
+   */
+  async addImagesToProperty(propertyId, images) {
+    try {
+      logger.info(`Añadiendo ${images.length} imágenes a propiedad ${propertyId}`);
+      
+      const createdImages = [];
+      
+      for (const imageData of images) {
+        const image = await this.create({
+          viviendaId: propertyId,
+          url: imageData.url,
+          orden: imageData.orden || null
+        });
+        createdImages.push(image);
+      }
+      
+      return { images: createdImages };
+    } catch (error) {
+      logger.error('Error en ImagenesViviendaRepository.addImagesToProperty:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza el orden de múltiples imágenes
+   */
+  async updateImageOrders(propertyId, imageOrders) {
+    try {
+      logger.info(`Actualizando orden de imágenes para propiedad ${propertyId}:`, imageOrders);
+      
+      const updatedImages = [];
+      
+      for (const orderData of imageOrders) {
+        const { id, orden } = orderData;
+        const image = await this.updateOrden(id, orden);
+        if (image) {
+          updatedImages.push(image);
+        }
+      }
+      
+      logger.info(`Orden actualizado para ${updatedImages.length} imágenes`);
+      return { images: updatedImages };
+    } catch (error) {
+      logger.error('Error en ImagenesViviendaRepository.updateImageOrders:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina una imagen
+   */
+  async deleteImage(imageId) {
+    try {
+      logger.info(`Eliminando imagen: ${imageId}`);
+      
+      const image = await this.findById(imageId);
+      if (!image) {
+        return false;
+      }
+      
+      const deleted = await this.delete(imageId);
+      
+      if (deleted) {
+        logger.info(`Imagen eliminada exitosamente: ${imageId}`);
+        return { deleted: true, image };
+      }
+      
+      return false;
+    } catch (error) {
+      logger.error('Error en ImagenesViviendaRepository.deleteImage:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Transforma una fila de la DB al formato del modelo
    */
   transformRow(row) {

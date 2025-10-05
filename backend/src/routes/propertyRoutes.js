@@ -81,4 +81,36 @@ privateRoutes.patch('/viviendas/:id/publish',
  */
 privateRoutes.delete('/viviendas/:id', validateUUID('id'), propertyController.deleteProperty);
 
+/**
+ * @route GET /api/v1/viviendas/:id/imagenes
+ * @desc Obtener imágenes de una propiedad
+ * @access Private (Owner, Admin)
+ */
+privateRoutes.get('/viviendas/:id/imagenes', validateUUID('id'), propertyController.getPropertyImages);
+
+/**
+ * @route POST /api/v1/viviendas/:id/imagenes
+ * @desc Añadir imágenes a una propiedad
+ * @access Private (Owner, Admin)
+ */
+privateRoutes.post('/viviendas/:id/imagenes', validateUUID('id'), propertyController.addPropertyImages);
+
+/**
+ * @route PUT /api/v1/viviendas/:id/imagenes/reorder
+ * @desc Reordenar imágenes de una propiedad
+ * @access Private (Owner, Admin)
+ */
+privateRoutes.put('/viviendas/:id/imagenes/reorder', validateUUID('id'), propertyController.reorderPropertyImages);
+
+/**
+ * @route DELETE /api/v1/viviendas/:id/imagenes/:imageId
+ * @desc Eliminar imagen de una propiedad
+ * @access Private (Owner, Admin)
+ */
+privateRoutes.delete('/viviendas/:id/imagenes/:imageId', 
+  validateUUID('id'), 
+  validateUUID('imageId'), 
+  propertyController.deletePropertyImage
+);
+
 export { publicRoutes, privateRoutes };

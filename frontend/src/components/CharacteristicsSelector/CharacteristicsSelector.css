@@ -1,0 +1,194 @@
+/**
+ * Estilos para el selector de características
+ * Incluye grid responsive y controles de acción
+ */
+
+.characteristics-selector {
+  width: 100%;
+}
+
+.characteristics-selector__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg, 16px);
+  gap: var(--spacing-md, 12px);
+}
+
+.characteristics-selector__title-section {
+  flex: 1;
+}
+
+.characteristics-selector__title {
+  margin: 0 0 4px 0;
+  font-size: var(--font-size-lg, 18px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--neutral-800, #1F2937);
+}
+
+.characteristics-selector__subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm, 14px);
+  color: var(--neutral-600, #475569);
+  line-height: 1.4;
+}
+
+.characteristics-selector__controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-sm, 8px);
+}
+
+.characteristics-selector__counter {
+  font-size: var(--font-size-sm, 14px);
+  color: var(--neutral-600, #475569);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.characteristics-selector__actions {
+  display: flex;
+  gap: var(--spacing-md, 12px);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--brand-primary, #3A8DFF);
+  font-size: var(--font-size-sm, 14px);
+  font-weight: var(--font-weight-medium, 500);
+  cursor: pointer;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs, 8px);
+  transition: all 0.2s ease;
+}
+
+.btn-link:hover:not(:disabled) {
+  background: var(--neutral-50, #F7F9FC);
+  color: var(--brand-primary-hover, #2F78DB);
+}
+
+.btn-link:focus {
+  outline: 2px solid var(--brand-primary, #3A8DFF);
+  outline-offset: 1px;
+}
+
+.btn-link:disabled {
+  color: var(--neutral-300, #CBD5E1);
+  cursor: not-allowed;
+}
+
+.characteristics-selector__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--spacing-md, 12px);
+  margin-bottom: var(--spacing-xl, 24px);
+}
+
+.characteristics-selector__summary {
+  padding: var(--spacing-lg, 16px);
+  background: var(--neutral-50, #F7F9FC);
+  border: 1px solid var(--neutral-100, #EEF2F7);
+  border-radius: var(--radius-md, 16px);
+}
+
+.characteristics-selector__summary-title {
+  margin: 0 0 var(--spacing-md, 12px) 0;
+  font-size: var(--font-size-md, 16px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--neutral-800, #1F2937);
+}
+
+.characteristics-selector__selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm, 8px);
+}
+
+.characteristic-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--brand-primary, #3A8DFF);
+  color: var(--neutral-0, #FFFFFF);
+  border-radius: var(--radius-pill, 9999px);
+  font-size: var(--font-size-sm, 14px);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: 1.2;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+  .characteristics-selector__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .characteristics-selector__controls {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .characteristics-selector__grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-sm, 8px);
+  }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 640px) {
+  .characteristics-selector__grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--spacing-sm, 8px);
+  }
+  
+  .characteristics-selector__actions {
+    flex-direction: column;
+    gap: var(--spacing-xs, 4px);
+  }
+  
+  .characteristic-chip {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  
+  .characteristics-selector__summary {
+    padding: var(--spacing-md, 12px);
+  }
+}
+
+/* Estados para características deshabilitadas */
+.characteristics-selector.disabled .characteristics-selector__grid {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.characteristics-selector.disabled .btn-link {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Animación sutil para la aparición del resumen */
+.characteristics-selector__summary {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mejora visual del grid en pantallas grandes */
+@media (min-width: 1200px) {
+  .characteristics-selector__grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}

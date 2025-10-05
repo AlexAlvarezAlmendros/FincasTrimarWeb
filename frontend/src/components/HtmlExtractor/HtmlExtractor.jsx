@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApi } from '../../hooks/useApi';
 import './HtmlExtractor.css';
 
-const HtmlExtractor = ({ onDataExtracted }) => {
+const HtmlExtractor = ({ onDataExtracted, resetTrigger }) => {
   const [file, setFile] = useState(null);
   const [htmlText, setHtmlText] = useState('');
   const [extractedData, setExtractedData] = useState(null);
@@ -10,6 +10,24 @@ const HtmlExtractor = ({ onDataExtracted }) => {
   const [error, setError] = useState(null);
   const [mode, setMode] = useState('file'); // 'file' o 'text'
   const api = useApi();
+
+  // Efecto para resetear el componente cuando se requiera
+  useEffect(() => {
+    if (resetTrigger) {
+      setFile(null);
+      setHtmlText('');
+      setExtractedData(null);
+      setLoading(false);
+      setError(null);
+      setMode('file');
+      
+      // Limpiar input de archivo si existe
+      const fileInput = document.querySelector('input[type="file"][accept=".html"]');
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    }
+  }, [resetTrigger]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
