@@ -125,6 +125,10 @@ const propertyController = {
    */
   async createProperty(req, res, next) {
     try {
+      logger.info('📥 Recibida petición createProperty');
+      logger.info('🔍 Body recibido:', JSON.stringify(req.body, null, 2));
+      logger.info('🔍 Content-Type:', req.headers['content-type']);
+      
       const propertyData = req.body;
       const newProperty = await propertyService.createProperty(propertyData);
       
@@ -133,7 +137,7 @@ const propertyController = {
         data: newProperty
       });
     } catch (error) {
-      logger.error('Error creating property:', error);
+      logger.error('❌ Error creating property:', error);
       next(error);
     }
   },

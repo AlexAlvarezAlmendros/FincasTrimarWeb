@@ -15,7 +15,12 @@ import {
   faFilter,
   faPhone,
   faEnvelope,
-  faClock
+  faClock,
+  faRefresh,
+  faAngleLeft,
+  faAngleRight,
+  faAnglesLeft,
+  faAnglesRight
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -34,5 +39,10 @@ library.add(
   faFilter,
   faPhone,
   faEnvelope,
-  faClock
+  faClock,
+  faRefresh,
+  faAngleLeft,
+  faAngleRight,
+  faAnglesLeft,
+  faAnglesRight
 )

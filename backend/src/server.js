@@ -2,8 +2,6 @@ import dotenv from 'dotenv';
 import app from './app.js';
 import { logger } from './utils/logger.js';
 import { testConnection } from './db/client.js';
-import { runMigrations } from './db/migrations/migrationRunner.js';
-import { runSeeds } from './db/seeds/initialData.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -20,13 +18,13 @@ async function initializeDatabase() {
     // Verificar conexión
     await testConnection();
     
-    // Ejecutar migraciones
-    await runMigrations();
+    // NO ejecutar migraciones automáticamente - usar npm run db:migrate manualmente
+    // await runMigrations();
     
-    // Ejecutar seeds si es desarrollo
-    if (process.env.NODE_ENV !== 'production') {
-      await runSeeds();
-    }
+    // NO ejecutar seeds automáticamente - usar npm run db:seed manualmente
+    // if (process.env.NODE_ENV !== 'production') {
+    //   await runSeeds();
+    // }
     
     logger.info('✅ Base de datos inicializada correctamente');
   } catch (error) {

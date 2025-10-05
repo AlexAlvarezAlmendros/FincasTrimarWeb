@@ -6,29 +6,74 @@ import { logger } from '../utils/logger.js';
  * Verifica JWT tokens y permisos de usuario
  */
 
-// Verificar si Auth0 está configurado
-const isAuth0Configured = () => {
-  return !!(process.env.AUTH0_AUDIENCE && process.env.AUTH0_ISSUER_BASE_URL);
-};
+// Validar que Auth0 esté configurado correctamente
+if (!process.env.AUTH0_AUDIENCE || !process.env.AUTH0_ISSUER_BASE_URL) {
+  throw new Error(
+    'Auth0 no está configurado correctamente. Configura AUTH0_AUDIENCE y AUTH0_ISSUER_BASE_URL en el archivo .env'
+  );
+}
 
-// Configuración del middleware de JWT (solo si está configurado)
-export const checkJwt = isAuth0Configured() 
-  ? auth({
-      audience: process.env.AUTH0_AUDIENCE,
-      issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
-      tokenSigningAlg: 'RS256'
-    })
-  : (req, res, next) => {
-      logger.warn('⚠️  Auth0 no configurado - saltando verificación JWT');
-      // En desarrollo sin Auth0, simular usuario admin
-      req.auth = {
-        sub: 'dev-user-123',
-        permissions: ['Admin'],
-        [`${process.env.AUTH0_AUDIENCE || 'https://api.localhost'}/roles`]: ['Admin'],
-        [`${process.env.AUTH0_AUDIENCE || 'https://api.localhost'}/email`]: 'dev@localhost'
-      };
-      next();
-    };
+console.log('🔐 Configurando Auth0 middleware:');
+console.log('  Audience:', process.env.AUTH0_AUDIENCE);
+console.log('  Issuer:', process.env.AUTH0_ISSUER_BASE_URL);
+
+// Configuración del middleware de JWT (SIEMPRE requerido)
+export const checkJwt = auth({
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+  tokenSigningAlg: 'RS256'
+});
+
+// Middleware personalizado para debugging
+export const debugCheckJwt = (req, res, next) => {
+  console.log('🔍 Request a endpoint protegido:');
+  console.log('  URL:', req.originalUrl);
+  console.log('  Method:', req.method);
+  console.log('  Headers:', Object.keys(req.headers));
+  console.log('  Auth header presente:', !!req.headers.authorization);
+  console.log('  Auth header:', req.headers.authorization ? req.headers.authorization.substring(0, 50) + '...' : 'AUSENTE');
+  
+  if (req.headers.authorization) {
+    console.log('  Bearer format:', req.headers.authorization.startsWith('Bearer '));
+  }
+  
+  // Ejecutar el middleware real de Auth0
+  checkJwt(req, res, (error) => {
+    if (error) {
+      console.log('❌ Error en Auth0 middleware:', error.message);
+      console.log('  Error type:', error.constructor.name);
+      console.log('  Error stack:', error.stack);
+      
+      if (error.constructor.name === 'InvalidRequestError') {
+        console.log('  💡 InvalidRequestError - Posibles causas:');
+        console.log('    - Token malformado');
+        console.log('    - Header Authorization incorrecto');
+        console.log('    - Token sin Bearer prefix');
+        console.log('    - Audience incorrecto');
+      }
+      
+      // Respuesta más específica para InvalidRequestError
+      if (error.constructor.name === 'InvalidRequestError') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN',
+            message: 'Token de autorización inválido o malformado',
+            details: 'Verifica que el token JWT esté bien formado y contenga el audience correcto'
+          }
+        });
+      }
+      
+      return next(error);
+    }
+    
+    console.log('✅ Auth0 middleware exitoso');
+    if (req.auth) {
+      console.log('  User ID:', req.auth.sub);
+    }
+    next();
+  });
+};
 
 /**
  * Middleware para verificar roles específicos
@@ -49,7 +94,18 @@ export const requireRoles = (allowedRoles = []) => {
       }
       
       // Obtener roles del token (Auth0 claim personalizado)
+      logger.info('🔍 Debugging roles:', {
+        permissions: req.auth.permissions,
+        audienceClaim: req.auth[`${process.env.AUTH0_AUDIENCE}/roles`],
+        authObject: req.auth
+      });
+      
       const userRoles = req.auth.permissions || req.auth[`${process.env.AUTH0_AUDIENCE}/roles`] || [];
+      logger.info('📋 Role verification:', {
+        userRoles,
+        allowedRoles,
+        endpoint: req.originalUrl
+      });
       
       // Si no se especifican roles, permitir acceso con token válido
       if (allowedRoles.length === 0) {
@@ -58,8 +114,20 @@ export const requireRoles = (allowedRoles = []) => {
       
       // Verificar si el usuario tiene al menos uno de los roles requeridos
       const hasRequiredRole = allowedRoles.some(role => userRoles.includes(role));
+      logger.info('✅ Role check result:', { hasRequiredRole });
       
       if (!hasRequiredRole) {
+        // En desarrollo, si no hay roles configurados, permitir acceso para testing
+        if (process.env.NODE_ENV === 'development' && userRoles.length === 0) {
+          logger.warn('⚠️ DEVELOPMENT MODE: Permitiendo acceso sin roles para testing');
+          req.user = {
+            id: req.auth.sub,
+            roles: ['Admin'], // Asignar Admin por defecto en desarrollo
+            email: req.auth.email || req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
+          };
+          return next();
+        }
+        
         logger.warn('Acceso denegado - Roles insuficientes:', {
           userId: req.auth.sub,
           userRoles,
@@ -70,7 +138,12 @@ export const requireRoles = (allowedRoles = []) => {
           success: false,
           error: {
             code: 'FORBIDDEN',
-            message: 'No tienes permisos suficientes para acceder a este recurso'
+            message: 'No tienes permisos suficientes para acceder a este recurso',
+            debug: process.env.NODE_ENV === 'development' ? {
+              userRoles,
+              requiredRoles: allowedRoles,
+              suggestion: 'Configura roles en Auth0 o usa modo desarrollo'
+            } : undefined
           }
         });
       }

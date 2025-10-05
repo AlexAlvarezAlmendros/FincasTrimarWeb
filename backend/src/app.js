@@ -40,7 +40,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/', rateLimiter);
 
 // Middleware de autenticación (configurado en authMiddleware.js)
-import { checkJwt } from './middlewares/authMiddleware.js';
+import { debugCheckJwt } from './middlewares/authMiddleware.js';
 
 // Rutas públicas
 app.use('/api', healthRoutes);
@@ -48,8 +48,8 @@ app.use('/api/v1', propertyPublicRoutes);
 app.use('/api/v1', messagePublicRoutes);
 app.use('/api/v1', imagePublicRoutes);
 
-// Rutas protegidas (requieren JWT)
-app.use('/api/v1', checkJwt);
+// Rutas protegidas (requieren JWT) - usando middleware de debug
+app.use('/api/v1', debugCheckJwt);
 app.use('/api/v1', propertyPrivateRoutes);
 app.use('/api/v1', messagePrivateRoutes);
 app.use('/api/v1', imagePrivateRoutes);

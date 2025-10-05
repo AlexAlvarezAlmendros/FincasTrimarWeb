@@ -24,7 +24,7 @@ export const propertyImagesSchema = z.object({
   body: z.object({
     images: z.array(z.object({
       url: z.string().url('URL de imagen inválida'),
-      orden: z.number().int().positive().optional()
+      orden: z.number().int().min(0).optional()
     })).min(1, 'Se requiere al menos una imagen')
   }),
   params: z.object({
