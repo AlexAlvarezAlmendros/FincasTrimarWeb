@@ -1,206 +1,133 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCreateViviendaSimple } from '../../../hooks/useCreateViviendaSimple.js';
+import { 
+  TipoInmueble, 
+  TipoVivienda, 
+  Estado, 
+  Planta, 
+  TipoAnuncio, 
+  EstadoVenta, 
+  Caracteristica 
+} from '../../../types/vivienda.types.js';
 import './PropertyCreatePage.css';
 
-// Hook personalizado para el formulario
-const usePropertyForm = () => {
-  const [formData, setFormData] = useState({
-    // Información básica
-    name: '',
-    shortDescription: '',
-    description: '',
-    price: '',
-    
-    // Características físicas
-    rooms: '',
-    bathrooms: '',
-    garage: '',
-    squaredMeters: '',
-    
-    // Ubicación
-    provincia: '',
-    poblacion: '',
-    calle: '',
-    numero: '',
-    
-    // Clasificación
-    tipoInmueble: 'Vivienda',
-    tipoVivienda: 'Piso',
-    estado: 'BuenEstado',
-    planta: 'PlantaIntermedia',
-    tipoAnuncio: 'Venta',
-    estadoVenta: 'Disponible',
-    
-    // Características adicionales
-    caracteristicas: [],
-    
-    // Control
-    published: false
-  });
-
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [images, setImages] = useState([]);
-
-  const updateField = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    // Limpiar error del campo si existe
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: null
-      }));
-    }
-  };
-
-  const toggleCaracteristica = (caracteristica) => {
-    setFormData(prev => ({
-      ...prev,
-      caracteristicas: prev.caracteristicas.includes(caracteristica)
-        ? prev.caracteristicas.filter(c => c !== caracteristica)
-        : [...prev.caracteristicas, caracteristica]
-    }));
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Campos obligatorios
-    if (!formData.name.trim()) newErrors.name = 'El nombre es obligatorio';
-    if (!formData.price || formData.price <= 0) newErrors.price = 'El precio debe ser mayor a 0';
-    if (!formData.poblacion.trim()) newErrors.poblacion = 'La población es obligatoria';
-    if (!formData.provincia.trim()) newErrors.provincia = 'La provincia es obligatoria';
-    
-    // Validaciones numéricas
-    if (formData.rooms && formData.rooms < 0) newErrors.rooms = 'Las habitaciones no pueden ser negativas';
-    if (formData.bathrooms && formData.bathrooms < 0) newErrors.bathrooms = 'Los baños no pueden ser negativos';
-    if (formData.garage && formData.garage < 0) newErrors.garage = 'Las plazas de garaje no pueden ser negativas';
-    if (formData.squaredMeters && formData.squaredMeters <= 0) newErrors.squaredMeters = 'Los metros cuadrados deben ser mayor a 0';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const submitForm = async (asDraft = false) => {
-    if (!asDraft && !validateForm()) {
-      return false;
-    }
-
-    setLoading(true);
-    
-    try {
-      // Simular llamada API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const propertyData = {
-        ...formData,
-        published: !asDraft,
-        images: images.map((img, index) => ({ url: img.url, orden: index }))
-      };
-
-      console.log('Propiedad creada:', propertyData);
-      
-      setLoading(false);
-      return true;
-    } catch (error) {
-      console.error('Error creating property:', error);
-      setLoading(false);
-      return false;
-    }
-  };
-
-  return {
-    formData,
-    errors,
-    loading,
+// Componente de subida de imágenes mejorado
+const ImageUpload = ({ imageManager, isReadOnly = false }) => {
+  const {
     images,
-    setImages,
-    updateField,
-    toggleCaracteristica,
-    submitForm
+    pendingFiles,
+    uploadState,
+    uploadProgress,
+    error,
+    addFiles,
+    removePendingFile,
+    removeImage,
+    uploadPendingFiles,
+    clearError,
+    canAddMore,
+    remainingSlots,
+    isProcessing
+  } = imageManager;
+
+  const handleFileSelect = (files) => {
+    if (isReadOnly) return;
+    
+    clearError();
+    const fileArray = Array.from(files);
+    addFiles(fileArray);
   };
-};
 
-// Componente de subida de imágenes
-const ImageUpload = ({ images, onImagesChange }) => {
-  const [uploading, setUploading] = useState(false);
-
-  const handleFileUpload = async (files) => {
-    setUploading(true);
+  const handleUploadPending = async () => {
+    if (pendingFiles.length === 0) return;
     
     try {
-      // Simular subida de imágenes
-      for (let file of files) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const mockUrl = URL.createObjectURL(file);
-        const newImage = {
-          id: Date.now() + Math.random(),
-          url: mockUrl,
-          name: file.name,
-          size: file.size
-        };
-        
-        onImagesChange(prev => [...prev, newImage]);
-      }
+      await uploadPendingFiles();
     } catch (error) {
-      console.error('Error uploading images:', error);
-    } finally {
-      setUploading(false);
+      console.error('Error uploading files:', error);
     }
   };
 
-  const removeImage = (imageId) => {
-    onImagesChange(prev => prev.filter(img => img.id !== imageId));
-  };
+  const allImages = [...images, ...pendingFiles];
+  const showUploadArea = canAddMore && !isReadOnly;
 
   return (
     <div className="image-upload-section">
-      <h3>Imágenes de la propiedad</h3>
-      
-      <div className="image-upload-area">
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={(e) => handleFileUpload(Array.from(e.target.files))}
-          disabled={uploading}
-          className="file-input"
-          id="property-images"
-        />
-        <label htmlFor="property-images" className="upload-label">
-          {uploading ? (
-            <>
-              <span className="upload-spinner">⏳</span>
-              <span>Subiendo imágenes...</span>
-            </>
-          ) : (
-            <>
-              <span className="upload-icon">📸</span>
-              <span>Hacer clic para seleccionar imágenes</span>
-              <small>JPG, PNG, WEBP (máx. 10MB cada una)</small>
-            </>
-          )}
-        </label>
+      <div className="upload-header">
+        <h3>Imágenes de la propiedad</h3>
+        {remainingSlots > 0 && (
+          <span className="remaining-slots">
+            {remainingSlots} espacios disponibles
+          </span>
+        )}
       </div>
 
-      {images.length > 0 && (
-        <div className="images-preview">
-          <h4>Imágenes seleccionadas ({images.length})</h4>
+      {error && (
+        <div className="upload-error">
+          <span>❌ {error}</span>
+          <button onClick={clearError} className="error-close">✕</button>
+        </div>
+      )}
+
+      {showUploadArea && (
+        <div className="image-upload-area">
+          <input
+            type="file"
+            multiple
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={(e) => handleFileSelect(e.target.files)}
+            disabled={isProcessing}
+            className="file-input"
+            id="property-images"
+          />
+          <label htmlFor="property-images" className="upload-label">
+            {isProcessing ? (
+              <>
+                <div className="upload-spinner">⏳</div>
+                <span>Procesando imágenes...</span>
+                {uploadProgress > 0 && (
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="upload-icon">📸</span>
+                <span>Hacer clic para seleccionar imágenes</span>
+                <small>JPG, PNG, WEBP (máx. 5MB cada una)</small>
+              </>
+            )}
+          </label>
+        </div>
+      )}
+
+      {pendingFiles.length > 0 && (
+        <div className="pending-files-section">
+          <div className="pending-header">
+            <h4>Archivos pendientes de subir ({pendingFiles.length})</h4>
+            <button
+              onClick={handleUploadPending}
+              disabled={isProcessing}
+              className="btn btn--primary btn--small"
+            >
+              Subir archivos
+            </button>
+          </div>
           <div className="images-grid">
-            {images.map((image, index) => (
-              <div key={image.id} className="image-preview-item">
-                <img src={image.url} alt={`Vista previa ${index + 1}`} />
+            {pendingFiles.map((file) => (
+              <div key={file.id} className="image-preview-item pending">
+                <img src={file.preview} alt={`Vista previa pendiente`} />
                 <div className="image-overlay">
-                  <span className="image-order">#{index + 1}</span>
+                  <span className="image-status">Pendiente</span>
                   <button
-                    onClick={() => removeImage(image.id)}
+                    onClick={() => removePendingFile(file.id)}
                     className="remove-image-btn"
                     type="button"
+                    disabled={isProcessing}
                   >
                     ✕
                   </button>
@@ -210,59 +137,161 @@ const ImageUpload = ({ images, onImagesChange }) => {
           </div>
         </div>
       )}
+
+      {images.length > 0 && (
+        <div className="images-preview">
+          <h4>Imágenes guardadas ({images.length})</h4>
+          <div className="images-grid">
+            {images.map((image, index) => (
+              <div key={image.id} className="image-preview-item uploaded">
+                <img src={image.url} alt={`Imagen ${index + 1}`} />
+                <div className="image-overlay">
+                  <span className="image-order">#{index + 1}</span>
+                  {!isReadOnly && (
+                    <button
+                      onClick={() => removeImage(image.id)}
+                      className="remove-image-btn"
+                      type="button"
+                      disabled={isProcessing}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {allImages.length === 0 && (
+        <div className="no-images">
+          <span className="no-images-icon">🖼️</span>
+          <span>No hay imágenes seleccionadas</span>
+        </div>
+      )}
     </div>
   );
 };
 
-// Componente principal
+// Componente principal simplificado
 const PropertyCreatePage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  
+  // Hook simplificado para crear vivienda
+  const {
+    formData,
+    updateField,
+    createVivienda,
+    isCreating,
+    error,
+    success,
+    resetForm
+  } = useCreateViviendaSimple({
+    onSuccess: (data) => {
+      const message = mode === OperationModes.CREATE 
+        ? 'Vivienda creada correctamente' 
+        : 'Vivienda actualizada correctamente';
+      
+      // En producción, usar un sistema de notificaciones
+      alert(message);
+      
+      // Navegar según el resultado
+      if (data?.published) {
+        navigate('/admin/viviendas');
+      } else {
+        navigate('/admin/viviendas/borradores');
+      }
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`);
+    }
+  });
+
   const {
     formData,
     errors,
-    loading,
-    images,
-    setImages,
-    updateField,
-    toggleCaracteristica,
-    submitForm
-  } = usePropertyForm();
+    validation,
+    imageManager,
+    formState,
+    isProcessing,
+    canSave,
+    isReadOnly
+  } = manager;
 
-  const handleSubmit = async (e, asDraft = false) => {
+  // Funciones auxiliares
+  const updateField = (field, value) => {
+    validation.updateField(field, value);
+  };
+
+  const toggleCaracteristica = (caracteristica) => {
+    const currentCaracteristicas = formData.caracteristicas || [];
+    const newCaracteristicas = currentCaracteristicas.includes(caracteristica)
+      ? currentCaracteristicas.filter(c => c !== caracteristica)
+      : [...currentCaracteristicas, caracteristica];
+    
+    updateField('caracteristicas', newCaracteristicas);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const success = await submitForm(asDraft);
-    
-    if (success) {
-      const message = asDraft ? 'Borrador guardado correctamente' : 'Vivienda publicada correctamente';
-      alert(message); // En producción, usar un sistema de notificaciones
-      
-      if (asDraft) {
-        navigate('/admin/viviendas/borradores');
-      } else {
-        navigate('/admin/viviendas');
-      }
+    try {
+      await manager.saveVivienda({
+        published: true
+      });
+    } catch (error) {
+      console.error('Error submitting form:', error);
     }
   };
 
-  const caracteristicasDisponibles = [
-    'AireAcondicionado', 'ArmariosEmpotrados', 'Ascensor', 'Balcón', 
-    'Terraza', 'Exterior', 'Jardín', 'Piscina', 'Trastero', 
-    'ViviendaAccesible', 'VistasAlMar', 'ViviendaDeLujo', 'VistasAMontaña', 
-    'Calefacción', 'Guardilla', 'CocinaOffice'
-  ];
+  const handleSaveAsDraft = async () => {
+    try {
+      await manager.saveVivienda({
+        published: false
+      });
+    } catch (error) {
+      console.error('Error saving draft:', error);
+    }
+  };
+
+  // Obtener características disponibles del enum
+  const caracteristicasDisponibles = useMemo(() => {
+    return Object.values(Caracteristica);
+  }, []);
+
+  // Título dinámico según el modo
+  const pageTitle = mode === OperationModes.CREATE ? 'Crear Nueva Vivienda' : 'Editar Vivienda';
+  const pageSubtitle = mode === OperationModes.CREATE 
+    ? 'Añade una nueva propiedad al catálogo'
+    : 'Modifica los datos de la propiedad';
+
+  // Estado del formulario para mostrar mensajes
+  const showProgress = formState.isProcessing;
+  const progressMessage = formState.message;
+  const progressValue = formState.progress;
 
   return (
     <div className="property-create-page">
       <div className="page-header">
         <div className="header-content">
-          <h1 className="page-title">
-            {id ? 'Editar Vivienda' : 'Crear Nueva Vivienda'}
-          </h1>
-          <p className="page-subtitle">
-            {id ? 'Modifica los datos de la propiedad' : 'Añade una nueva propiedad al catálogo'}
-          </p>
+          <h1 className="page-title">{pageTitle}</h1>
+          <p className="page-subtitle">{pageSubtitle}</p>
+          
+          {showProgress && (
+            <div className="progress-indicator">
+              <div className="progress-message">{progressMessage}</div>
+              {progressValue > 0 && (
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${progressValue}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="header-actions">
           <button
@@ -289,11 +318,14 @@ const PropertyCreatePage = () => {
                 id="name"
                 value={formData.name}
                 onChange={(e) => updateField('name', e.target.value)}
-                className={`form-input ${errors.name ? 'error' : ''}`}
+                className={`form-input ${validation.hasFieldError('name') ? 'error' : ''}`}
+                disabled={isReadOnly}
                 placeholder="Ej: Piso reformado en centro de Igualada 102 m²"
                 maxLength={200}
               />
-              {errors.name && <span className="error-message">{errors.name}</span>}
+              {validation.getFieldError('name') && (
+                <span className="error-message">{validation.getFieldError('name')}</span>
+              )}
             </div>
 
             <div className="form-group form-group--full">
@@ -305,7 +337,9 @@ const PropertyCreatePage = () => {
                 id="shortDescription"
                 value={formData.shortDescription}
                 onChange={(e) => updateField('shortDescription', e.target.value)}
+                onBlur={() => validation.handleFieldBlur('shortDescription')}
                 className="form-input"
+                disabled={isReadOnly}
                 placeholder="Descripción que aparecerá en las tarjetas de listado"
                 maxLength={300}
               />
@@ -319,9 +353,11 @@ const PropertyCreatePage = () => {
                 id="description"
                 value={formData.description}
                 onChange={(e) => updateField('description', e.target.value)}
+                onBlur={() => validation.handleFieldBlur('description')}
                 className="form-textarea"
                 placeholder="Descripción detallada de la propiedad..."
                 rows={6}
+                disabled={isReadOnly}
               />
             </div>
 
@@ -334,11 +370,15 @@ const PropertyCreatePage = () => {
                 id="price"
                 value={formData.price}
                 onChange={(e) => updateField('price', parseInt(e.target.value) || '')}
-                className={`form-input ${errors.price ? 'error' : ''}`}
+                onBlur={() => validation.handleFieldBlur('price')}
+                className={`form-input ${validation.hasFieldError('price') ? 'error' : ''}`}
+                disabled={isReadOnly}
                 placeholder="240000"
                 min="0"
               />
-              {errors.price && <span className="error-message">{errors.price}</span>}
+              {validation.getFieldError('price') && (
+                <span className="error-message">{validation.getFieldError('price')}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -347,9 +387,11 @@ const PropertyCreatePage = () => {
               </label>
               <select
                 id="tipoAnuncio"
-                value={formData.tipoAnuncio}
+                value={formData.tipoAnuncio || 'Venta'}
                 onChange={(e) => updateField('tipoAnuncio', e.target.value)}
+                onBlur={() => validation.handleFieldBlur('tipoAnuncio')}
                 className="form-select"
+                disabled={isReadOnly}
               >
                 <option value="Venta">Venta</option>
                 <option value="Alquiler">Alquiler</option>
@@ -371,27 +413,35 @@ const PropertyCreatePage = () => {
                 id="rooms"
                 value={formData.rooms}
                 onChange={(e) => updateField('rooms', parseInt(e.target.value) || '')}
-                className={`form-input ${errors.rooms ? 'error' : ''}`}
+                onBlur={() => validation.handleFieldBlur('rooms')}
+                className={`form-input ${validation.hasFieldError('rooms') ? 'error' : ''}`}
                 placeholder="3"
                 min="0"
+                disabled={isReadOnly}
               />
-              {errors.rooms && <span className="error-message">{errors.rooms}</span>}
+              {validation.getFieldError('rooms') && (
+                <span className="error-message">{validation.getFieldError('rooms')}</span>
+              )}
             </div>
 
             <div className="form-group">
-              <label htmlFor="bathrooms" className="form-label">
+              <label htmlFor="bathRooms" className="form-label">
                 Baños
               </label>
               <input
                 type="number"
-                id="bathrooms"
-                value={formData.bathrooms}
-                onChange={(e) => updateField('bathrooms', parseInt(e.target.value) || '')}
-                className={`form-input ${errors.bathrooms ? 'error' : ''}`}
+                id="bathRooms"
+                value={formData.bathRooms}
+                onChange={(e) => updateField('bathRooms', parseInt(e.target.value) || '')}
+                onBlur={() => validation.handleFieldBlur('bathRooms')}
+                className={`form-input ${validation.hasFieldError('bathRooms') ? 'error' : ''}`}
                 placeholder="2"
                 min="0"
+                disabled={isReadOnly}
               />
-              {errors.bathrooms && <span className="error-message">{errors.bathrooms}</span>}
+              {validation.getFieldError('bathRooms') && (
+                <span className="error-message">{validation.getFieldError('bathRooms')}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -441,10 +491,14 @@ const PropertyCreatePage = () => {
                 id="provincia"
                 value={formData.provincia}
                 onChange={(e) => updateField('provincia', e.target.value)}
-                className={`form-input ${errors.provincia ? 'error' : ''}`}
+                onBlur={() => validation.handleFieldBlur('provincia')}
+                className={`form-input ${validation.hasFieldError('provincia') ? 'error' : ''}`}
                 placeholder="Barcelona"
+                disabled={isReadOnly}
               />
-              {errors.provincia && <span className="error-message">{errors.provincia}</span>}
+              {validation.getFieldError('provincia') && (
+                <span className="error-message">{validation.getFieldError('provincia')}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -456,10 +510,14 @@ const PropertyCreatePage = () => {
                 id="poblacion"
                 value={formData.poblacion}
                 onChange={(e) => updateField('poblacion', e.target.value)}
-                className={`form-input ${errors.poblacion ? 'error' : ''}`}
+                onBlur={() => validation.handleFieldBlur('poblacion')}
+                className={`form-input ${validation.hasFieldError('poblacion') ? 'error' : ''}`}
                 placeholder="Igualada"
+                disabled={isReadOnly}
               />
-              {errors.poblacion && <span className="error-message">{errors.poblacion}</span>}
+              {validation.getFieldError('poblacion') && (
+                <span className="error-message">{validation.getFieldError('poblacion')}</span>
+              )}
             </div>
 
             <div className="form-group">
@@ -579,8 +637,9 @@ const PropertyCreatePage = () => {
               <label key={caracteristica} className="characteristic-item">
                 <input
                   type="checkbox"
-                  checked={formData.caracteristicas.includes(caracteristica)}
+                  checked={(formData.caracteristicas || []).includes(caracteristica)}
                   onChange={() => toggleCaracteristica(caracteristica)}
+                  disabled={isReadOnly}
                 />
                 <span className="characteristic-label">{caracteristica}</span>
               </label>
@@ -590,7 +649,7 @@ const PropertyCreatePage = () => {
 
         {/* Subida de imágenes */}
         <section className="form-section">
-          <ImageUpload images={images} onImagesChange={setImages} />
+          <ImageUpload imageManager={imageManager} isReadOnly={isReadOnly} />
         </section>
 
         {/* Botones de acción */}
@@ -599,27 +658,42 @@ const PropertyCreatePage = () => {
             type="button"
             onClick={() => navigate('/admin/viviendas')}
             className="btn btn--secondary"
-            disabled={loading}
+            disabled={isProcessing}
           >
             Cancelar
           </button>
           
-          <button
-            type="button"
-            onClick={(e) => handleSubmit(e, true)}
-            className="btn btn--draft"
-            disabled={loading}
-          >
-            {loading ? 'Guardando...' : '📝 Guardar como borrador'}
-          </button>
+          {!isReadOnly && (
+            <>
+              <button
+                type="button"
+                onClick={handleSaveAsDraft}
+                className="btn btn--draft"
+                disabled={isProcessing || !canSave}
+              >
+                {isProcessing ? 'Guardando...' : '📝 Guardar como borrador'}
+              </button>
+              
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={isProcessing || !validation.isFormValid}
+              >
+                {isProcessing ? 'Procesando...' : '🚀 Publicar vivienda'}
+              </button>
+            </>
+          )}
           
-          <button
-            type="submit"
-            className="btn btn--primary"
-            disabled={loading}
-          >
-            {loading ? 'Publicando...' : '🚀 Publicar vivienda'}
-          </button>
+          {mode === OperationModes.EDIT && (
+            <button
+              type="button"
+              onClick={() => manager.duplicateVivienda()}
+              className="btn btn--secondary"
+              disabled={isProcessing}
+            >
+              📋 Duplicar
+            </button>
+          )}
         </div>
       </form>
     </div>

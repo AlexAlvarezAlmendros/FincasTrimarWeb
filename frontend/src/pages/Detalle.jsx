@@ -208,22 +208,28 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
               </div>
               
               <div className="specs-grid">
-                <div className="spec">
-                  <span className="spec-value">{property.rooms}</span>
-                  <span className="spec-label">Habitaciones</span>
-                </div>
-                <div className="spec">
-                  <span className="spec-value">{property.garage}</span>
-                  <span className="spec-label">Garajes</span>
-                </div>
+                {property.rooms > 0 && (
+                  <div className="spec">
+                    <span className="spec-value">{property.rooms}</span>
+                    <span className="spec-label">Habitaciones</span>
+                  </div>
+                )}
+                {property.garage > 0 && (
+                  <div className="spec">
+                    <span className="spec-value">{property.garage}</span>
+                    <span className="spec-label">Garajes</span>
+                  </div>
+                )}
                 <div className="spec">
                   <span className="spec-value">{property.squaredMeters}</span>
                   <span className="spec-label">M²</span>
                 </div>
-                <div className="spec">
-                  <span className="spec-value">{property.bathRooms}</span>
-                  <span className="spec-label">Baños</span>
-                </div>
+                {property.bathRooms > 0 && (
+                  <div className="spec">
+                    <span className="spec-value">{property.bathRooms}</span>
+                    <span className="spec-label">Baños</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -374,9 +380,10 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
                   <div className="similar-info">
                     <h4 className="similar-title">{similar.name}</h4>
                     <div className="similar-specs">
-                      <span>{similar.rooms} hab</span>
+                      {similar.rooms > 0 && <span>{similar.rooms} hab</span>}
                       <span>{similar.squaredMeters} m²</span>
-                      <span>{similar.bathRooms} baños</span>
+                      {similar.bathRooms > 0 && <span>{similar.bathRooms} baños</span>}
+                      {similar.garage > 0 && <span>{similar.garage} garajes</span>}
                     </div>
                     <div className="similar-price">
                       {similar.price.toLocaleString('es-ES')} €

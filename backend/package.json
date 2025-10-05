@@ -10,7 +10,10 @@
     "test": "vitest",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
-    "db:migrate": "node -e \"import('./src/db/migrations/migrationRunner.js').then(m => m.runMigrations())\"",
+    "db:migrate": "node migrate.js",
+    "db:migrate:clean": "node clean-migrate.js",
+    "db:verify": "node verify-turso.js",
+    "auth:check": "node check-auth0.js",
     "db:seed": "node -e \"import('./src/db/seeds/initialData.js').then(s => s.runSeeds())\"",
     "db:reset": "npm run db:migrate; npm run db:seed",
     "setup": "copy .env.example .env"

@@ -40,7 +40,7 @@ const useDrafts = () => {
           shortDescription: 'Magnífico chalet con jardín y piscina privada',
           price: 450000,
           rooms: 4,
-          bathrooms: 3,
+          bathRooms: 3,
           garage: 2,
           squaredMeters: 180,
           provincia: 'Barcelona',
@@ -64,7 +64,7 @@ const useDrafts = () => {
           shortDescription: 'Perfecta para desconectar, con todos los servicios',
           price: 180000,
           rooms: 3,
-          bathrooms: 2,
+          bathRooms: 2,
           garage: 0,
           squaredMeters: 140,
           provincia: 'Barcelona',
@@ -88,7 +88,7 @@ const useDrafts = () => {
           shortDescription: '',
           price: 120000,
           rooms: 0,
-          bathrooms: 1,
+          bathRooms: 1,
           garage: 0,
           squaredMeters: 85,
           provincia: 'Barcelona',
@@ -345,7 +345,7 @@ const DraftCard = ({
 
           <div className="draft-specs">
             {draft.rooms > 0 && <span className="spec">🛏️ {draft.rooms}</span>}
-            {draft.bathrooms > 0 && <span className="spec">🚿 {draft.bathrooms}</span>}
+            {draft.bathRooms > 0 && <span className="spec">🚿 {draft.bathRooms}</span>}
             {draft.garage > 0 && <span className="spec">🚗 {draft.garage}</span>}
             {draft.squaredMeters > 0 && <span className="spec">📐 {draft.squaredMeters}m²</span>}
           </div>

@@ -88,6 +88,7 @@ const imageController = {
       }
 
       logger.info(`🖼️ Asociando ${images.length} imágenes a vivienda ${viviendaId}`);
+      logger.info('🔍 Datos de imágenes recibidos:', images);
 
       const results = [];
       

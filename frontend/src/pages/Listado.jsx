@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
 import LocationAutocomplete from '../components/LocationAutocomplete/LocationAutocomplete';
 import CustomSelect from '../components/CustomSelect/CustomSelect';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useViviendas } from '../hooks/useViviendas';
+import { 
+  TipoVivienda, 
+  Estado, 
+  TipoAnuncio,
+  DataTransformers 
+} from '../types/vivienda.types';
 import './Listado.css';
 
 export default function Listado() {
@@ -23,289 +30,195 @@ export default function Listado() {
     tipoAnuncio: 'all'
   });
 
-  // Opciones para los selectores personalizados
-  const typeOptions = [
-    { value: 'all', label: 'Tipo de vivienda' },
-    { value: 'Piso', label: 'Piso' },
-    { value: 'Casa', label: 'Casa' },
-    { value: 'Chalet', label: 'Chalet' },
-    { value: 'Ático', label: 'Ático' },
-    { value: 'Dúplex', label: 'Dúplex' },
-    { value: 'Loft', label: 'Loft' },
-    { value: 'Villa', label: 'Villa' }
-  ];
+  // Opciones para los selectores personalizados (usando enumeraciones tipadas)
+  const typeOptions = useMemo(() => [
+    { value: '', label: 'Tipo de vivienda' },
+    { value: TipoVivienda.PISO, label: 'Piso' },
+    { value: TipoVivienda.CASA, label: 'Casa' },
+    { value: TipoVivienda.CHALET, label: 'Chalet' },
+    { value: TipoVivienda.ATICO, label: 'Ático' },
+    { value: TipoVivienda.DUPLEX, label: 'Dúplex' },
+    { value: TipoVivienda.LOFT, label: 'Loft' },
+    { value: TipoVivienda.VILLA, label: 'Villa' },
+    { value: TipoVivienda.MASIA, label: 'Masía' },
+    { value: TipoVivienda.FINCA, label: 'Finca' }
+  ], []);
 
-  const roomOptions = [
-    { value: 'all', label: 'Cualquiera' },
+  const roomOptions = useMemo(() => [
+    { value: '', label: 'Cualquiera' },
     { value: '1', label: '1 habitación' },
     { value: '2', label: '2 habitaciones' },
     { value: '3', label: '3 habitaciones' },
     { value: '4', label: '4 habitaciones' },
     { value: '5', label: '5+ habitaciones' }
-  ];
+  ], []);
 
-  const bathroomOptions = [
-    { value: 'all', label: 'Cualquiera' },
+  const bathroomOptions = useMemo(() => [
+    { value: '', label: 'Cualquiera' },
     { value: '1', label: '1 baño' },
     { value: '2', label: '2 baños' },
     { value: '3', label: '3 baños' },
     { value: '4', label: '4+ baños' }
-  ];
+  ], []);
 
-  const garageOptions = [
-    { value: 'all', label: 'Cualquiera' },
+  const garageOptions = useMemo(() => [
+    { value: '', label: 'Cualquiera' },
     { value: '0', label: 'Sin garaje' },
     { value: '1', label: '1 plaza' },
     { value: '2', label: '2 plazas' },
     { value: '3', label: '3+ plazas' }
-  ];
+  ], []);
 
-  const estadoOptions = [
-    { value: 'all', label: 'Cualquier estado' },
-    { value: 'ObraNueva', label: 'Obra nueva' },
-    { value: 'BuenEstado', label: 'Buen estado' },
-    { value: 'AReformar', label: 'A reformar' }
-  ];
+  const estadoOptions = useMemo(() => [
+    { value: '', label: 'Cualquier estado' },
+    { value: Estado.OBRA_NUEVA, label: 'Obra nueva' },
+    { value: Estado.BUEN_ESTADO, label: 'Buen estado' },
+    { value: Estado.A_REFORMAR, label: 'A reformar' }
+  ], []);
 
-  const tipoAnuncioOptions = [
-    { value: 'all', label: 'Venta y Alquiler' },
-    { value: 'venta', label: 'Venta' },
-    { value: 'alquiler', label: 'Alquiler' }
-  ];
+  const tipoAnuncioOptions = useMemo(() => [
+    { value: '', label: 'Venta y Alquiler' },
+    { value: TipoAnuncio.VENTA, label: 'Venta' },
+    { value: TipoAnuncio.ALQUILER, label: 'Alquiler' }
+  ], []);
 
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  // Mock data para las viviendas
-  const mockProperties = [
-    {
-      id: '1',
-      name: 'Piso reformado en centro histórico de Igualada 102 m²',
-      shortDescription: 'Precioso piso en una de las mejores zonas de Igualada',
-      price: 240000,
-      rooms: 3,
-      bathrooms: 2,
-      garage: 0,
-      squaredMeters: 102,
-      provincia: 'Barcelona',
-      poblacion: 'Igualada',
-      calle: 'C/ Major',
-      numero: '12',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Piso',
-      tipoAnuncio: 'Venta',
-      estado: 'BuenEstado',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '2',
-      name: 'Chalet adosado con jardín privado 180 m²',
-      shortDescription: 'Perfecto para familias, zona tranquila',
-      price: 350000,
-      rooms: 4,
-      bathrooms: 3,
-      garage: 2,
-      squaredMeters: 180,
-      provincia: 'Barcelona',
-      poblacion: 'Sant Cugat',
-      calle: 'Avda. Catalunya',
-      numero: '45',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Chalet',
-      tipoAnuncio: 'Venta',
-      estado: 'ObraNueva',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '3',
-      name: 'Ático con terraza panorámica 120 m²',
-      shortDescription: 'Vistas espectaculares al mar',
-      price: 450000,
-      rooms: 3,
-      bathrooms: 2,
-      garage: 1,
-      squaredMeters: 120,
-      provincia: 'Barcelona',
-      poblacion: 'Sitges',
-      calle: 'Passeig Marítim',
-      numero: '8',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Ático',
-      tipoAnuncio: 'Venta',
-      estado: 'BuenEstado',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '4',
-      name: 'Casa rústica renovada 150 m²',
-      shortDescription: 'Encanto tradicional con comodidades modernas',
-      price: 280000,
-      rooms: 4,
-      bathrooms: 2,
-      garage: 1,
-      squaredMeters: 150,
-      provincia: 'Barcelona',
-      poblacion: 'Vilafranca del Penedès',
-      calle: 'C/ Sant Antoni',
-      numero: '23',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Casa',
-      tipoAnuncio: 'Venta',
-      estado: 'AReformar',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '5',
-      name: 'Loft moderno en distrito empresarial 85 m²',
-      shortDescription: 'Diseño contemporáneo y funcional',
-      price: 320000,
-      rooms: 2,
-      bathrooms: 2,
-      garage: 1,
-      squaredMeters: 85,
-      provincia: 'Barcelona',
-      poblacion: 'Barcelona',
-      calle: 'C/ Diagonal',
-      numero: '567',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Loft',
-      tipoAnuncio: 'Venta',
-      estado: 'ObraNueva',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '6',
-      name: 'Piso luminoso cerca del mar 95 m²',
-      shortDescription: 'A 5 minutos caminando de la playa',
-      price: 380000,
-      rooms: 3,
-      bathrooms: 2,
-      garage: 0,
-      squaredMeters: 95,
-      provincia: 'Barcelona',
-      poblacion: 'Castelldefels',
-      calle: 'Avda. del Mar',
-      numero: '156',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Piso',
-      tipoAnuncio: 'Venta',
-      estado: 'BuenEstado',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '7',
-      name: 'Casa de alquiler con piscina 200 m²',
-      shortDescription: 'Perfecta para vacaciones familiares',
-      price: 1200,
-      rooms: 5,
-      bathrooms: 3,
-      garage: 2,
-      squaredMeters: 200,
-      provincia: 'Barcelona',
-      poblacion: 'Calafell',
-      calle: 'C/ del Mar',
-      numero: '78',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Casa',
-      tipoAnuncio: 'Alquiler',
-      estado: 'BuenEstado',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    },
-    {
-      id: '8',
-      name: 'Estudio céntrico para reformar 45 m²',
-      shortDescription: 'Gran potencial de inversión',
-      price: 90000,
-      rooms: 1,
-      bathrooms: 1,
-      garage: 0,
-      squaredMeters: 45,
-      provincia: 'Barcelona',
-      poblacion: 'Mataró',
-      calle: 'C/ Real',
-      numero: '34',
-      tipoInmueble: 'Vivienda',
-      tipoVivienda: 'Piso',
-      tipoAnuncio: 'Venta',
-      estado: 'AReformar',
-      mainImage: './img/houses.webp',
-      images: ['./img/houses.webp']
-    }
-  ];
-
-  // Efecto para procesar query parameters desde la URL
-  useEffect(() => {
+  // Filtros iniciales basados en URL parameters
+  const getInitialFilters = () => {
     const searchParams = new URLSearchParams(location.search);
-    
-    const newFilters = {
-      location: searchParams.get('q') || '',
-      type: searchParams.get('tipo') || 'all',
-      minPrice: searchParams.get('minPrice') || '',
-      maxPrice: searchParams.get('maxPrice') || '',
-      rooms: searchParams.get('rooms') || 'all',
-      bathrooms: searchParams.get('bathrooms') || 'all',
-      garage: searchParams.get('garage') || 'all',
-      minSquareMeters: searchParams.get('minSquareMeters') || '',
-      maxSquareMeters: searchParams.get('maxSquareMeters') || '',
-      estado: searchParams.get('estado') || 'all',
-      tipoAnuncio: searchParams.get('tipoAnuncio') || 'all'
+    return {
+      q: searchParams.get('q') || '',
+      poblacion: searchParams.get('poblacion') || '',
+      provincia: searchParams.get('provincia') || '',
+      tipoVivienda: searchParams.get('tipo') || '',
+      minPrice: searchParams.get('minPrice') ? parseInt(searchParams.get('minPrice')) : null,
+      maxPrice: searchParams.get('maxPrice') ? parseInt(searchParams.get('maxPrice')) : null,
+      rooms: searchParams.get('rooms') ? parseInt(searchParams.get('rooms')) : null,
+      bathRooms: searchParams.get('bathrooms') ? parseInt(searchParams.get('bathrooms')) : null,
+      garage: searchParams.get('garage') ? parseInt(searchParams.get('garage')) : null,
+      squaredMeters: searchParams.get('minSquareMeters') ? parseInt(searchParams.get('minSquareMeters')) : null,
+      estado: searchParams.get('estado') || '',
+      tipoAnuncio: searchParams.get('tipoAnuncio') || '',
+      published: true,
+      page: 1,
+      pageSize: 12
     };
+  };
 
-    setFilters(newFilters);
-  }, [location.search]);
+  // Integración con el hook useViviendas
+  const {
+    viviendas,
+    pagination,
+    isLoading,
+    isError,
+    error,
+    isEmpty,
+    hasNextPage,
+    hasPrevPage,
+    filters: hookFilters,
+    updateFilters,
+    goToPage,
+    resetFilters: resetHookFilters,
+    searchViviendas,
+    refreshViviendas
+  } = useViviendas(getInitialFilters(), {
+    enableCache: true,
+    debounceMs: 500,
+    autoFetch: true,
+    onError: (error) => {
+      console.error('Error al cargar viviendas:', error);
+    },
+    onSuccess: (data) => {
+      console.log('Viviendas cargadas:', data.viviendas.length);
+    }
+  });
 
+  // Mapeo de filtros locales del formulario a filtros del hook
+  const mapLocalFiltersToHook = (localFilters) => {
+    return {
+      q: localFilters.location || '',
+      poblacion: '', // Se extraerá de location si es específico
+      provincia: '', // Se extraerá de location si es específico  
+      tipoVivienda: localFilters.type || '',
+      minPrice: localFilters.minPrice ? parseInt(localFilters.minPrice) : null,
+      maxPrice: localFilters.maxPrice ? parseInt(localFilters.maxPrice) : null,
+      rooms: localFilters.rooms ? parseInt(localFilters.rooms) : null,
+      bathRooms: localFilters.bathrooms ? parseInt(localFilters.bathrooms) : null,
+      garage: localFilters.garage ? parseInt(localFilters.garage) : null,
+      squaredMeters: localFilters.minSquareMeters ? parseInt(localFilters.minSquareMeters) : null,
+      estado: localFilters.estado || '',
+      tipoAnuncio: localFilters.tipoAnuncio || '',
+      published: true
+    };
+  };
+
+  // Mapeo inverso: de filtros del hook a filtros locales del formulario
+  const mapHookFiltersToLocal = (hookFilters) => {
+    return {
+      location: hookFilters.q || '',
+      type: hookFilters.tipoVivienda || '',
+      minPrice: hookFilters.minPrice?.toString() || '',
+      maxPrice: hookFilters.maxPrice?.toString() || '',
+      rooms: hookFilters.rooms?.toString() || '',
+      bathrooms: hookFilters.bathRooms?.toString() || '',
+      garage: hookFilters.garage?.toString() || '',
+      minSquareMeters: hookFilters.squaredMeters?.toString() || '',
+      maxSquareMeters: '', // No tenemos máximo en el backend
+      estado: hookFilters.estado || '',
+      tipoAnuncio: hookFilters.tipoAnuncio || ''
+    };
+  };
+
+  // Filtros locales del formulario (para el estado de la UI)
+  const [localFilters, setLocalFilters] = useState(() => mapHookFiltersToLocal(hookFilters));
+
+  // Sincronizar filtros locales cuando cambien los filtros del hook
   useEffect(() => {
-    // Simular carga de datos
-    setLoading(true);
-    setTimeout(() => {
-      setProperties(mockProperties);
-      setTotalPages(Math.ceil(mockProperties.length / 6));
-      setLoading(false);
-    }, 500);
-  }, [filters]);
+    setLocalFilters(mapHookFiltersToLocal(hookFilters));
+  }, [hookFilters]);
 
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({
-      ...prev,
+    const newLocalFilters = {
+      ...localFilters,
       [field]: value
-    }));
-    setCurrentPage(1);
+    };
+    setLocalFilters(newLocalFilters);
+
+    // Para campos que requieren búsqueda inmediata con debounce
+    const immediateSearchFields = ['location'];
+    if (immediateSearchFields.includes(field)) {
+      const hookFilters = mapLocalFiltersToHook(newLocalFilters);
+      updateFilters(hookFilters, { debounce: true, resetPagination: true });
+    }
   };
 
   const handleSearch = () => {
-    // Simulamos una búsqueda aplicando los filtros
-    setLoading(true);
-    setTimeout(() => {
-      // En una implementación real, aquí se haría la llamada a la API
-      console.log('Searching with filters:', filters);
-      setLoading(false);
-    }, 300);
+    const hookFilters = mapLocalFiltersToHook(localFilters);
+    updateFilters(hookFilters, { resetPagination: true });
+  };
+
+  const handleAdvancedSearch = () => {
+    const hookFilters = mapLocalFiltersToHook(localFilters);
+    searchViviendas(hookFilters);
   };
 
   const resetFilters = () => {
-    setFilters({
+    const defaultLocalFilters = {
       location: '',
-      type: 'all',
+      type: '',
       minPrice: '',
       maxPrice: '',
-      rooms: 'all',
-      bathrooms: 'all',
-      garage: 'all',
+      rooms: '',
+      bathrooms: '',
+      garage: '',
       minSquareMeters: '',
       maxSquareMeters: '',
-      estado: 'all',
-      tipoAnuncio: 'all'
-    });
+      estado: '',
+      tipoAnuncio: ''
+    };
+    setLocalFilters(defaultLocalFilters);
+    resetHookFilters();
   };
 
   const handleImageClick = (images) => {
@@ -317,67 +230,19 @@ export default function Listado() {
     navigate(`/viviendas/${propertyId}`);
   };
 
-  const getEstadoChipClass = (estado) => {
-    switch (estado) {
-      case 'ObraNueva': return 'chip-blue';
-      case 'BuenEstado': return 'chip-green';
-      case 'AReformar': return 'chip-orange';
-      default: return 'chip-gray';
-    }
+  // Funciones de paginación
+  const handlePageChange = (newPage) => {
+    goToPage(newPage);
+    // Scroll hacia arriba al cambiar de página
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const filteredProperties = properties.filter(property => {
-    if (filters.location) {
-      const locationFilter = filters.location.toLowerCase();
-      const poblacion = property.poblacion.toLowerCase();
-      const provincia = property.provincia.toLowerCase();
-      const calle = property.calle.toLowerCase();
-      
-      // Buscar en población, provincia y calle
-      if (!poblacion.includes(locationFilter) && 
-          !provincia.includes(locationFilter) && 
-          !calle.includes(locationFilter)) {
-        return false;
-      }
-    }
-    if (filters.type !== 'all' && property.tipoVivienda.toLowerCase() !== filters.type.toLowerCase()) {
-      return false;
-    }
-    if (filters.minPrice && property.price < parseInt(filters.minPrice)) {
-      return false;
-    }
-    if (filters.maxPrice && property.price > parseInt(filters.maxPrice)) {
-      return false;
-    }
-    if (filters.rooms !== 'all') {
-      const roomFilter = parseInt(filters.rooms);
-      if (roomFilter === 5 && property.rooms < 5) return false;
-      if (roomFilter !== 5 && property.rooms !== roomFilter) return false;
-    }
-    if (filters.bathrooms !== 'all') {
-      const bathroomFilter = parseInt(filters.bathrooms);
-      if (bathroomFilter === 4 && property.bathrooms < 4) return false;
-      if (bathroomFilter !== 4 && property.bathrooms !== bathroomFilter) return false;
-    }
-    if (filters.garage !== 'all') {
-      const garageFilter = parseInt(filters.garage);
-      if (garageFilter === 3 && property.garage < 3) return false;
-      if (garageFilter !== 3 && property.garage !== garageFilter) return false;
-    }
-    if (filters.minSquareMeters && property.squaredMeters < parseInt(filters.minSquareMeters)) {
-      return false;
-    }
-    if (filters.maxSquareMeters && property.squaredMeters > parseInt(filters.maxSquareMeters)) {
-      return false;
-    }
-    if (filters.estado !== 'all' && property.estado !== filters.estado) {
-      return false;
-    }
-    if (filters.tipoAnuncio !== 'all') {
-      if (property.tipoAnuncio !== filters.tipoAnuncio) return false;
-    }
-    return true;
-  });
+  const handleRefresh = () => {
+    refreshViviendas();
+  };
+
+  // Memoizar las viviendas para optimizar re-renders
+  const displayedViviendas = useMemo(() => viviendas, [viviendas]);
 
   return (
     <div className="listado">
@@ -389,7 +254,7 @@ export default function Listado() {
               <div className="filter-group">
                 <div className="filter-field">
                   <LocationAutocomplete
-                    value={filters.location}
+                    value={localFilters.location}
                     onChange={(value) => handleFilterChange('location', value)}
                     placeholder="Ubicación"
                   />
@@ -397,7 +262,7 @@ export default function Listado() {
                 
                 <div className="filter-field">
                   <CustomSelect
-                    value={filters.type}
+                    value={localFilters.type}
                     onChange={(value) => handleFilterChange('type', value)}
                     options={typeOptions}
                     placeholder="Tipo de vivienda"
@@ -437,7 +302,7 @@ export default function Listado() {
                     <input
                       type="number"
                       placeholder="0"
-                      value={filters.minPrice}
+                      value={localFilters.minPrice}
                       onChange={(e) => handleFilterChange('minPrice', e.target.value)}
                     />
                   </div>
@@ -447,7 +312,7 @@ export default function Listado() {
                     <input
                       type="number"
                       placeholder="999999"
-                      value={filters.maxPrice}
+                      value={localFilters.maxPrice}
                       onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
                     />
                   </div>
@@ -455,7 +320,7 @@ export default function Listado() {
                   <div className="filter-field">
                     <label>Habitaciones</label>
                     <CustomSelect
-                      value={filters.rooms}
+                      value={localFilters.rooms}
                       onChange={(value) => handleFilterChange('rooms', value)}
                       options={roomOptions}
                       placeholder="Habitaciones"
@@ -465,7 +330,7 @@ export default function Listado() {
                   <div className="filter-field">
                     <label>Baños</label>
                     <CustomSelect
-                      value={filters.bathrooms}
+                      value={localFilters.bathrooms}
                       onChange={(value) => handleFilterChange('bathrooms', value)}
                       options={bathroomOptions}
                       placeholder="Baños"
@@ -475,7 +340,7 @@ export default function Listado() {
                   <div className="filter-field">
                     <label>Garaje</label>
                     <CustomSelect
-                      value={filters.garage}
+                      value={localFilters.garage}
                       onChange={(value) => handleFilterChange('garage', value)}
                       options={garageOptions}
                       placeholder="Garaje"
@@ -487,7 +352,7 @@ export default function Listado() {
                     <input
                       type="number"
                       placeholder="0"
-                      value={filters.minSquareMeters}
+                      value={localFilters.minSquareMeters}
                       onChange={(e) => handleFilterChange('minSquareMeters', e.target.value)}
                     />
                   </div>
@@ -497,7 +362,7 @@ export default function Listado() {
                     <input
                       type="number"
                       placeholder="999"
-                      value={filters.maxSquareMeters}
+                      value={localFilters.maxSquareMeters}
                       onChange={(e) => handleFilterChange('maxSquareMeters', e.target.value)}
                     />
                   </div>
@@ -505,7 +370,7 @@ export default function Listado() {
                   <div className="filter-field">
                     <label>Estado</label>
                     <CustomSelect
-                      value={filters.estado}
+                      value={localFilters.estado}
                       onChange={(value) => handleFilterChange('estado', value)}
                       options={estadoOptions}
                       placeholder="Estado"
@@ -515,7 +380,7 @@ export default function Listado() {
                   <div className="filter-field">
                     <label>Tipo de operación</label>
                     <CustomSelect
-                      value={filters.tipoAnuncio}
+                      value={localFilters.tipoAnuncio}
                       onChange={(value) => handleFilterChange('tipoAnuncio', value)}
                       options={tipoAnuncioOptions}
                       placeholder="Operación"
@@ -540,15 +405,32 @@ export default function Listado() {
           <div className="results-header">
             <h1>Viviendas disponibles</h1>
             <p className="results-count">
-              {loading ? 'Cargando...' : (
-                filteredProperties.length === properties.length 
-                  ? `${filteredProperties.length} viviendas disponibles`
-                  : `${filteredProperties.length} de ${properties.length} viviendas (filtradas)`
+              {isLoading ? 'Cargando...' : (
+                pagination.total > 0
+                  ? `${pagination.total} viviendas disponibles - Página ${pagination.page} de ${pagination.totalPages}`
+                  : 'No hay viviendas disponibles'
               )}
             </p>
+            {!isLoading && pagination.total > 0 && (
+              <button 
+                onClick={handleRefresh} 
+                className="refresh-button"
+                title="Actualizar resultados"
+              >
+                <FontAwesomeIcon icon="fa-solid fa-refresh" />
+              </button>
+            )}
           </div>
 
-          {loading ? (
+          {isError ? (
+            <div className="error-state">
+              <h3>Error al cargar viviendas</h3>
+              <p>{error}</p>
+              <button onClick={handleRefresh} className="retry-button">
+                Reintentar
+              </button>
+            </div>
+          ) : isLoading ? (
             <div className="loading">
               <div className="loading-spinner"></div>
               <p>Cargando viviendas...</p>
@@ -556,7 +438,7 @@ export default function Listado() {
           ) : (
             <>
               <div className="properties-grid">
-                {filteredProperties.map((property) => (
+                {displayedViviendas.map((property) => (
                   <PropertyCard
                     key={property.id}
                     property={property}
@@ -566,13 +448,66 @@ export default function Listado() {
                 ))}
               </div>
 
-              {filteredProperties.length === 0 && (
+              {isEmpty && (
                 <div className="no-results">
                   <h3>No se encontraron viviendas</h3>
                   <p>Prueba a ajustar los filtros de búsqueda.</p>
                   <button onClick={resetFilters} className="reset-button">
                     Limpiar filtros
                   </button>
+                </div>
+              )}
+
+              {/* Paginación */}
+              {pagination.totalPages > 1 && (
+                <div className="pagination">
+                  <div className="pagination-info">
+                    <span>
+                      Mostrando {((pagination.page - 1) * pagination.pageSize) + 1} - {Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total} viviendas
+                    </span>
+                  </div>
+                  
+                  <div className="pagination-controls">
+                    <button 
+                      onClick={() => handlePageChange(1)}
+                      disabled={!hasPrevPage}
+                      className="pagination-button"
+                      title="Primera página"
+                    >
+                      <FontAwesomeIcon icon="fa-solid fa-angles-left" />
+                    </button>
+                    
+                    <button 
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={!hasPrevPage}
+                      className="pagination-button"
+                      title="Página anterior"
+                    >
+                      <FontAwesomeIcon icon="fa-solid fa-angle-left" />
+                    </button>
+                    
+                    <span className="pagination-current">
+                      {pagination.page}
+                    </span>
+                    
+                    <button 
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={!hasNextPage}
+                      className="pagination-button"
+                      title="Página siguiente"
+                    >
+                      <FontAwesomeIcon icon="fa-solid fa-angle-right" />
+                    </button>
+                    
+                    <button 
+                      onClick={() => handlePageChange(pagination.totalPages)}
+                      disabled={!hasNextPage}
+                      className="pagination-button"
+                      title="Última página"
+                    >
+                      <FontAwesomeIcon icon="fa-solid fa-angles-right" />
+                    </button>
+                  </div>
                 </div>
               )}
             </>

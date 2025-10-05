@@ -73,20 +73,24 @@ class PropertyService {
    */
   async createProperty(propertyData) {
     try {
-      logger.info('Creando nueva propiedad:', { name: propertyData.name });
+      logger.info('🏠 Iniciando creación de propiedad con datos:', JSON.stringify(propertyData, null, 2));
       
       // Validaciones de negocio
+      logger.info(`🔍 Validando nombre: "${propertyData.name}" (longitud: ${propertyData.name?.length || 0})`);
       if (!propertyData.name || propertyData.name.trim().length < 5) {
         const error = new Error('El nombre de la propiedad debe tener al menos 5 caracteres');
         error.statusCode = 400;
         error.code = 'INVALID_PROPERTY_NAME';
+        logger.error('❌ Validación falló: nombre inválido');
         throw error;
       }
       
+      logger.info(`🔍 Validando precio: ${propertyData.price} (tipo: ${typeof propertyData.price})`);
       if (!propertyData.price || propertyData.price <= 0) {
         const error = new Error('El precio debe ser mayor a cero');
         error.statusCode = 400;
         error.code = 'INVALID_PRICE';
+        logger.error('❌ Validación falló: precio inválido');
         throw error;
       }
       

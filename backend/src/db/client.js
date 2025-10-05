@@ -1,25 +1,33 @@
 import { createClient } from '@libsql/client';
 import { logger } from '../utils/logger.js';
+import dotenv from 'dotenv';
+
+// Cargar variables de entorno
+dotenv.config();
 
 /**
  * Cliente de base de datos Turso SQLite
  */
 
-// Configuración del cliente
+// Variables de entorno cargadas correctamente
+
+// Validar configuración de Turso
+if (!process.env.TURSO_DATABASE_URL) {
+  throw new Error('TURSO_DATABASE_URL es obligatorio - configúralo en el archivo .env');
+}
+
+if (!process.env.TURSO_AUTH_TOKEN) {
+  throw new Error('TURSO_AUTH_TOKEN es obligatorio - configúralo en el archivo .env');
+}
+
+// Configuración del cliente - SIEMPRE usar Turso
 const config = {
-  url: process.env.TURSO_DATABASE_URL || 'file:local.db',
+  url: process.env.TURSO_DATABASE_URL,
   authToken: process.env.TURSO_AUTH_TOKEN,
 };
 
-// Validar configuración
-if (!config.url) {
-  throw new Error('TURSO_DATABASE_URL no está configurada');
-}
-
-// En producción validar que exista el token
-if (process.env.NODE_ENV === 'production' && !config.authToken) {
-  throw new Error('TURSO_AUTH_TOKEN es requerido en producción');
-}
+// Log de configuración
+console.log('🗄️ Usando Turso como base de datos:', config.url.substring(0, 50) + '...');
 
 // Crear cliente
 export const db = createClient(config);

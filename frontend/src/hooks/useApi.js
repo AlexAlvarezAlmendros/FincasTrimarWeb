@@ -5,18 +5,27 @@ export function useApi() {
 
   return async function api(path, opts = {}) {
     const headers = {
-      'Content-Type': 'application/json',
       ...(opts.headers || {}),
     };
+    
+    // Solo establecer Content-Type si no se está enviando FormData
+    if (!(opts.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     // Agregar token de autorización si el usuario está autenticado
     if (isAuthenticated) {
       try {
         const token = await getAccessTokenSilently();
+        console.log('🔑 Token obtenido:', token.substring(0, 50) + '...');
         headers.Authorization = `Bearer ${token}`;
       } catch (error) {
-        console.warn('No se pudo obtener el token de acceso:', error);
+        console.warn('❌ No se pudo obtener el token de acceso:', error);
+        throw new Error('No se pudo obtener el token de autenticación');
       }
+    } else {
+      console.warn('⚠️ Usuario no autenticado, no se enviará token');
+      throw new Error('Debes iniciar sesión para realizar esta acción');
     }
 
     const url = `${import.meta.env.VITE_API_BASE_URL}${path}`;
