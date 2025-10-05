@@ -11,6 +11,7 @@ import healthRoutes from './routes/healthRoutes.js';
 import { publicRoutes as propertyPublicRoutes, privateRoutes as propertyPrivateRoutes } from './routes/propertyRoutes.js';
 import { publicRoutes as messagePublicRoutes, privateRoutes as messagePrivateRoutes } from './routes/messageRoutes.js';
 import { imagePublicRoutes, imagePrivateRoutes } from './routes/imageRoutes.js';
+import htmlParserRoutes from './routes/htmlParserRoutes.js';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api', healthRoutes);
 app.use('/api/v1', propertyPublicRoutes);
 app.use('/api/v1', messagePublicRoutes);
 app.use('/api/v1', imagePublicRoutes);
+app.use('/api/v1/parse', htmlParserRoutes);
 
 // Rutas protegidas (requieren JWT) - usando middleware de debug
 app.use('/api/v1', debugCheckJwt);
