@@ -201,6 +201,61 @@ class ImagenesViviendaRepository {
       throw error;
     }
   }
+
+  /**
+   * Obtiene las imágenes principales de múltiples propiedades en una sola consulta
+   */
+  async getMainImagesForProperties(propertyIds) {
+    try {
+      if (!propertyIds || propertyIds.length === 0) {
+        return [];
+      }
+      
+      const placeholders = propertyIds.map(() => '?').join(',');
+      const result = await executeQuery(`
+        SELECT DISTINCT iv.* 
+        FROM ImagenesVivienda iv
+        INNER JOIN (
+          SELECT ViviendaId, MIN(Orden) as MinOrden
+          FROM ImagenesVivienda 
+          WHERE ViviendaId IN (${placeholders})
+          GROUP BY ViviendaId
+        ) grouped ON iv.ViviendaId = grouped.ViviendaId AND iv.Orden = grouped.MinOrden
+      `, propertyIds);
+      
+      return result.rows.map(this.transformRow);
+    } catch (error) {
+      logger.error('Error en ImagenesViviendaRepository.getMainImagesForProperties:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el conteo de imágenes para múltiples propiedades en una sola consulta
+   */
+  async getImageCountsForProperties(propertyIds) {
+    try {
+      if (!propertyIds || propertyIds.length === 0) {
+        return [];
+      }
+      
+      const placeholders = propertyIds.map(() => '?').join(',');
+      const result = await executeQuery(`
+        SELECT ViviendaId, COUNT(*) as count
+        FROM ImagenesVivienda 
+        WHERE ViviendaId IN (${placeholders})
+        GROUP BY ViviendaId
+      `, propertyIds);
+      
+      return result.rows.map(row => ({
+        viviendaId: row.ViviendaId,
+        count: row.count
+      }));
+    } catch (error) {
+      logger.error('Error en ImagenesViviendaRepository.getImageCountsForProperties:', error);
+      throw error;
+    }
+  }
   
   /**
    * Añade imágenes a una propiedad

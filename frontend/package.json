@@ -15,8 +15,10 @@
     "@fortawesome/free-regular-svg-icons": "^7.0.1",
     "@fortawesome/free-solid-svg-icons": "^7.0.1",
     "@fortawesome/react-fontawesome": "^3.0.2",
+    "quill": "^2.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-quill": "^2.0.0",
     "react-router-dom": "^6.26.2"
   },
   "devDependencies": {

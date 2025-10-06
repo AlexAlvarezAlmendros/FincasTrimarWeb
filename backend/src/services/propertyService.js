@@ -30,13 +30,31 @@ class PropertyService {
         pageSize: filters.pageSize || 20
       });
       
-      // Agregar imagen principal a cada propiedad
-      for (const property of result.data) {
-        const mainImage = await imagenesViviendaRepository.getMainImage(property.id);
-        property.mainImage = mainImage?.url || null;
-        property.imageCount = (await imagenesViviendaRepository.findByViviendaId(property.id)).length;
+      // Optimización: obtener todas las imágenes principales en una sola consulta
+      if (result.data && result.data.length > 0) {
+        const propertyIds = result.data.map(property => property.id);
+        const mainImages = await imagenesViviendaRepository.getMainImagesForProperties(propertyIds);
+        const imageCounts = await imagenesViviendaRepository.getImageCountsForProperties(propertyIds);
+        
+        // Mapear imágenes principales y conteos a cada propiedad
+        const imageMap = {};
+        const countMap = {};
+        
+        mainImages.forEach(img => {
+          imageMap[img.viviendaId] = img.url;
+        });
+        
+        imageCounts.forEach(count => {
+          countMap[count.viviendaId] = count.count;
+        });
+        
+        result.data.forEach(property => {
+          property.mainImage = imageMap[property.id] || null;
+          property.imageCount = countMap[property.id] || 0;
+        });
       }
       
+      logger.info(`Propiedades encontradas: ${result.data?.length || 0}`);
       return result;
     } catch (error) {
       logger.error('Error en PropertyService.searchProperties:', error);
