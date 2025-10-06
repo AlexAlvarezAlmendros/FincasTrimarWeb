@@ -403,7 +403,7 @@ const PropertyCreatePage = () => {
       </div>
 
       {/* Componente temporal de debug para Auth0 */}
-      <Auth0Debug />
+      {/* <Auth0Debug /> */}
 
       {/* Extractor de HTML de Idealista */}
       {!id && (
@@ -828,10 +828,10 @@ const PropertyCreatePage = () => {
       </form>
 
       {/* Debug Info */}
-      <details className="debug-info">
+      {/* <details className="debug-info">
         <summary>Información de Debug</summary>
         <pre>{JSON.stringify(formData, null, 2)}</pre>
-      </details>
+      </details> */}
 
       {/* Popup de carga */}
       <LoadingPopup
