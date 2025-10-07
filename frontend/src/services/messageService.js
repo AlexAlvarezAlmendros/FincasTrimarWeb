@@ -10,6 +10,59 @@ class MessageService {
   }
 
   /**
+   * Enviar un mensaje de contacto desde el formulario público
+   * @param {Object} messageData - Datos del mensaje
+   * @param {string} messageData.nombre - Nombre del contacto
+   * @param {string} messageData.email - Email del contacto
+   * @param {string} messageData.telefono - Teléfono del contacto (opcional)
+   * @param {string} messageData.asunto - Asunto del mensaje
+   * @param {string} messageData.descripcion - Contenido del mensaje
+   * @param {string} messageData.viviendaId - ID de la vivienda (opcional)
+   * @returns {Promise<Object>} Confirmación del envío
+   */
+  async sendMessage(messageData) {
+    try {
+      // Validar datos requeridos
+      if (!messageData.nombre || !messageData.email || !messageData.descripcion) {
+        throw new Error('Nombre, email y mensaje son campos requeridos');
+      }
+
+      const response = await fetch(`${this.apiUrl}${this.baseEndpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nombre: messageData.nombre.trim(),
+          email: messageData.email.trim(),
+          telefono: messageData.telefono?.trim() || null,
+          asunto: messageData.asunto?.trim() || 'Consulta desde web',
+          descripcion: messageData.descripcion.trim(),
+          viviendaId: messageData.viviendaId || null
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al enviar el mensaje');
+      }
+
+      const data = await response.json();
+      
+      return {
+        success: true,
+        data: data.data,
+        message: 'Mensaje enviado correctamente. Nos pondremos en contacto contigo pronto.'
+      };
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw new Error(
+        error.message || 'Error al enviar el mensaje'
+      );
+    }
+  }
+
+  /**
    * Obtener todos los mensajes con filtros opcionales
    * @param {Object} params - Parámetros de filtrado
    * @param {string} params.estado - Estado del mensaje (Nuevo, EnCurso, Cerrado)

@@ -176,9 +176,9 @@
   align-items: center;
 }
 
-.price {
+.price-detalle {
   background: var(--color-primary);
-  color: var(--color-neutral-0);
+  color: white;
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-md);
   font-size: var(--font-size-xl);
@@ -188,14 +188,14 @@
   gap: var(--spacing-xs);
 }
 
-.price::before {
+.price-detalle::after {
   content: '€';
   font-size: var(--font-size-lg);
 }
 
-.specs-grid {
+.specs-grid-detalle {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: 1fr 1fr 1fr;
   gap: var(--spacing-lg);
 }
 
@@ -229,7 +229,7 @@
   align-items: start;
 }
 
-.main-content {
+.main-content-detalle {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);
@@ -339,6 +339,38 @@
   color: var(--color-neutral-700);
   text-align: center;
   font-weight: var(--font-weight-medium);
+}
+
+/* Google Map Component */
+.property-map {
+  width: 100%;
+}
+
+.property-map .map-embed {
+  border: 1px solid var(--color-neutral-200);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.property-map .map-embed:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.property-map .location-info {
+  margin-top: var(--spacing-md);
+}
+
+.property-map .location-text {
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
 }
 
 /* Image Gallery */

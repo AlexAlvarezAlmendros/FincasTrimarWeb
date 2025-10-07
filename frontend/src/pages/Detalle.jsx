@@ -1,131 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useVivienda, useSimilarViviendas } from '../hooks/useViviendas.js';
+import useContactMessage from '../hooks/useContactMessage.js';
+import GoogleMapEmbed from '../components/GoogleMapEmbed/GoogleMapEmbed.jsx';
 import './Detalle.css';
 
 export default function Detalle() {
   const { id } = useParams();
-  const [property, setProperty] = useState(null);
-  const [loading, setLoading] = useState(true);
+  
+  // Hooks para datos reales
+  const { 
+    vivienda: property, 
+    isLoading: loadingProperty, 
+    isError: errorProperty, 
+    error: propertyError 
+  } = useVivienda(id);
+  
+  const { 
+    similarViviendas: similarProperties, 
+    isLoading: loadingSimilar 
+  } = useSimilarViviendas(id, 2);
+
+  // Hook para mensajes de contacto
+  const {
+    contactForm,
+    isSubmitting,
+    submitError,
+    submitSuccess,
+    updateField,
+    sendMessage,
+    updatePropertyMessage
+  } = useContactMessage('', property?.name || '');
+
+  // Estados locales para UI
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
-  const [contactForm, setContactForm] = useState({
-    mensaje: '',
-    nombre: '',
-    email: '',
-    telefono: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mock data para la vivienda
-  const mockProperty = {
-    id: '1',
-    name: 'Piso reformado en edificio histórico en el centro de Igualada 102 m²',
-    shortDescription: 'Precioso piso en una de las mejores zonas de Igualada',
-    description: `Este espectacular piso completamente reformado se encuentra ubicado en el corazón del centro histórico de Igualada, una de las zonas más cotizadas y con mayor proyección de la ciudad.
-
-La vivienda ha sido renovada integralmente manteniendo el encanto original de la arquitectura histórica pero incorporando todas las comodidades modernas. Los acabados son de primera calidad y se ha cuidado cada detalle para crear un ambiente acogedor y funcional.
-
-La ubicación es inmejorable, a escasos metros de la plaza mayor y rodeado de todos los servicios: comercios, restaurantes, transporte público, centros educativos y sanitarios. Perfecto tanto como vivienda habitual como para inversión.
-
-Una oportunidad única para vivir en el centro de Igualada con todas las comodidades de una vivienda moderna en un entorno histórico privilegiado.`,
-    price: 240000,
-    rooms: 3,
-    bathRooms: 2,
-    garage: 0,
-    squaredMeters: 102,
-    provincia: 'Barcelona',
-    poblacion: 'Igualada',
-    calle: 'C/ Major',
-    numero: '12',
-    tipoInmueble: 'Vivienda',
-    tipoVivienda: 'Piso',
-    estado: 'BuenEstado',
-    planta: 'PlantaIntermedia',
-    tipoAnuncio: 'Venta',
-    estadoVenta: 'Disponible',
-    fechaPublicacion: '2024-01-15',
-    caracteristicas: [
-      'Aire acondicionado',
-      'Armarios empotrados',
-      'Ascensor',
-      'Balcón',
-      'Calefacción',
-      'Cocina equipada',
-      'Exterior'
-    ],
-    distribucion: 'La vivienda se distribuye en un amplio salón-comedor con acceso a balcón, cocina office completamente equipada, 3 dormitorios (uno de ellos suite con baño privado), un baño completo adicional y recibidor de entrada.',
-    destacado: 'Ubicación privilegiada en el centro histórico con vistas despejadas y mucha luz natural durante todo el día.',
-    images: [
-      '/api/placeholder/800/600',
-      '/api/placeholder/800/600',
-      '/api/placeholder/800/600',
-      '/api/placeholder/800/600',
-      '/api/placeholder/800/600',
-      '/api/placeholder/800/600'
-    ],
-    planoUrl: '/api/placeholder/800/600'
-  };
-
-  const similarProperties = [
-    {
-      id: '2',
-      name: 'Chalet adosado con jardín',
-      price: 350000,
-      rooms: 4,
-      bathRooms: 3,
-      garage: 2,
-      squaredMeters: 180,
-      poblacion: 'Barcelona',
-      tipoVivienda: 'Chalet',
-      tipoAnuncio: 'Venta',
-      imageUrl: '/api/placeholder/300/200'
-    },
-    {
-      id: '3',
-      name: 'Ático con terraza panorámica',
-      price: 450000,
-      rooms: 3,
-      bathRooms: 2,
-      garage: 1,
-      squaredMeters: 120,
-      poblacion: 'Sitges',
-      tipoVivienda: 'Ático',
-      tipoAnuncio: 'Venta',
-      imageUrl: '/api/placeholder/300/200'
+  // Actualizar mensaje cuando cambia la propiedad
+  React.useEffect(() => {
+    if (property?.name) {
+      updatePropertyMessage(property.name);
     }
-  ];
-
-  useEffect(() => {
-    // Simular carga de datos
-    setLoading(true);
-    setTimeout(() => {
-      setProperty(mockProperty);
-      setLoading(false);
-    }, 500);
-  }, [id]);
+  }, [property?.name, updatePropertyMessage]);
 
   const handleContactFormChange = (field, value) => {
-    setContactForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    updateField(field, value);
   };
 
   const handleContactFormSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    // Simular envío
-    setTimeout(() => {
-      alert('Mensaje enviado correctamente. Nos pondremos en contacto contigo pronto.');
-      setContactForm({
-        mensaje: '',
-        nombre: '',
-        email: '',
-        telefono: ''
-      });
-      setIsSubmitting(false);
-    }, 1000);
+    if (isSubmitting) return;
+    
+    // Enviar mensaje usando el hook
+    await sendMessage(property?.id || id, property?.name || 'Vivienda');
   };
 
   const openLightbox = (index) => {
@@ -138,18 +66,21 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
   };
 
   const nextImage = () => {
+    const totalImages = property?.imagenes?.length || 1;
     setCurrentImageIndex((prev) => 
-      prev === property.images.length - 1 ? 0 : prev + 1
+      prev === totalImages - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
+    const totalImages = property?.imagenes?.length || 1;
     setCurrentImageIndex((prev) => 
-      prev === 0 ? property.images.length - 1 : prev - 1
+      prev === 0 ? totalImages - 1 : prev - 1
     );
   };
 
-  if (loading) {
+  // Estados de carga y error
+  if (loadingProperty) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
@@ -158,11 +89,13 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
     );
   }
 
-  if (!property) {
+  if (errorProperty || !property) {
     return (
       <div className="error-container">
         <h1>Vivienda no encontrada</h1>
-        <p>La vivienda que buscas no existe o ha sido eliminada.</p>
+        <p>
+          {propertyError || 'La vivienda que buscas no existe o ha sido eliminada.'}
+        </p>
         <Link to="/viviendas" className="back-link">Volver al listado</Link>
       </div>
     );
@@ -183,8 +116,17 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
         {/* Hero Gallery */}
         <section className="hero-gallery">
           <div className="main-image" onClick={() => openLightbox(0)}>
-            <img src={property.images[0]} alt={property.name} />
-            <div className="view-all-images">Ver todas las imágenes</div>
+            <img 
+              src={property.imagenes && property.imagenes.length > 0 
+                ? property.imagenes[0].URL 
+                : '/api/placeholder/800/600'} 
+              alt={property.name} 
+            />
+            <div className="view-all-images">
+              {property.imagenes && property.imagenes.length > 1 
+                ? `Ver todas las imágenes (${property.imagenes.length})` 
+                : 'Ver imagen'}
+            </div>
           </div>
         </section>
 
@@ -202,41 +144,35 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
             
             <div className="property-price-specs">
               <div className="price-section">
-                <span className="price" aria-label={`Precio: ${property.price.toLocaleString('es-ES')} euros`}>
-                  {property.price.toLocaleString('es-ES')} €
+                <span className="price-detalle" aria-label={`Precio: ${property.price.toLocaleString('es-ES')} euros`}>
+                  {property.price.toLocaleString('es-ES')}
                 </span>
               </div>
               
-              <div className="specs-grid">
+              <div className="specs-grid-detalle">
                 {property.rooms > 0 && (
                   <div className="spec">
                     <span className="spec-value">{property.rooms}</span>
                     <span className="spec-label">Habitaciones</span>
                   </div>
                 )}
-                {property.garage > 0 && (
-                  <div className="spec">
-                    <span className="spec-value">{property.garage}</span>
-                    <span className="spec-label">Garajes</span>
-                  </div>
-                )}
-                <div className="spec">
-                  <span className="spec-value">{property.squaredMeters}</span>
-                  <span className="spec-label">M²</span>
-                </div>
                 {property.bathRooms > 0 && (
                   <div className="spec">
                     <span className="spec-value">{property.bathRooms}</span>
                     <span className="spec-label">Baños</span>
                   </div>
                 )}
+                <div className="spec">
+                  <span className="spec-value">{property.squaredMeters}</span>
+                  <span className="spec-label">M²</span>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         <div className="content-grid">
-          <main className="main-content">
+          <main className="main-content-detalle">
             {/* Description */}
             <section className="description-section">
               <h2>Descripción</h2>
@@ -248,51 +184,69 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
             </section>
 
             {/* Características */}
-            <section className="features-section">
-              <h3>Características principales</h3>
-              <ul className="features-list">
-                {property.caracteristicas.map((feature, index) => (
-                  <li key={index}>{feature}</li>
-                ))}
-              </ul>
-            </section>
+            {property.caracteristicas && property.caracteristicas.length > 0 && (
+              <section className="features-section">
+                <h3>Características principales</h3>
+                <ul className="features-list">
+                  {property.caracteristicas.map((feature, index) => (
+                    <li key={index}>
+                      {typeof feature === 'object' ? feature.name || feature.caracteristica : feature}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-            {/* Distribución */}
-            <section className="distribution-section">
-              <h3>Distribución</h3>
-              <p>{property.distribucion}</p>
-            </section>
+            {/* Distribución - Solo mostrar si existe */}
+            {property.distribucion && (
+              <section className="distribution-section">
+                <h3>Distribución</h3>
+                <p>{property.distribucion}</p>
+              </section>
+            )}
 
-            {/* Destacado */}
-            <section className="highlight-section">
-              <h3>Extra destacado</h3>
-              <p className="highlight-text">{property.destacado}</p>
-            </section>
+            {/* Destacado - Solo mostrar si existe */}
+            {property.destacado && (
+              <section className="highlight-section">
+                <h3>Extra destacado</h3>
+                <p className="highlight-text">{property.destacado}</p>
+              </section>
+            )}
 
             {/* Ubicación */}
             <section className="location-section">
               <h3>Ubicación</h3>
               <div className="location-map">
-                <img src="/api/placeholder/600/300" alt="Mapa de ubicación" />
-                <p className="location-text">
-                  {property.calle} {property.numero}, {property.poblacion}, {property.provincia}
-                </p>
+                <GoogleMapEmbed
+                  calle={property.calle}
+                  numero={property.numero}
+                  poblacion={property.poblacion}
+                  provincia={property.provincia}
+                  height="400px"
+                  className="property-map"
+                />
               </div>
             </section>
 
-            {/* Gallery */}
-            <section className="gallery-section">
-              <h3>Imágenes</h3>
-              <div className="image-grid">
-                {property.images.map((image, index) => (
-                  <div key={index} className="gallery-item" onClick={() => openLightbox(index)}>
-                    <img src={image} alt={`${property.name} - Imagen ${index + 1}`} loading="lazy" />
-                  </div>
-                ))}
-              </div>
-            </section>
+            {/* Gallery - Solo mostrar si hay imágenes */}
+            {property.imagenes && property.imagenes.length > 0 && (
+              <section className="gallery-section">
+                <h3>Imágenes</h3>
+                <div className="image-grid">
+                  {property.imagenes.map((imagen, index) => (
+                    <div key={imagen.Id || index} className="gallery-item" onClick={() => openLightbox(index)}>
+                      <img 
+                        src={imagen.URL} 
+                        alt={`${property.name} - Imagen ${index + 1}`} 
+                        loading="lazy" 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-            {/* Plano */}
+            {/* Plano - Solo mostrar si existe */}
             {property.planoUrl && (
               <section className="floorplan-section">
                 <h3>Plano de la vivienda</h3>
@@ -310,6 +264,34 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
             {/* Contact Form */}
             <div className="contact-form-container">
               <h3>Agenda una visita</h3>
+              
+              {/* Mensajes de estado */}
+              {submitSuccess && (
+                <div className="success-message" style={{
+                  background: '#d4edda',
+                  color: '#155724',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  border: '1px solid #c3e6cb'
+                }}>
+                  Mensaje enviado correctamente. Nos pondremos en contacto contigo pronto.
+                </div>
+              )}
+              
+              {submitError && (
+                <div className="error-message" style={{
+                  background: '#f8d7da',
+                  color: '#721c24',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  border: '1px solid #f5c6cb'
+                }}>
+                  {submitError}
+                </div>
+              )}
+              
               <form onSubmit={handleContactFormSubmit} className="contact-form">
                 <div className="form-group">
                   <textarea
@@ -318,26 +300,29 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
                     onChange={(e) => handleContactFormChange('mensaje', e.target.value)}
                     rows="3"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 
                 <div className="form-group">
                   <input
                     type="text"
-                    placeholder="Tu nombre"
+                    placeholder="Tu nombre *"
                     value={contactForm.nombre}
                     onChange={(e) => handleContactFormChange('nombre', e.target.value)}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 
                 <div className="form-group">
                   <input
                     type="email"
-                    placeholder="Tu Email"
+                    placeholder="Tu Email *"
                     value={contactForm.email}
                     onChange={(e) => handleContactFormChange('email', e.target.value)}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 
@@ -347,6 +332,7 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
                     placeholder="Tu Teléfono"
                     value={contactForm.telefono}
                     onChange={(e) => handleContactFormChange('telefono', e.target.value)}
+                    disabled={isSubmitting}
                   />
                 </div>
                 
@@ -354,6 +340,7 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
                   type="submit" 
                   className="submit-button"
                   disabled={isSubmitting}
+                  style={isSubmitting ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
                 >
                   {isSubmitting ? 'Enviando...' : 'AGENDAR VISITA'}
                 </button>
@@ -363,49 +350,75 @@ Una oportunidad única para vivir en el centro de Igualada con todas las comodid
         </div>
 
         {/* Similar Properties */}
-        <section className="similar-properties">
-          <div className="section-header">
-            <h3>Inmuebles similares</h3>
-            <Link to="/viviendas" className="view-more-link">VER MÁS</Link>
-          </div>
-          
-          <div className="similar-grid">
-            {similarProperties.map((similar) => (
-              <article key={similar.id} className="similar-card">
-                <Link to={`/viviendas/${similar.id}`}>
-                  <div className="similar-image">
-                    <img src={similar.imageUrl} alt={similar.name} loading="lazy" />
-                  </div>
-                  
-                  <div className="similar-info">
-                    <h4 className="similar-title">{similar.name}</h4>
-                    <div className="similar-specs">
-                      {similar.rooms > 0 && <span>{similar.rooms} hab</span>}
-                      <span>{similar.squaredMeters} m²</span>
-                      {similar.bathRooms > 0 && <span>{similar.bathRooms} baños</span>}
-                      {similar.garage > 0 && <span>{similar.garage} garajes</span>}
+        {!loadingSimilar && similarProperties && similarProperties.length > 0 && (
+          <section className="similar-properties">
+            <div className="section-header">
+              <h3>Inmuebles similares</h3>
+              <Link to="/viviendas" className="view-more-link">VER MÁS</Link>
+            </div>
+            
+            <div className="similar-grid">
+              {similarProperties.map((similar) => (
+                <article key={similar.id} className="similar-card">
+                  <Link to={`/viviendas/${similar.id}`}>
+                    <div className="similar-image">
+                      <img 
+                        src={similar.imagenes && similar.imagenes.length > 0 
+                          ? similar.imagenes[0].URL 
+                          : '/api/placeholder/300/200'} 
+                        alt={similar.name} 
+                        loading="lazy" 
+                      />
                     </div>
-                    <div className="similar-price">
-                      {similar.price.toLocaleString('es-ES')} €
+                    
+                    <div className="similar-info">
+                      <h4 className="similar-title">{similar.name}</h4>
+                      <div className="similar-specs">
+                        {similar.rooms > 0 && <span>{similar.rooms} hab</span>}
+                        <span>{similar.squaredMeters} m²</span>
+                        {similar.bathRooms > 0 && <span>{similar.bathRooms} baños</span>}
+                        {similar.garage > 0 && <span>{similar.garage} garajes</span>}
+                      </div>
+                      <div className="similar-price">
+                        {similar.price.toLocaleString('es-ES')} €
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              </article>
-            ))}
-          </div>
-        </section>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+        
+        {loadingSimilar && (
+          <section className="similar-properties">
+            <div className="section-header">
+              <h3>Inmuebles similares</h3>
+            </div>
+            <div className="loading-similar">
+              <p>Cargando propiedades similares...</p>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Lightbox */}
-      {showLightbox && (
+      {showLightbox && property?.imagenes && property.imagenes.length > 0 && (
         <div className="lightbox" onClick={closeLightbox}>
           <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
             <button className="lightbox-close" onClick={closeLightbox}>×</button>
-            <button className="lightbox-prev" onClick={prevImage}>‹</button>
-            <img src={property.images[currentImageIndex]} alt={`${property.name} - Imagen ${currentImageIndex + 1}`} />
-            <button className="lightbox-next" onClick={nextImage}>›</button>
+            {property.imagenes.length > 1 && (
+              <>
+                <button className="lightbox-prev" onClick={prevImage}>‹</button>
+                <button className="lightbox-next" onClick={nextImage}>›</button>
+              </>
+            )}
+            <img 
+              src={property.imagenes[currentImageIndex]?.URL || '/api/placeholder/800/600'} 
+              alt={`${property.name} - Imagen ${currentImageIndex + 1}`} 
+            />
             <div className="lightbox-counter">
-              {currentImageIndex + 1} / {property.images.length}
+              {currentImageIndex + 1} / {property.imagenes.length}
             </div>
           </div>
         </div>

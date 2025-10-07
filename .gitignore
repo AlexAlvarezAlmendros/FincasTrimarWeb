@@ -168,3 +168,8 @@ backend/test-parser-realistic.js
 backend/test-parser.js
 backend/test-images-query.js
 backend/test-db-quick.js
+frontend/src/services/messageService.js
+DETALLE_REFACTOR_SUMMARY.md
+GOOGLE_MAPS_SETUP.md
+backend/test-endpoint.js
+backend/check-images.js
