@@ -93,7 +93,8 @@ class ViviendaRepository {
       
       // Query para contar total de resultados
       const countSql = `SELECT COUNT(*) as total FROM Vivienda ${whereClause}`;
-      const countResult = await executeQuery(countSql, params.slice(0, -2)); // Remover LIMIT y OFFSET
+      const countParams = params.slice(0, -2); // Remover LIMIT y OFFSET
+      const countResult = await executeQuery(countSql, countParams);
       const total = countResult.rows[0].total;
       
       return {

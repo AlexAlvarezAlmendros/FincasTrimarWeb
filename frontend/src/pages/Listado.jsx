@@ -251,7 +251,7 @@ export default function Listado() {
         <div className="container">
           <div className="filter-card">
             <div className="main-filters">
-              <div className="filter-group">
+              <div className="filter-group-viviendas">
                 <div className="filter-field">
                   <LocationAutocomplete
                     value={localFilters.location}

@@ -41,15 +41,6 @@ const AdminDashboard = () => {
           <Link to="/admin/viviendas/crear" className="btn btn--primary">
             <span>➕</span> Nueva vivienda
           </Link>
-          <Link to="/admin/test-create" className="btn btn--secondary" style={{marginLeft: '10px'}}>
-            <span>🧪</span> Test crear
-          </Link>
-          <Link to="/admin/test-images" className="btn btn--secondary" style={{marginLeft: '10px'}}>
-            <span>🖼️</span> Test imágenes
-          </Link>
-          <Link to="/admin/test-api" className="btn btn--secondary" style={{marginLeft: '10px'}}>
-            <span>🔗</span> Test API
-          </Link>
         </div>
       </div>
 

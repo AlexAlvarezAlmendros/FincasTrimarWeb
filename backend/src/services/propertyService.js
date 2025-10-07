@@ -30,28 +30,38 @@ class PropertyService {
         pageSize: filters.pageSize || 20
       });
       
-      // Optimización: obtener todas las imágenes principales en una sola consulta
+      // Obtener imágenes principales y conteos con consultas optimizadas
       if (result.data && result.data.length > 0) {
         const propertyIds = result.data.map(property => property.id);
-        const mainImages = await imagenesViviendaRepository.getMainImagesForProperties(propertyIds);
-        const imageCounts = await imagenesViviendaRepository.getImageCountsForProperties(propertyIds);
         
-        // Mapear imágenes principales y conteos a cada propiedad
-        const imageMap = {};
-        const countMap = {};
-        
-        mainImages.forEach(img => {
-          imageMap[img.viviendaId] = img.url;
-        });
-        
-        imageCounts.forEach(count => {
-          countMap[count.viviendaId] = count.count;
-        });
-        
-        result.data.forEach(property => {
-          property.mainImage = imageMap[property.id] || null;
-          property.imageCount = countMap[property.id] || 0;
-        });
+        try {
+          const mainImages = await imagenesViviendaRepository.getMainImagesForProperties(propertyIds);
+          const imageCounts = await imagenesViviendaRepository.getImageCountsForProperties(propertyIds);
+          
+          // Mapear imágenes principales y conteos a cada propiedad
+          const imageMap = {};
+          const countMap = {};
+          
+          mainImages.forEach(img => {
+            imageMap[img.viviendaId] = img.url;
+          });
+          
+          imageCounts.forEach(count => {
+            countMap[count.viviendaId] = count.count;
+          });
+          
+          result.data.forEach(property => {
+            property.mainImage = imageMap[property.id] || null;
+            property.imageCount = countMap[property.id] || 0;
+          });
+        } catch (imageError) {
+          logger.error('Error loading images, continuing without them:', imageError);
+          // Si falla la carga de imágenes, continuamos sin ellas
+          result.data.forEach(property => {
+            property.mainImage = null;
+            property.imageCount = 0;
+          });
+        }
       }
       
       logger.info(`Propiedades encontradas: ${result.data?.length || 0}`);

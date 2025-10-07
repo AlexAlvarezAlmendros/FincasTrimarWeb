@@ -127,7 +127,8 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
   /**
    * Función principal para obtener viviendas
    */
-  const fetchViviendas = useCallback(async (searchFilters = filters, useSearch = false) => {
+  const fetchViviendas = useCallback(async (searchFilters, useSearch = false) => {
+    const filtersToUse = searchFilters || filters;
     // Cancelar petición anterior si existe
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -142,7 +143,7 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
 
       // Verificar cache si está habilitado
       const method = useSearch ? 'searchProperties' : 'getProperties';
-      const cacheKey = propertyCache.generateKey(searchFilters, method);
+      const cacheKey = propertyCache.generateKey(filtersToUse, method);
       
       if (enableCache) {
         const cachedData = propertyCache.get(cacheKey);
@@ -163,9 +164,9 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
       // Realizar petición al API
       let response;
       if (useSearch) {
-        response = await propertyService.searchProperties(searchFilters);
+        response = await propertyService.searchProperties(filtersToUse);
       } else {
-        response = await propertyService.getProperties(searchFilters);
+        response = await propertyService.getProperties(filtersToUse);
       }
 
       // Verificar si el componente sigue montado
@@ -207,7 +208,7 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
     } finally {
       abortControllerRef.current = null;
     }
-  }, [filters, enableCache, onSuccess, onError, safeSetState, safeSetViviendas, safeSetPagination, safeSetError]);
+  }, [enableCache, onSuccess, onError, safeSetState, safeSetViviendas, safeSetPagination, safeSetError]);
 
   /**
    * Función con debounce para búsquedas en tiempo real
@@ -289,7 +290,7 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
    */
   useEffect(() => {
     if (autoFetch && state === HookStates.IDLE) {
-      fetchViviendas(filters);
+      fetchViviendas();
     }
   }, []); // Solo en mount inicial
 
