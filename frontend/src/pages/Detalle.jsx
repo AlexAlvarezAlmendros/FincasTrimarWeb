@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useVivienda, useSimilarViviendas } from '../hooks/useViviendas.js';
 import useContactMessage from '../hooks/useContactMessage.js';
 import GoogleMapEmbed from '../components/GoogleMapEmbed/GoogleMapEmbed.jsx';
+import SafeHtmlRenderer from '../components/SafeHtmlRenderer/SafeHtmlRenderer.jsx';
 import './Detalle.css';
 
 export default function Detalle() {
@@ -176,11 +177,10 @@ export default function Detalle() {
             {/* Description */}
             <section className="description-section">
               <h2>Descripción</h2>
-              <div className="description-content">
-                {property.description.split('\n\n').map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
-              </div>
+              <SafeHtmlRenderer 
+                content={property.description}
+                className="description-content html-content"
+              />
             </section>
 
             {/* Características */}
@@ -201,7 +201,11 @@ export default function Detalle() {
             {property.distribucion && (
               <section className="distribution-section">
                 <h3>Distribución</h3>
-                <p>{property.distribucion}</p>
+                <SafeHtmlRenderer 
+                  content={property.distribucion}
+                  className="html-content"
+                  tag="div"
+                />
               </section>
             )}
 
@@ -209,7 +213,11 @@ export default function Detalle() {
             {property.destacado && (
               <section className="highlight-section">
                 <h3>Extra destacado</h3>
-                <p className="highlight-text">{property.destacado}</p>
+                <SafeHtmlRenderer 
+                  content={property.destacado}
+                  className="highlight-text html-content"
+                  tag="div"
+                />
               </section>
             )}
 
