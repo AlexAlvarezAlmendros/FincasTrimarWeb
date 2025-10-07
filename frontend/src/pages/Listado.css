@@ -30,7 +30,7 @@
   gap: var(--spacing-lg);
 }
 
-.filter-group {
+.filter-group-viviendas {
   display: flex;
   gap: var(--spacing-md);
   flex: 1;
@@ -432,7 +432,7 @@
     align-items: stretch;
   }
 
-  .filter-group {
+  .filter-group-viviendas {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
