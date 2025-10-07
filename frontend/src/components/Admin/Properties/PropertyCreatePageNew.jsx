@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCreateViviendaSimple } from '../../../hooks/useCreateViviendaSimple.js';
 import { useImageManager } from '../../../hooks/useImageManager.js';
@@ -171,6 +171,9 @@ const PropertyCreatePage = () => {
   // Estado para el popup de carga
   const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
   
+  // Estado para evitar múltiples cargas
+  const [hasLoadedData, setHasLoadedData] = useState(false);
+  
   // Función helper para obtener texto plano del HTML
   const getPlainTextFromHtml = (html) => {
     if (!html) return '';
@@ -180,7 +183,10 @@ const PropertyCreatePage = () => {
     return tempDiv.textContent || tempDiv.innerText || '';
   };
   
-  // Hook para crear vivienda
+  // Determinar si estamos en modo edición
+  const isEditing = Boolean(id);
+  
+  // Hook para crear/editar vivienda
   const {
     formData,
     updateField,
@@ -188,16 +194,18 @@ const PropertyCreatePage = () => {
     isCreating,
     error,
     success,
-    resetForm
+    resetForm,
+    loadProperty
   } = useCreateViviendaSimple({
     onSuccess: async (data) => {
-      console.log('Vivienda creada exitosamente:', data);
+      console.log(`Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente:`, data);
       
-      // Si hay imágenes pendientes, subirlas después de crear la vivienda
-      if (data?.id && pendingFiles.length > 0) {
+      // Si hay imágenes pendientes, subirlas después de crear/actualizar la vivienda
+      const propertyId = data?.id || id;
+      if (propertyId && pendingFiles.length > 0) {
         try {
           setLoadingMessage('Subiendo imágenes...');
-          await uploadPendingFiles(data.id);
+          await uploadPendingFiles(propertyId);
           console.log('Imágenes subidas exitosamente');
         } catch (imgError) {
           console.error('Error subiendo imágenes:', imgError);
@@ -221,6 +229,23 @@ const PropertyCreatePage = () => {
       console.error('Error con imágenes:', err);
     }
   });
+
+  // Resetear estado cuando cambie el ID
+  useEffect(() => {
+    setHasLoadedData(false);
+  }, [id]);
+
+  // Cargar datos si estamos en modo edición
+  useEffect(() => {
+    if (isEditing && id && !hasLoadedData) {
+      console.log('Cargando datos para edición, ID:', id);
+      setHasLoadedData(true);
+      loadProperty(id).catch(err => {
+        console.error('Error cargando propiedad para edición:', err);
+        setHasLoadedData(false); // Resetear en caso de error para permitir reintento
+      });
+    }
+  }, [isEditing, id, hasLoadedData]);
 
   // Extraer funciones necesarias del imageManager
   const {
@@ -246,37 +271,55 @@ const PropertyCreatePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setLoadingMessage('Subiendo vivienda...');
-      await createVivienda();
+      setLoadingMessage(isEditing ? 'Actualizando vivienda...' : 'Creando vivienda...');
+      await createVivienda(formData, isEditing ? id : null);
     } catch (error) {
       // Error ya manejado por el hook
     }
   };
 
-  const handleReset = () => {
-    if (window.confirm('¿Estás seguro de que quieres resetear el formulario?')) {
-      resetForm();
-      clearAllImages();
-      setHtmlExtractorReset(prev => prev + 1);
+  const handleReset = async () => {
+    if (isEditing) {
+      // En modo edición, recargar los datos originales
+      if (window.confirm('¿Estás seguro de que quieres descartar los cambios y recargar los datos originales?')) {
+        try {
+          await loadProperty(id);
+          // También recargar imágenes si es necesario
+        } catch (error) {
+          console.error('Error recargando datos:', error);
+        }
+      }
+    } else {
+      // En modo creación, limpiar todo
+      if (window.confirm('¿Estás seguro de que quieres resetear el formulario?')) {
+        resetForm();
+        clearAllImages();
+        setHtmlExtractorReset(prev => prev + 1);
+      }
     }
   };
 
-  // Función para manejar el cierre del popup de éxito y resetear para crear otra vivienda
+  // Función para manejar el cierre del popup de éxito
   const handleSuccessPopupClose = () => {
     setShowSuccessPopup(false);
     setSuccessData(null);
     
-    // Resetear el formulario para crear otra vivienda
-    resetForm();
-    
-    // Limpiar todas las imágenes (pendientes y guardadas)
-    clearAllImages();
-    
-    // Resetear el componente HtmlExtractor
-    setHtmlExtractorReset(prev => prev + 1);
-    
-    // Scroll hacia arriba para mejor UX
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (isEditing) {
+      // En modo edición, volver al listado
+      navigate('/admin/viviendas');
+    } else {
+      // En modo creación, resetear para crear otra vivienda
+      resetForm();
+      
+      // Limpiar todas las imágenes (pendientes y guardadas)
+      clearAllImages();
+      
+      // Resetear el componente HtmlExtractor
+      setHtmlExtractorReset(prev => prev + 1);
+      
+      // Scroll hacia arriba para mejor UX
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // Función para manejar los datos extraídos del HTML de Idealista
@@ -851,8 +894,8 @@ const PropertyCreatePage = () => {
       <SuccessPopup
         isVisible={showSuccessPopup}
         onClose={handleSuccessPopupClose}
-        title="¡Vivienda creada exitosamente!"
-        message={`La vivienda "${successData?.name || 'Nueva vivienda'}" ha sido guardada correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`}
+        title={`¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`}
+        message={`La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'guardada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`}
         autoClose={true}
         autoCloseDelay={4000}
       />

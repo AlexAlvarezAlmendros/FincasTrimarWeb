@@ -2,13 +2,19 @@
  * Hook simplificado para crear viviendas - versión de debugging
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ViviendaFormModel } from '../types/viviendaForm.types.js';
 import { useApi } from './useApi.js';
 
 export const useCreateViviendaSimple = (options = {}) => {
   const api = useApi();
+  const apiRef = useRef(api);
   const { onSuccess, onError } = options;
+  
+  // Actualizar la referencia cuando cambie api
+  useEffect(() => {
+    apiRef.current = api;
+  }, [api]);
 
   // Estados básicos
   const [formData, setFormData] = useState(() => ViviendaFormModel.create());
@@ -31,14 +37,71 @@ export const useCreateViviendaSimple = (options = {}) => {
   }, [error, success]);
 
   /**
-   * Crear vivienda
+   * Cargar datos de una propiedad para edición
    */
-  const createVivienda = useCallback(async (data = formData) => {
+  const loadProperty = useCallback(async (propertyId) => {
+    try {
+      setIsCreating(true);
+      setError(null);
+
+      console.log('Cargando propiedad con ID:', propertyId);
+      
+      const response = await apiRef.current(`/api/v1/viviendas/${propertyId}`);
+      console.log('Respuesta del backend:', response);
+
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error cargando la propiedad');
+      }
+
+      const property = response.data;
+      
+      // Mapear datos de la propiedad al formato del formulario
+      const formattedData = {
+        name: property.name || '',
+        shortDescription: property.shortDescription || '',
+        description: property.description || '',
+        price: property.price?.toString() || '',
+        rooms: property.rooms?.toString() || '',
+        bathRooms: property.bathRooms?.toString() || '',
+        garage: property.garage?.toString() || '',
+        squaredMeters: property.squaredMeters?.toString() || '',
+        provincia: property.provincia || '',
+        poblacion: property.poblacion || '',
+        calle: property.calle || '',
+        numero: property.numero || '',
+        tipoInmueble: property.tipoInmueble || 'Vivienda',
+        tipoVivienda: property.tipoVivienda || 'Piso',
+        estado: property.estado || 'BuenEstado',
+        planta: property.planta || 'PlantaIntermedia',
+        tipoAnuncio: property.tipoAnuncio || 'Venta',
+        estadoVenta: property.estadoVenta || 'Disponible',
+        caracteristicas: Array.isArray(property.caracteristicas) ? property.caracteristicas : [],
+        published: Boolean(property.published)
+      };
+
+      console.log('Datos mapeados para el formulario:', formattedData);
+      setFormData(formattedData);
+
+      return property;
+    } catch (err) {
+      console.error('Error cargando propiedad:', err);
+      setError(err.message || 'Error cargando la propiedad');
+      throw err;
+    } finally {
+      setIsCreating(false);
+    }
+  }, []); // Remover api de las dependencias para evitar recreaciones
+
+  /**
+   * Crear o actualizar vivienda
+   */
+  const createVivienda = useCallback(async (data = formData, propertyId = null) => {
     try {
       setIsCreating(true);
       setError(null);
 
       console.log('Datos a enviar:', data);
+      console.log('ID de propiedad (para edición):', propertyId);
 
       // Validación básica
       if (!data.name || data.name.trim().length < 5) {
@@ -53,15 +116,20 @@ export const useCreateViviendaSimple = (options = {}) => {
       const backendData = ViviendaFormModel.toVivienda(data);
       console.log('Datos preparados para backend:', backendData);
 
+      // Determinar si es creación o actualización
+      const isUpdate = Boolean(propertyId);
+      const url = isUpdate ? `/api/v1/viviendas/${propertyId}` : '/api/v1/viviendas';
+      const method = isUpdate ? 'PUT' : 'POST';
+
       // Enviar al backend usando useApi (con autenticación)
-      const response = await api('/api/v1/viviendas', {
-        method: 'POST',
+      const response = await apiRef.current(url, {
+        method,
         body: JSON.stringify(backendData)
       });
       console.log('Respuesta del backend:', response);
 
       if (!response.success) {
-        throw new Error(response.error?.message || 'Error creando vivienda');
+        throw new Error(response.error?.message || `Error ${isUpdate ? 'actualizando' : 'creando'} vivienda`);
       }
 
       setSuccess(true);
@@ -111,6 +179,7 @@ export const useCreateViviendaSimple = (options = {}) => {
     // Acciones
     updateField,
     createVivienda,
+    loadProperty,
     resetForm,
 
     // Utilidades

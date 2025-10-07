@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { usePropertiesApi, useImagesApi } from '../../hooks/admin/useAdminApi';
+import { usePropertiesApi, useImagesApi } from '../../../hooks/admin/useAdminApi.js';
 import LocationAutocomplete from '../../LocationAutocomplete/LocationAutocomplete';
 import CustomSelect from '../../CustomSelect/CustomSelect';
 import CharacteristicsSelector from '../../CharacteristicsSelector';
@@ -82,8 +82,11 @@ const getInitialFormData = () => ({
 });
 
 // Componente para subir imágenes
-const ImageUploader = ({ images, onImagesChange, isLoading }) => {
+const ImageUploader = ({ images = [], onImagesChange, isLoading }) => {
   const [dragActive, setDragActive] = useState(false);
+  
+  // Asegurar que images siempre sea un array válido
+  const safeImages = Array.isArray(images) ? images.filter(img => img != null) : [];
   
   const handleDrag = (e) => {
     e.preventDefault();
@@ -105,7 +108,7 @@ const ImageUploader = ({ images, onImagesChange, isLoading }) => {
     );
     
     if (files.length > 0) {
-      onImagesChange([...images, ...files]);
+      onImagesChange([...safeImages, ...files]);
     }
   };
 
@@ -115,20 +118,36 @@ const ImageUploader = ({ images, onImagesChange, isLoading }) => {
     );
     
     if (files.length > 0) {
-      onImagesChange([...images, ...files]);
+      onImagesChange([...safeImages, ...files]);
     }
   };
 
   const removeImage = (index) => {
-    const newImages = images.filter((_, i) => i !== index);
+    console.log('Eliminando imagen en índice:', index, 'de:', safeImages);
+    const newImages = safeImages.filter((_, i) => i !== index);
+    console.log('Nuevas imágenes:', newImages);
     onImagesChange(newImages);
   };
 
   const getImagePreview = (file) => {
+    // Si es una string, es una URL existente
     if (typeof file === 'string') {
-      return file; // URL existente
+      return file;
     }
-    return URL.createObjectURL(file); // Archivo nuevo
+    
+    // Si es un objeto con propiedad url (formato de base de datos)
+    if (file && typeof file === 'object' && file.url) {
+      return file.url;
+    }
+    
+    // Si es un File object, crear object URL
+    if (file instanceof File || file instanceof Blob) {
+      return URL.createObjectURL(file);
+    }
+    
+    // Fallback - retornar URL de placeholder si no se puede determinar el tipo
+    console.warn('Tipo de imagen no reconocido:', file);
+    return '/img/placeholder-image.jpg';
   };
 
   return (
@@ -157,16 +176,17 @@ const ImageUploader = ({ images, onImagesChange, isLoading }) => {
         </label>
       </div>
       
-      {images.length > 0 && (
+      {safeImages.length > 0 && (
         <div className="images-preview">
-          <h5>Imágenes ({images.length})</h5>
+          <h5>Imágenes ({safeImages.length})</h5>
           <div className="images-grid">
-            {images.map((image, index) => (
-              <div key={index} className="image-preview">
+            {safeImages.map((image, index) => (
+              <div key={`image-${index}-${typeof image === 'string' ? image.substring(image.lastIndexOf('/') + 1) : 'file'}`} className="image-preview">
                 <img 
                   src={getImagePreview(image)} 
                   alt={`Preview ${index + 1}`}
                   onError={(e) => {
+                    console.warn('Error cargando imagen:', image);
                     e.target.src = '/img/placeholder-image.jpg';
                   }}
                 />
@@ -215,15 +235,20 @@ const PropertyForm = () => {
 
   // Cargar datos si estamos editando
   useEffect(() => {
+    console.log('useEffect ejecutado - isEditing:', isEditing, 'id:', id);
     if (isEditing && id) {
+      console.log('Intentando cargar datos de la propiedad...');
       loadPropertyData();
     }
   }, [isEditing, id]);
 
   const loadPropertyData = async () => {
     try {
+      console.log('Cargando datos de la propiedad con ID:', id);
       const response = await getProperty(id);
+      console.log('Respuesta del backend:', response);
       const property = response.data;
+      console.log('Datos de la propiedad:', property);
       
       setFormData({
         name: property.name || '',
@@ -248,10 +273,26 @@ const PropertyForm = () => {
         published: Boolean(property.published)
       });
       
-      // Cargar imágenes existentes
-      if (property.images && property.images.length > 0) {
-        setImages(property.images);
+      // Cargar imágenes existentes - normalizar formato
+      let imagesToLoad = [];
+      
+      if (property.imagenes && property.imagenes.length > 0) {
+        // Formato desde base de datos: array de objetos con url
+        imagesToLoad = property.imagenes.map(img => {
+          if (typeof img === 'string') {
+            return img; // Ya es una URL
+          }
+          return img.url || img.URL || img; // Diferentes posibles formatos
+        });
+      } else if (property.images && property.images.length > 0) {
+        // Formato alternativo: array directo de URLs
+        imagesToLoad = property.images;
       }
+      
+      // Filtrar valores válidos
+      const validImages = imagesToLoad.filter(img => img && typeof img === 'string');
+      console.log('Imágenes cargadas:', validImages);
+      setImages(validImages);
     } catch (error) {
       console.error('Error loading property:', error);
     }

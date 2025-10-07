@@ -192,7 +192,6 @@ const PropertiesTable = ({
               <td className="col-name">
                 <div className="property-info">
                   <h4 className="property-title">{property.name}</h4>
-                  <p className="property-description">{property.shortDescription}</p>
                   <div className="property-meta">
                     <span className="property-type">{property.tipoVivienda}</span>
                     <span className="property-date">
