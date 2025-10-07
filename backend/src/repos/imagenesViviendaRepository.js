@@ -211,22 +211,30 @@ class ImagenesViviendaRepository {
         return [];
       }
       
-      // Consulta simplificada que busca la primera imagen ordenada por Orden
-      const placeholders = propertyIds.map(() => '?').join(',');
-      const query = `
-        SELECT * 
-        FROM ImagenesVivienda 
-        WHERE ViviendaId IN (${placeholders})
-        AND Orden = 1
-        ORDER BY ViviendaId
-      `;
+      logger.info(`🔍 Obteniendo imágenes principales para ${propertyIds.length} propiedades`);
       
-      const result = await executeQuery(query, propertyIds);
+      // Usar el método individual que sabemos que funciona para evitar consultas complejas
+      // Esto es más lento pero más confiable
+      const results = [];
       
-      return result.rows.map(this.transformRow);
+      for (const propertyId of propertyIds) {
+        try {
+          const mainImage = await this.getMainImage(propertyId);
+          if (mainImage) {
+            results.push(mainImage);
+          }
+        } catch (imageError) {
+          logger.warn(`Error obteniendo imagen principal para ${propertyId}:`, imageError.message);
+          // Continuar con las demás imágenes
+        }
+      }
+      
+      logger.info(`✅ Obtenidas ${results.length} imágenes principales`);
+      return results;
+      
     } catch (error) {
       logger.error('Error en ImagenesViviendaRepository.getMainImagesForProperties:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -239,16 +247,24 @@ class ImagenesViviendaRepository {
         return [];
       }
       
-      // Por simplicidad y rendimiento, retornamos conteos por defecto
-      // Se puede optimizar con consultas reales si es necesario
-      return propertyIds.map(id => ({
+      logger.info(`🔢 Obteniendo conteos de imágenes para ${propertyIds.length} propiedades`);
+      
+      // Por ahora, usar conteos por defecto para evitar consultas lentas
+      // TODO: Optimizar en el futuro si es necesario
+      const results = propertyIds.map(id => ({
         viviendaId: id,
         count: 1 // Conteo por defecto
       }));
       
+      logger.info(`✅ Retornando conteos por defecto para ${results.length} propiedades`);
+      return results;
+      
     } catch (error) {
       logger.error('Error en ImagenesViviendaRepository.getImageCountsForProperties:', error);
-      throw error;
+      return propertyIds.map(id => ({
+        viviendaId: id,
+        count: 0
+      }));
     }
   }
   

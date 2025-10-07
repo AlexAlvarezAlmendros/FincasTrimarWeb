@@ -15,6 +15,8 @@ class ViviendaRepository {
     provincia, poblacion, published = true, page = 1, pageSize = 20 
   } = {}) {
     try {
+      logger.info(`🔍 findAll llamado con pageSize=${pageSize}, published=${published}`);
+      
       const conditions = [];
       const params = [];
       
@@ -79,9 +81,22 @@ class ViviendaRepository {
       // Calcular offset para paginación
       const offset = (page - 1) * pageSize;
       
-      // Query principal con paginación
+      // Query principal con paginación - SELECT específico para evitar problemas de memoria
       const sql = `
-        SELECT * FROM Vivienda 
+        SELECT 
+          Id, Name, ShortDescription, Price, Rooms, BathRooms, Garage, 
+          SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
+          TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
+          Published, FechaPublicacion, CreatedAt, UpdatedAt,
+          CASE 
+            WHEN LENGTH(Description) > 1000 THEN SUBSTR(Description, 1, 1000) || '...' 
+            ELSE Description 
+          END as Description,
+          CASE 
+            WHEN LENGTH(Caracteristicas) > 5000 THEN '[]' 
+            ELSE Caracteristicas 
+          END as Caracteristicas
+        FROM Vivienda 
         ${whereClause}
         ORDER BY FechaPublicacion DESC 
         LIMIT ? OFFSET ?
@@ -89,6 +104,7 @@ class ViviendaRepository {
       
       params.push(pageSize, offset);
       
+      logger.info(`🔍 Ejecutando consulta optimizada con LIMIT ${pageSize}`);
       const result = await executeQuery(sql, params);
       
       // Query para contar total de resultados

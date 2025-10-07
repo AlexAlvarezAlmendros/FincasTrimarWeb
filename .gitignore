@@ -173,3 +173,8 @@ DETALLE_REFACTOR_SUMMARY.md
 GOOGLE_MAPS_SETUP.md
 backend/test-endpoint.js
 backend/check-images.js
+backend/diagnose-timeout.js
+backend/find-problem.js
+backend/fix-duplicate-images.js
+backend/simple-test.js
+backend/test-endpoint-fixed.js
