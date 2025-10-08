@@ -36,6 +36,7 @@ export default function Detalle() {
   // Estados locales para UI
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [showPhoneNumber, setShowPhoneNumber] = useState(false);
 
   // Actualizar mensaje cuando cambia la propiedad
   React.useEffect(() => {
@@ -353,6 +354,26 @@ export default function Detalle() {
                   {isSubmitting ? 'Enviando...' : 'AGENDAR VISITA'}
                 </button>
               </form>
+              
+              {/* Botón y número de teléfono */}
+              <div className="phone-section">
+                <button 
+                  className="phone-toggle-button"
+                  onClick={() => setShowPhoneNumber(!showPhoneNumber)}
+                  type="button"
+                >
+                  {showPhoneNumber ? 'Ocultar número de teléfono' : 'Mostrar número de teléfono'}
+                </button>
+                
+                {showPhoneNumber && (
+                  <div className="phone-display">
+                    <p className="phone-text">O si prefieres, llámanos directamente al:</p>
+                    <a href="tel:+34615840273" className="phone-number">
+                      615 84 02 73
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
         </div>
