@@ -51,8 +51,8 @@ export default function Contacto() {
       <section className="contact-header">
         <div className="container">
           <div className="header-content">
-            <h1 className="page-title">Contacta con nosotros</h1>
-            <p className="page-subtitle">
+            <h1 className="page-title-contacto">Contacta con nosotros</h1>
+            <p className="page-subtitle-contacto">
               Estamos aquí para ayudarte con todas tus necesidades inmobiliarias. 
               No dudes en ponerte en contacto con nuestro equipo.
             </p>
@@ -158,9 +158,9 @@ export default function Contacto() {
                   Completa el formulario y nos pondremos en contacto contigo lo antes posible.
                 </p>
 
-                <form onSubmit={handleSubmit} className="contact-form">
-                  <div className="form-row">
-                    <div className="form-group">
+                <form onSubmit={handleSubmit} className="contact-form-contacto">
+                  <div className="form-row-contacto">
+                    <div className="form-group-contacto">
                       <label htmlFor="nombre">Nombre *</label>
                       <input
                         type="text"
@@ -173,7 +173,7 @@ export default function Contacto() {
                       />
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group-contacto">
                       <label htmlFor="email">Email *</label>
                       <input
                         type="email"
@@ -187,8 +187,8 @@ export default function Contacto() {
                     </div>
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
+                  <div className="form-row-contacto">
+                    <div className="form-group-contacto">
                       <label htmlFor="telefono">Teléfono</label>
                       <input
                         type="tel"
@@ -200,7 +200,7 @@ export default function Contacto() {
                       />
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group-contacto">
                       <label htmlFor="asunto">Asunto *</label>
                       <select
                         id="asunto"
@@ -220,7 +220,7 @@ export default function Contacto() {
                     </div>
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group-contacto">
                     <label htmlFor="mensaje">Mensaje *</label>
                     <textarea
                       id="mensaje"
