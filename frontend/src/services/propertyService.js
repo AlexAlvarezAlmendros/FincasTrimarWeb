@@ -490,7 +490,7 @@ class PropertyService {
    * @param {Array} imageOrders - Array de {id, orden}
    * @returns {Promise<Object>} Resultado del reordenamiento
    */
-  async reorderPropertyImages(propertyId, imageOrders) {
+  async reorderPropertyImages(propertyId, imageOrders, getTokenFn) {
     try {
       if (!propertyId) {
         throw new Error('ID de propiedad requerido');
@@ -500,20 +500,34 @@ class PropertyService {
         throw new Error('Array de órdenes de imágenes requerido');
       }
 
+      // Obtener token de Auth0
+      const token = getTokenFn ? await getTokenFn() : null;
+      
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('🔄 Reordenando imágenes:', { propertyId, imageOrders });
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${propertyId}/imagenes/reorder`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ imageOrders })
       });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Error al reordenar imágenes:', errorData);
         throw new Error(errorData.error?.message || 'Error al reordenar imágenes');
       }
       
-      return await response.json();
+      const result = await response.json();
+      console.log('✅ Imágenes reordenadas correctamente:', result);
+      return result;
     } catch (error) {
       console.error('PropertyService.reorderPropertyImages error:', error);
       throw error;
@@ -545,45 +559,7 @@ class PropertyService {
     }
   }
 
-  /**
-   * Reordena las imágenes de una propiedad
-   * @param {string} propertyId - ID de la propiedad
-   * @param {Array} imageOrders - Array con {id, orden} para cada imagen
-   * @returns {Promise<Object>} Respuesta del servidor
-   */
-  async reorderPropertyImages(propertyId, imageOrders) {
-    try {
-      if (!propertyId) {
-        throw new Error('ID de propiedad requerido');
-      }
 
-      if (!Array.isArray(imageOrders) || imageOrders.length === 0) {
-        throw new Error('Orden de imágenes requerido');
-      }
-
-      console.log('🔄 Reordenando imágenes:', { propertyId, imageOrders });
-
-      const response = await this.fetchWithAuth(`${this.baseUrl}/viviendas/${propertyId}/imagenes/reorder`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ imageOrders })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || 'Error al reordenar imágenes');
-      }
-
-      const result = await response.json();
-      console.log('✅ Imágenes reordenadas correctamente');
-      return result;
-    } catch (error) {
-      console.error('PropertyService.reorderPropertyImages error:', error);
-      throw error;
-    }
-  }
 }
 
 // Exportar instancia singleton

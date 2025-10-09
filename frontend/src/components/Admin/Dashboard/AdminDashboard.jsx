@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import useDashboardData from '../../../hooks/admin/useDashboardData';
+import { useDashboardStats } from '../../../hooks/useDashboard';
 import MetricCard from './MetricCard';
 import RecentPropertiesTable from './RecentPropertiesTable';
 import RecentMessagesList from './RecentMessagesList';
-import SalesSummary from './SalesSummary';
+import LoadingSpinner from '../../common/LoadingSpinner';
+import ErrorMessage from '../../common/ErrorMessage';
 import './AdminDashboard.css';
 
 /**
@@ -14,16 +15,37 @@ import './AdminDashboard.css';
  */
 const AdminDashboard = () => {
   const { user } = useAuth0();
-  const { metrics, recentProperties, recentMessages, loading } = useDashboardData();
+  const { stats, loading, error, refetch } = useDashboardStats();
 
   if (loading) {
     return (
       <div className="dashboard-loading">
-        <div className="loading-spinner" aria-label="Cargando datos"></div>
+        <LoadingSpinner />
         <p>Cargando datos del dashboard...</p>
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="dashboard-error">
+        <ErrorMessage 
+          message="Error al cargar las estadísticas del dashboard"
+          onRetry={refetch}
+        />
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="dashboard-empty">
+        <p>No hay datos disponibles</p>
+      </div>
+    );
+  }
+
+  const { propertyStats, monthlySales, summary } = stats;
 
   return (
     <div className="admin-dashboard">
@@ -48,37 +70,34 @@ const AdminDashboard = () => {
       <div className="metrics-grid">
         <MetricCard
           title="Ventas del Mes"
-          value={`${(metrics.salesThisMonth / 1000).toFixed(0)}K€`}
-          subtitle={`${metrics.propertiesSold} propiedades vendidas`}
+          value={summary.bestMonth ? `${(summary.bestMonth.revenue / 1000).toFixed(0)}K€` : '0€'}
+          subtitle={`${summary.bestMonth ? summary.bestMonth.sales : 0} propiedades vendidas`}
           icon="💰"
           trend={{ 
-            type: metrics.salesThisMonth > metrics.salesLastMonth ? 'up' : 'down', 
-            text: `${((metrics.salesThisMonth - metrics.salesLastMonth) / metrics.salesLastMonth * 100).toFixed(1)}% vs mes anterior` 
+            type: summary.growthRate >= 0 ? 'up' : 'down', 
+            text: `${summary.growthRate.toFixed(1)}% vs mes anterior` 
           }}
           color="green"
         />
         <MetricCard
           title="Propiedades Vendidas"
-          value={metrics.propertiesSold}
-          subtitle="Este mes"
+          value={propertyStats.sold}
+          subtitle="Total vendidas"
           icon="✅"
-          trend={{ type: 'up', text: '+2 vs mes anterior' }}
           color="blue"
         />
         <MetricCard
           title="Reservadas"
-          value={metrics.propertiesReserved}
+          value={propertyStats.reserved}
           subtitle="En proceso de venta"
           icon="🔒"
-          trend={{ type: 'up', text: '+1 esta semana' }}
           color="orange"
         />
         <MetricCard
           title="Disponibles"
-          value={metrics.propertiesAvailable}
+          value={propertyStats.available}
           subtitle="Listas para vender"
           icon="🏠"
-          trend={{ type: 'up', text: '+5 esta semana' }}
           color="purple"
         />
       </div>
@@ -86,41 +105,36 @@ const AdminDashboard = () => {
       {/* Secondary Metrics */}
       <div className="secondary-metrics">
         <MetricCard
-          title="Pendientes de Captar"
-          value={metrics.propertiesPendingCapture}
-          subtitle="Necesitan seguimiento"
+          title="Total Propiedades"
+          value={propertyStats.total}
+          subtitle="En el sistema"
           icon="📋"
-          trend={{ type: 'down', text: '-3 desde la semana pasada' }}
           color="yellow"
         />
         <MetricCard
-          title="Mensajes Pendientes"
-          value={metrics.pendingMessages}
-          subtitle="Requieren respuesta"
-          icon="💬"
-          trend={{ type: 'down', text: '-2 desde ayer' }}
+          title="Publicadas"
+          value={propertyStats.published}
+          subtitle="Visibles al público"
+          icon="�️"
+          color="teal"
+        />
+        <MetricCard
+          title="Cerradas"
+          value={propertyStats.closed}
+          subtitle="Operaciones finalizadas"
+          icon="�"
           color="red"
         />
         <MetricCard
-          title="Precio Promedio"
-          value={`${(metrics.averagePrice / 1000).toFixed(0)}K€`}
-          subtitle="Propiedades activas"
-          icon="📊"
-          trend={{ type: 'up', text: '+2.5% este trimestre' }}
+          title="Ingresos Totales"
+          value={`${(summary.totalRevenue / 1000).toFixed(0)}K€`}
+          subtitle="Todos los meses"
+          icon="�"
           color="indigo"
-        />
-        <MetricCard
-          title="Visitas Totales"
-          value={metrics.totalViews.toLocaleString()}
-          subtitle="Este mes"
-          icon="👁️"
-          trend={{ type: 'up', text: '+12% vs mes anterior' }}
-          color="teal"
         />
       </div>
 
-      {/* Sales Summary */}
-      <SalesSummary metrics={metrics} />
+
 
       {/* Main Content Grid */}
       <div className="dashboard-content-grid">
@@ -133,7 +147,7 @@ const AdminDashboard = () => {
             </Link>
           </div>
           <div className="section-content">
-            <RecentPropertiesTable properties={recentProperties} />
+            <RecentPropertiesTable properties={[]} />
           </div>
         </div>
 
@@ -146,7 +160,7 @@ const AdminDashboard = () => {
             </Link>
           </div>
           <div className="section-content">
-            <RecentMessagesList messages={recentMessages} />
+            <RecentMessagesList messages={[]} />
           </div>
         </div>
       </div>

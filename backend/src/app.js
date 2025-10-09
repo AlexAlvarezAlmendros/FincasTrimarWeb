@@ -12,6 +12,7 @@ import { publicRoutes as propertyPublicRoutes, privateRoutes as propertyPrivateR
 import { publicRoutes as messagePublicRoutes, privateRoutes as messagePrivateRoutes } from './routes/messageRoutes.js';
 import { imagePublicRoutes, imagePrivateRoutes } from './routes/imageRoutes.js';
 import htmlParserRoutes from './routes/htmlParserRoutes.js';
+import { privateRoutes as dashboardPrivateRoutes } from './routes/dashboardRoutes.js';
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/v1', debugCheckJwt);
 app.use('/api/v1', propertyPrivateRoutes);
 app.use('/api/v1', messagePrivateRoutes);
 app.use('/api/v1', imagePrivateRoutes);
+app.use('/api/v1', dashboardPrivateRoutes);
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {

@@ -1,0 +1,234 @@
+/* Gráfico de Ventas Mensuales */
+.monthly-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.monthly-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--neutral-500);
+  font-style: italic;
+}
+
+/* Leyenda */
+.monthly-chart__legend {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  justify-content: center;
+}
+
+.monthly-chart__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--neutral-600);
+}
+
+.monthly-chart__legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.monthly-chart__legend-color--sales {
+  background: var(--brand-primary);
+}
+
+.monthly-chart__legend-color--revenue {
+  background: var(--semantic-success);
+}
+
+/* Container del gráfico */
+.monthly-chart__container {
+  flex: 1;
+  position: relative;
+  min-height: 300px;
+  margin-bottom: 16px;
+}
+
+.monthly-chart__bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 100%;
+  padding: 0 16px;
+}
+
+.monthly-chart__bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 80px;
+  margin: 0 2px;
+}
+
+.monthly-chart__bars-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 280px;
+  width: 100%;
+}
+
+.monthly-chart__bar {
+  min-height: 4px;
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.monthly-chart__bar:hover {
+  opacity: 0.8;
+  transform: scaleY(1.05);
+}
+
+.monthly-chart__bar--sales {
+  background: var(--brand-primary);
+  width: 20px;
+}
+
+.monthly-chart__bar--revenue {
+  background: var(--semantic-success);
+  width: 20px;
+}
+
+.monthly-chart__bar-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.2);
+  margin-top: 4px;
+  min-width: max-content;
+  text-align: center;
+}
+
+.monthly-chart__label {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--neutral-600);
+  text-align: center;
+  font-weight: 500;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  white-space: nowrap;
+  min-height: 16px;
+}
+
+/* Información adicional */
+.monthly-chart__info {
+  border-top: 1px solid var(--neutral-100);
+  padding-top: 16px;
+}
+
+.monthly-chart__totals {
+  display: flex;
+  justify-content: space-around;
+  gap: 24px;
+}
+
+.monthly-chart__total {
+  text-align: center;
+}
+
+.monthly-chart__total-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--neutral-600);
+  margin-bottom: 4px;
+}
+
+.monthly-chart__total-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--neutral-800);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .monthly-chart__bars {
+    padding: 0 8px;
+  }
+
+  .monthly-chart__bar-group {
+    margin: 0 1px;
+    max-width: 60px;
+  }
+
+  .monthly-chart__bars-container {
+    height: 240px;
+    gap: 2px;
+  }
+
+  .monthly-chart__bar {
+    width: 16px;
+  }
+
+  .monthly-chart__bar--sales,
+  .monthly-chart__bar--revenue {
+    width: 16px;
+  }
+
+  .monthly-chart__bar-value {
+    font-size: 0.65rem;
+    padding: 1px 2px;
+  }
+
+  .monthly-chart__label {
+    font-size: 0.65rem;
+    margin-top: 8px;
+  }
+
+  .monthly-chart__legend {
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .monthly-chart__totals {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .monthly-chart__container {
+    min-height: 250px;
+  }
+
+  .monthly-chart__bars-container {
+    height: 200px;
+  }
+
+  .monthly-chart__bar-group {
+    max-width: 40px;
+  }
+
+  .monthly-chart__bar {
+    width: 12px;
+  }
+
+  .monthly-chart__bar--sales,
+  .monthly-chart__bar--revenue {
+    width: 12px;
+  }
+
+  .monthly-chart__legend {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+}

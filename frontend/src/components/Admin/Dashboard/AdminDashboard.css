@@ -19,6 +19,24 @@
   gap: 1rem;
 }
 
+.dashboard-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 2rem;
+}
+
+.dashboard-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  color: var(--neutral-500);
+  font-style: italic;
+}
+
 .loading-spinner {
   width: 40px;
   height: 40px;
@@ -312,6 +330,14 @@
 .section-link:focus-visible {
   outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
+}
+
+/* Chart Section Specific Styles */
+.dashboard-section .chart-section {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  min-height: 400px;
 }
 
 /* Print Styles */

@@ -235,18 +235,6 @@ const PropertyCreatePage = () => {
     setHasLoadedData(false);
   }, [id]);
 
-  // Cargar datos si estamos en modo edición
-  useEffect(() => {
-    if (isEditing && id && !hasLoadedData) {
-      console.log('Cargando datos para edición, ID:', id);
-      setHasLoadedData(true);
-      loadProperty(id).catch(err => {
-        console.error('Error cargando propiedad para edición:', err);
-        setHasLoadedData(false); // Resetear en caso de error para permitir reintento
-      });
-    }
-  }, [isEditing, id, hasLoadedData]);
-
   // Extraer funciones necesarias del imageManager
   const {
     images,
@@ -265,8 +253,34 @@ const PropertyCreatePage = () => {
     reorderImages,
     reorderPendingFiles,
     clearPendingFiles,
-    clearAllImages
+    clearAllImages,
+    loadPropertyImages
   } = imageManager;
+
+  // Cargar datos si estamos en modo edición
+  useEffect(() => {
+    if (isEditing && id && !hasLoadedData) {
+      console.log('Cargando datos para edición, ID:', id);
+      setHasLoadedData(true);
+      
+      const loadData = async () => {
+        try {
+          // Cargar datos de la propiedad
+          await loadProperty(id);
+          
+          // Cargar imágenes de la propiedad
+          await loadPropertyImages(id);
+          
+          console.log('✅ Datos y imágenes cargados correctamente');
+        } catch (err) {
+          console.error('Error cargando datos para edición:', err);
+          setHasLoadedData(false); // Resetear en caso de error para permitir reintento
+        }
+      };
+      
+      loadData();
+    }
+  }, [isEditing, id, hasLoadedData, loadProperty, loadPropertyImages]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -284,7 +298,11 @@ const PropertyCreatePage = () => {
       if (window.confirm('¿Estás seguro de que quieres descartar los cambios y recargar los datos originales?')) {
         try {
           await loadProperty(id);
-          // También recargar imágenes si es necesario
+          // También recargar imágenes
+          await loadPropertyImages(id);
+          // Limpiar archivos pendientes
+          clearPendingFiles();
+          console.log('✅ Datos e imágenes recargados correctamente');
         } catch (error) {
           console.error('Error recargando datos:', error);
         }

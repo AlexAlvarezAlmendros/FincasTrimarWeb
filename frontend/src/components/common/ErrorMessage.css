@@ -1,0 +1,64 @@
+/* Error Message */
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  background-color: white;
+}
+
+.error-message--error {
+  border-color: var(--semantic-danger);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.error-message--warning {
+  border-color: var(--semantic-warning);
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.error-message--info {
+  border-color: var(--semantic-info);
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+.error-message__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.error-message__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.error-message__text {
+  color: var(--neutral-700);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.error-message__retry {
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-message__retry:hover {
+  background: var(--brand-primary-hover, #2F78DB);
+  transform: translateY(-1px);
+}
+
+.error-message__retry:active {
+  transform: translateY(0);
+}

@@ -320,6 +320,132 @@ class ViviendaRepository {
       updatedAt: row.UpdatedAt
     };
   }
+
+  /**
+   * Obtiene el conteo de propiedades por estado de venta
+   */
+  async getPropertyCountsByStatus() {
+    try {
+      const query = `
+        SELECT EstadoVenta as status, COUNT(*) as count
+        FROM Vivienda
+        WHERE Published = 1
+        GROUP BY EstadoVenta
+      `;
+      
+      const result = await executeQuery(query, []);
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting property counts by status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el conteo total de propiedades
+   */
+  async getTotalPropertiesCount() {
+    try {
+      const query = 'SELECT COUNT(*) as count FROM Vivienda';
+      const result = await executeQuery(query, []);
+      return result.rows[0]?.count || 0;
+    } catch (error) {
+      logger.error('Error getting total properties count:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el conteo de propiedades publicadas
+   */
+  async getPublishedPropertiesCount() {
+    try {
+      const query = 'SELECT COUNT(*) as count FROM Vivienda WHERE Published = 1';
+      const result = await executeQuery(query, []);
+      return result.rows[0]?.count || 0;
+    } catch (error) {
+      logger.error('Error getting published properties count:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las ventas mensuales (propiedades vendidas/cerradas)
+   */
+  async getMonthlySales() {
+    try {
+      const query = `
+        SELECT 
+          strftime('%Y-%m', FechaPublicacion) as month,
+          COUNT(*) as sales,
+          SUM(Price) as revenue
+        FROM Vivienda
+        WHERE EstadoVenta IN ('Vendida', 'Cerrada')
+          AND FechaPublicacion IS NOT NULL
+          AND FechaPublicacion >= date('now', '-12 months')
+        GROUP BY strftime('%Y-%m', FechaPublicacion)
+        ORDER BY month ASC
+      `;
+      
+      const result = await executeQuery(query, []);
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting monthly sales:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene estadísticas por tipo de propiedad
+   */
+  async getPropertyTypeStats() {
+    try {
+      const query = `
+        SELECT 
+          TipoVivienda as type,
+          COUNT(*) as count,
+          AVG(Price) as averagePrice,
+          MIN(Price) as minPrice,
+          MAX(Price) as maxPrice
+        FROM Vivienda
+        WHERE Published = 1
+        GROUP BY TipoVivienda
+        ORDER BY count DESC
+      `;
+      
+      const result = await executeQuery(query, []);
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting property type stats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene estadísticas por ubicación
+   */
+  async getLocationStats() {
+    try {
+      const query = `
+        SELECT 
+          Poblacion as location,
+          COUNT(*) as count,
+          AVG(Price) as averagePrice
+        FROM Vivienda
+        WHERE Published = 1
+          AND Poblacion IS NOT NULL
+        GROUP BY Poblacion
+        ORDER BY count DESC
+        LIMIT 10
+      `;
+      
+      const result = await executeQuery(query, []);
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting location stats:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ViviendaRepository();
