@@ -184,3 +184,6 @@ DRAFT_SYSTEM_IMPLEMENTATION.md
 SISTEMA_CAPTACION_RESUMEN.md
 backend/run-captacion-migration.js
 backend/run-draft-migration.js
+IMAGE_VALIDATION_FIX.md
+VALIDATION_ERROR_400_FIX.md
+VALIDATION_FINAL_FIX.md

@@ -30,7 +30,8 @@ export const validateSchema = (schema, property = 'body') => {
       const formattedErrors = error.errors?.map(err => ({
         field: err.path.join('.'),
         message: err.message,
-        code: err.code
+        code: err.code,
+        received: err.received
       }));
 
       res.status(400).json({

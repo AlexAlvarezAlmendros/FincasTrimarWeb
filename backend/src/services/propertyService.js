@@ -25,6 +25,8 @@ class PropertyService {
         tipoVivienda: filters.tipoVivienda,
         provincia: filters.provincia,
         poblacion: filters.poblacion,
+        estadoVenta: filters.estadoVenta,
+        captadoPor: filters.captadoPor,
         published: filters.published !== undefined ? filters.published : true,
         page: filters.page || 1,
         pageSize: filters.pageSize || 20

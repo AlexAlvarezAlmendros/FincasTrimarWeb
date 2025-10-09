@@ -65,6 +65,11 @@ export const ViviendaFormModel = {
       caracteristicas: [],
       published: false,
       isDraft: false,
+      // Campos de captación
+      comisionGanada: 0,
+      captadoPor: '',
+      porcentajeCaptacion: 0,
+      fechaCaptacion: '',
       images: [],
       imagesToDelete: [],
       newImages: []
@@ -108,6 +113,11 @@ export const ViviendaFormModel = {
       caracteristicas: Array.isArray(vivienda.caracteristicas) ? [...vivienda.caracteristicas] : [],
       published: Boolean(vivienda.published),
       isDraft: Boolean(vivienda.isDraft),
+      // Campos de captación
+      comisionGanada: vivienda.comisionGanada?.toString() || '0',
+      captadoPor: vivienda.captadoPor || '',
+      porcentajeCaptacion: vivienda.porcentajeCaptacion?.toString() || '0',
+      fechaCaptacion: vivienda.fechaCaptacion || '',
       images: Array.isArray(vivienda.imagenes) ? [...vivienda.imagenes] : [],
       imagesToDelete: [],
       newImages: []
@@ -148,7 +158,12 @@ export const ViviendaFormModel = {
       estadoVenta: formData.estadoVenta || EstadoVenta.DISPONIBLE,
       caracteristicas: Array.isArray(formData.caracteristicas) ? formData.caracteristicas : [],
       published: Boolean(formData.published),
-      isDraft: Boolean(formData.isDraft)
+      isDraft: Boolean(formData.isDraft),
+      // Campos de captación (opcionales)
+      comisionGanada: formData.comisionGanada ? parseFloat(formData.comisionGanada) : 0,
+      captadoPor: formData.captadoPor?.trim() || undefined,
+      porcentajeCaptacion: formData.porcentajeCaptacion ? parseFloat(formData.porcentajeCaptacion) : 0,
+      fechaCaptacion: formData.fechaCaptacion || undefined
     };
 
     // Limpiar campos undefined para enviar solo lo necesario
@@ -435,11 +450,12 @@ export const ImageUtils = {
    */
   validateImageFile(file) {
     const maxSize = 10 * 1024 * 1024; // 10MB
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
     if (!file) return 'Archivo requerido';
     
     if (!allowedTypes.includes(file.type)) {
+      console.log('Tipo de archivo detectado:', file.type); // Debug
       return 'Tipo de archivo no válido. Solo se permiten: JPG, PNG, WebP';
     }
 

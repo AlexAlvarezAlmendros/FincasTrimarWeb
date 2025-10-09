@@ -108,14 +108,18 @@ export const useImageManager = (propertyId = null, options = {}) => {
   // Funciones auxiliares
   const addFiles = useCallback((files) => {
     const validFiles = files.filter(file => {
-      if (!ImageUtils.validateImageFile(file)) {
+      const validationError = ImageUtils.validateImageFile(file);
+      if (validationError) {
+        console.log('Archivo rechazado:', file.name, 'Error:', validationError);
         return false;
       }
       return true;
     });
 
     if (validFiles.length === 0) {
-      setError('No se pudieron añadir archivos: formato no válido');
+      // Identificar el primer error específico
+      const firstError = files.length > 0 ? ImageUtils.validateImageFile(files[0]) : 'No hay archivos';
+      setError(`No se pudieron añadir archivos: ${firstError || 'formato no válido'}`);
       return;
     }
 

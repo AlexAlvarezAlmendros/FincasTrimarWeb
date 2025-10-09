@@ -45,6 +45,7 @@ const ImageUploadSection = ({
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
+    console.log('Archivos seleccionados:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
     if (files.length > 0) {
       addFiles(files);
     }
@@ -114,7 +115,7 @@ const ImageUploadSection = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
             multiple
             onChange={handleFileSelect}
             style={{ display: 'none' }}

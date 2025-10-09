@@ -12,7 +12,7 @@ class ViviendaRepository {
    */
   async findAll({ 
     q, minPrice, maxPrice, rooms, bathRooms, tipoInmueble, tipoVivienda,
-    provincia, poblacion, published = true, page = 1, pageSize = 20, includeDrafts = false 
+    provincia, poblacion, estadoVenta, captadoPor, published = true, page = 1, pageSize = 20, includeDrafts = false 
   } = {}) {
     try {
       logger.info(`🔍 findAll llamado con pageSize=${pageSize}, published=${published}, includeDrafts=${includeDrafts}`);
@@ -79,6 +79,17 @@ class ViviendaRepository {
       if (poblacion) {
         conditions.push('Poblacion = ?');
         params.push(poblacion);
+      }
+      
+      // Filtros de captación
+      if (estadoVenta) {
+        conditions.push('EstadoVenta = ?');
+        params.push(estadoVenta);
+      }
+      
+      if (captadoPor) {
+        conditions.push('CaptadoPor = ?');
+        params.push(captadoPor);
       }
       
       // Construir WHERE clause
