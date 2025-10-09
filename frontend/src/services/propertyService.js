@@ -546,7 +546,7 @@ class PropertyService {
         ...(options.token && { 'Authorization': `Bearer ${options.token}` })
       };
 
-      const response = await fetch(`${this.apiUrl}/api/v1/properties/drafts`, {
+      const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/drafts`, {
         method: 'GET',
         headers
       });
