@@ -9,8 +9,17 @@ import './Header.css';
  */
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated, loginWithRedirect, logout, user, isLoading } = useAuth0();
+  const auth0 = useAuth0();
+  const { isAuthenticated, loginWithRedirect, logout, user, isLoading } = auth0;
   const location = useLocation();
+
+  // Debug log para verificar que las funciones están disponibles
+  console.log('🔍 Auth0 functions available:', {
+    loginWithRedirect: typeof loginWithRedirect,
+    logout: typeof logout,
+    isAuthenticated,
+    isLoading
+  });
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -21,7 +30,12 @@ const Header = () => {
   };
 
   const handleLogin = () => {
-    loginWithRedirect();
+    console.log('🔍 handleLogin called, loginWithRedirect type:', typeof loginWithRedirect);
+    if (typeof loginWithRedirect === 'function') {
+      loginWithRedirect();
+    } else {
+      console.error('❌ loginWithRedirect is not a function:', loginWithRedirect);
+    }
   };
 
   const handleLogout = () => {

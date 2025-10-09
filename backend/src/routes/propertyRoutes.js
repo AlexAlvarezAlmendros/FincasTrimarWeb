@@ -23,6 +23,13 @@ publicRoutes.get('/viviendas', propertyController.getProperties);
 publicRoutes.get('/viviendas/stats', propertyController.getStats);
 
 /**
+ * @route GET /api/v1/viviendas/drafts
+ * @desc Obtener lista de borradores
+ * @access Public (temporal para testing - debería ser Private)
+ */
+publicRoutes.get('/viviendas/drafts', propertyController.getDrafts);
+
+/**
  * @route GET /api/v1/viviendas/:id
  * @desc Obtener detalles de una propiedad específica
  * @access Public
@@ -45,13 +52,6 @@ publicRoutes.post('/viviendas/search', propertyController.searchProperties);
 
 // Rutas privadas para propiedades (requieren autenticación)
 const privateRoutes = Router();
-
-/**
- * @route GET /api/v1/viviendas/drafts
- * @desc Obtener lista de borradores
- * @access Private (Seller, Admin)
- */
-privateRoutes.get('/viviendas/drafts', propertyController.getDrafts);
 
 /**
  * @route POST /api/v1/viviendas

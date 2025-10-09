@@ -9,6 +9,7 @@ import Contacto from '../pages/Contacto';
 import Admin from '../pages/Admin';
 import NotFound from '../pages/NotFound';
 import RequireAuth from '../components/RequireAuth';
+import AuthWrapper from '../components/Auth/AuthWrapper';
 
 export default function App() {
   return (
@@ -18,11 +19,14 @@ export default function App() {
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "openid profile email read:viviendas write:viviendas read:mensajes write:mensajes"
+        scope: "openid profile email"
       }}
+      cacheLocation="localstorage"
+      useRefreshTokens={true}
     >
-      <BrowserRouter>
-        <Routes>
+      <AuthWrapper>
+        <BrowserRouter>
+          <Routes>
           {/* Todas las rutas principales usan el Layout */}
           {/* Rutas públicas con Layout principal */}
           <Route path="/" element={<Layout />}>
@@ -48,8 +52,9 @@ export default function App() {
           
           {/* Ruta 404 */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </AuthWrapper>
     </Auth0Provider>
   );
 }
