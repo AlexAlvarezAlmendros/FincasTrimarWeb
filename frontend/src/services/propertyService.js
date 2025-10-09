@@ -535,6 +535,36 @@ class PropertyService {
   }
 
   /**
+   * Obtiene todas las viviendas en estado borrador
+   * @param {Object} options Opciones adicionales (token, etc.)
+   * @returns {Promise<Object>} Respuesta con lista de borradores
+   */
+  async getDrafts(options = {}) {
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(options.token && { 'Authorization': `Bearer ${options.token}` })
+      };
+
+      const response = await fetch(`${this.apiUrl}/api/v1/properties/drafts`, {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al obtener borradores');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('PropertyService.getDrafts error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtiene el estado del servicio de imágenes
    * @returns {Promise<Object>} Estado del servicio
    */

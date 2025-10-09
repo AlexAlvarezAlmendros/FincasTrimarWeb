@@ -47,6 +47,13 @@ publicRoutes.post('/viviendas/search', propertyController.searchProperties);
 const privateRoutes = Router();
 
 /**
+ * @route GET /api/v1/viviendas/drafts
+ * @desc Obtener lista de borradores
+ * @access Private (Seller, Admin)
+ */
+privateRoutes.get('/viviendas/drafts', propertyController.getDrafts);
+
+/**
  * @route POST /api/v1/viviendas
  * @desc Crear nueva propiedad
  * @access Private (Seller, Admin)

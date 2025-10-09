@@ -178,3 +178,9 @@ backend/find-problem.js
 backend/fix-duplicate-images.js
 backend/simple-test.js
 backend/test-endpoint-fixed.js
+.github/instructions/Modelo de datos.instructions.md
+DRAFT_SYSTEM_IMPLEMENTATION.md
+.gitignore
+SISTEMA_CAPTACION_RESUMEN.md
+backend/run-captacion-migration.js
+backend/run-draft-migration.js

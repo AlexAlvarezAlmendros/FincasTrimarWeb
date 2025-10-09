@@ -164,6 +164,7 @@ const PropertyCreatePage = () => {
   // Estado para el popup de éxito
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successData, setSuccessData] = useState(null);
+  const [wasSavedAsDraft, setWasSavedAsDraft] = useState(false);
   
   // Estado para resetear el HtmlExtractor
   const [htmlExtractorReset, setHtmlExtractorReset] = useState(0);
@@ -191,6 +192,7 @@ const PropertyCreatePage = () => {
     formData,
     updateField,
     createVivienda,
+    createDraft,
     isCreating,
     error,
     success,
@@ -321,6 +323,7 @@ const PropertyCreatePage = () => {
   const handleSuccessPopupClose = () => {
     setShowSuccessPopup(false);
     setSuccessData(null);
+    setWasSavedAsDraft(false);
     
     if (isEditing) {
       // En modo edición, volver al listado
@@ -337,6 +340,20 @@ const PropertyCreatePage = () => {
       
       // Scroll hacia arriba para mejor UX
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Función para guardar como borrador
+  const handleSaveDraft = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setWasSavedAsDraft(true);
+      await createDraft(formData, id);
+    } catch (error) {
+      console.error('Error guardando borrador:', error);
+      setWasSavedAsDraft(false);
+      // El error ya se maneja en el hook
     }
   };
 
@@ -741,22 +758,27 @@ const PropertyCreatePage = () => {
               </select>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="planta">Planta</label>
-              <select
-                id="planta"
-                value={formData.planta}
-                onChange={(e) => updateField('planta', e.target.value)}
-                className="form-select"
-              >
-                <option value="">🏢 Seleccionar planta...</option>
-                {Object.entries(Planta).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Solo mostrar selector de Planta para Piso, Ático o Dúplex */}
+            {(formData.tipoVivienda === 'Piso' || 
+              formData.tipoVivienda === 'Ático' || 
+              formData.tipoVivienda === 'Dúplex') && (
+              <div className="form-group">
+                <label htmlFor="planta">Planta</label>
+                <select
+                  id="planta"
+                  value={formData.planta}
+                  onChange={(e) => updateField('planta', e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">🏢 Seleccionar planta...</option>
+                  {Object.entries(Planta).map(([key, value]) => (
+                    <option key={key} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="form-row">
@@ -827,25 +849,7 @@ const PropertyCreatePage = () => {
           />
         </div>
 
-        <div className="form-section">
-          <h2 className="section-title">📢 Estado de Publicación</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.published}
-                  onChange={(e) => updateField('published', e.target.checked)}
-                />
-                <span>Publicar inmediatamente</span>
-              </label>
-              <small className="form-help">
-                Si está marcado, la vivienda será visible públicamente
-              </small>
-            </div>
-          </div>
-        </div>
+        {/* Sección de publicación eliminada - ahora se auto-publica según estado */}
 
         <div className="form-actions">
           <button 
@@ -867,6 +871,18 @@ const PropertyCreatePage = () => {
             <i className="fas fa-redo"></i>
             Resetear
           </button>
+
+          {!id && (
+            <button 
+              type="button"
+              onClick={handleSaveDraft}
+              className="btn btn-secondary"
+              disabled={isCreating || !formData.name}
+            >
+              <i className="fas fa-save"></i>
+              Guardar Borrador
+            </button>
+          )}
           
           <button 
             type="submit" 
@@ -912,8 +928,16 @@ const PropertyCreatePage = () => {
       <SuccessPopup
         isVisible={showSuccessPopup}
         onClose={handleSuccessPopupClose}
-        title={`¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`}
-        message={`La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'guardada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`}
+        title={
+          wasSavedAsDraft 
+            ? '¡Borrador guardado exitosamente!'
+            : `¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`
+        }
+        message={
+          wasSavedAsDraft
+            ? `El borrador "${successData?.name || 'Nueva vivienda'}" ha sido guardado correctamente. Puedes encontrarlo en la sección de borradores para continuar editándolo más tarde.`
+            : `La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'publicada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`
+        }
         autoClose={true}
         autoCloseDelay={4000}
       />

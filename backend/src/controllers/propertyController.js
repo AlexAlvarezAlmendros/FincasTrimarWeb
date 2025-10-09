@@ -42,6 +42,31 @@ const propertyController = {
   },
 
   /**
+   * GET /api/v1/properties/drafts
+   * Obtiene lista de borradores (requiere autenticación)
+   */
+  async getDrafts(req, res, next) {
+    try {
+      const filters = {
+        q: req.query.q,
+        page: req.query.page ? parseInt(req.query.page) : 1,
+        pageSize: req.query.pageSize ? parseInt(req.query.pageSize) : 20
+      };
+      
+      const result = await propertyService.getDrafts(filters);
+      
+      res.json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    } catch (error) {
+      logger.error('Error getting drafts:', error);
+      next(error);
+    }
+  },
+
+  /**
    * GET /api/v1/properties/:id
    * Obtiene una propiedad por ID
    */

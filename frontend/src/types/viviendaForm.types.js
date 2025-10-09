@@ -64,6 +64,7 @@ export const ViviendaFormModel = {
       estadoVenta: EstadoVenta.DISPONIBLE,
       caracteristicas: [],
       published: false,
+      isDraft: false,
       images: [],
       imagesToDelete: [],
       newImages: []
@@ -106,6 +107,7 @@ export const ViviendaFormModel = {
       estadoVenta: vivienda.estadoVenta || EstadoVenta.DISPONIBLE,
       caracteristicas: Array.isArray(vivienda.caracteristicas) ? [...vivienda.caracteristicas] : [],
       published: Boolean(vivienda.published),
+      isDraft: Boolean(vivienda.isDraft),
       images: Array.isArray(vivienda.imagenes) ? [...vivienda.imagenes] : [],
       imagesToDelete: [],
       newImages: []
@@ -145,7 +147,8 @@ export const ViviendaFormModel = {
       tipoAnuncio: formData.tipoAnuncio || undefined,
       estadoVenta: formData.estadoVenta || EstadoVenta.DISPONIBLE,
       caracteristicas: Array.isArray(formData.caracteristicas) ? formData.caracteristicas : [],
-      published: Boolean(formData.published)
+      published: Boolean(formData.published),
+      isDraft: Boolean(formData.isDraft)
     };
 
     // Limpiar campos undefined para enviar solo lo necesario

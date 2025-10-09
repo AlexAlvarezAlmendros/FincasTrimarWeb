@@ -42,6 +42,11 @@ La entidad `Vivienda` representa un inmueble en el sistema. Es el modelo central
     - `Caracteristicas` (List<Caracteristica>): Lista de características especiales
     - `IMGURL` (List<string>): URLs de imágenes
     - `Published` (bool): Indica si está publicado
+- **Gestión de Captación**
+    - `ComisionGanada` (decimal): Porcentaje de comisión ganada por la venta (0-100)
+    - `CaptadoPor` (string): ID del usuario/agente que captó la vivienda
+    - `PorcentajeCaptacion` (decimal): Porcentaje que se lleva el agente captador (0-100)
+    - `FechaCaptacion` (DateTime): Fecha cuando se captó la vivienda
 
 ### 2. Mensaje
 
@@ -92,7 +97,7 @@ La entidad `Mensaje` representa los mensajes de contacto relacionados con las vi
 ### Estados
 
 - **Estado**: ObraNueva, BuenEstado, AReformar
-- **EstadoDeLaVenta**: Disponible, Reservada, Vendida, Cerrada
+- **EstadoDeLaVenta**: Pendiente, Contactada, Captada, Rechazada, Disponible, Reservada, Vendida, Cerrada
 - **EstadoDelMensaje**: Nuevo, EnCurso, Cerrado
 
 ### Características y Ubicación
@@ -115,6 +120,10 @@ erDiagram
         int Price
         int Rooms
         DateTime FechaPublicacion
+        decimal ComisionGanada
+        string CaptadoPor
+        decimal PorcentajeCaptacion
+        DateTime FechaCaptacion
         Guid ViviendaId FK
     }
 

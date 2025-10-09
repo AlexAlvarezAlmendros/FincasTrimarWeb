@@ -105,6 +105,162 @@ export const useImageManager = (propertyId = null, options = {}) => {
     }
   }, [images, propertyId, onError, getAccessTokenSilently]);
 
+  // Funciones auxiliares
+  const addFiles = useCallback((files) => {
+    const validFiles = files.filter(file => {
+      if (!ImageUtils.validateImageFile(file)) {
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) {
+      setError('No se pudieron añadir archivos: formato no válido');
+      return;
+    }
+
+    const remainingSlots = maxImages - (images.length + pendingFiles.length);
+    const filesToAdd = validFiles.slice(0, remainingSlots);
+
+    if (filesToAdd.length < validFiles.length) {
+      setError(`Solo se pudieron añadir ${filesToAdd.length} de ${validFiles.length} archivos (límite de ${maxImages} imágenes)`);
+    }
+
+    const newPendingFiles = filesToAdd.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      preview: URL.createObjectURL(file),
+      status: 'pending'
+    }));
+
+    setPendingFiles(prev => [...prev, ...newPendingFiles]);
+    clearError();
+
+    if (autoUpload) {
+      uploadPendingFiles();
+    }
+  }, [images.length, pendingFiles.length, maxImages, autoUpload]);
+
+  const removePendingFile = useCallback((fileId) => {
+    setPendingFiles(prev => {
+      const updated = prev.filter(pf => pf.id !== fileId);
+      // Limpiar URL del preview
+      const fileToRemove = prev.find(pf => pf.id === fileId);
+      if (fileToRemove?.preview) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      return updated;
+    });
+  }, []);
+
+  const removeImage = useCallback(async (imageId) => {
+    if (!propertyId) return;
+    
+    try {
+      setUploadState(ImageStates.PROCESSING);
+      await propertyService.deletePropertyImage(propertyId, imageId, getAccessTokenSilently);
+      
+      if (isMountedRef.current) {
+        setImages(prev => prev.filter(img => img.id !== imageId));
+        setUploadState(ImageStates.SUCCESS);
+        clearError();
+      }
+    } catch (err) {
+      console.error('Error removing image:', err);
+      if (isMountedRef.current) {
+        setError(`Error eliminando imagen: ${err.message}`);
+        setUploadState(ImageStates.ERROR);
+        onError?.(err);
+      }
+    }
+  }, [propertyId, getAccessTokenSilently, onError]);
+
+  const uploadPendingFiles = useCallback(async () => {
+    if (pendingFiles.length === 0 || !propertyId) return { success: true };
+
+    try {
+      setUploadState(ImageStates.UPLOADING);
+      setUploadProgress(0);
+      onUploadStart?.();
+
+      const files = pendingFiles.map(pf => pf.file);
+      const response = await propertyService.uploadPropertyImages(
+        propertyId, 
+        files, 
+        getAccessTokenSilently,
+        (progress) => {
+          if (isMountedRef.current) {
+            setUploadProgress(progress);
+            onUploadProgress?.(progress);
+          }
+        }
+      );
+
+      if (isMountedRef.current) {
+        if (response.success && response.data) {
+          const newImages = response.data.map(img => ({
+            id: img.id,
+            url: img.url,
+            orden: img.orden || 0
+          }));
+
+          setImages(prev => [...prev, ...newImages].sort((a, b) => a.orden - b.orden));
+          clearPendingFiles();
+          setUploadState(ImageStates.SUCCESS);
+          onUploadComplete?.(newImages);
+        }
+        
+        clearError();
+        return { success: true, data: response.data };
+      }
+    } catch (err) {
+      console.error('Error uploading files:', err);
+      if (isMountedRef.current) {
+        setError(`Error subiendo imágenes: ${err.message}`);
+        setUploadState(ImageStates.ERROR);
+        onError?.(err);
+      }
+      return { success: false, error: err.message };
+    }
+  }, [pendingFiles, propertyId, getAccessTokenSilently, onUploadStart, onUploadProgress, onUploadComplete, onError]);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const clearPendingFiles = useCallback(() => {
+    // Limpiar URLs de preview
+    pendingFiles.forEach(pf => {
+      if (pf.preview) {
+        URL.revokeObjectURL(pf.preview);
+      }
+    });
+    setPendingFiles([]);
+  }, [pendingFiles]);
+
+  const clearAllImages = useCallback(() => {
+    setImages([]);
+    clearPendingFiles();
+    setUploadProgress(0);
+    setUploadState(ImageStates.IDLE);
+    clearError();
+  }, [clearPendingFiles]);
+
+  const reorderPendingFiles = useCallback((startIndex, endIndex) => {
+    setPendingFiles(prev => {
+      const result = Array.from(prev);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      return result;
+    });
+  }, []);
+
+  // Valores calculados
+  const totalImages = images.length + pendingFiles.length;
+  const canAddMore = totalImages < maxImages;
+  const remainingSlots = maxImages - totalImages;
+  const isProcessing = uploadState === ImageStates.UPLOADING || uploadState === ImageStates.PROCESSING || isReordering;
+
   return {
     images,
     pendingFiles,
@@ -112,8 +268,20 @@ export const useImageManager = (propertyId = null, options = {}) => {
     uploadProgress,
     error,
     isReordering,
+    totalImages,
+    canAddMore,
+    remainingSlots,
+    isProcessing,
+    addFiles,
+    removePendingFile,
+    removeImage,
+    uploadPendingFiles,
+    clearError,
+    clearPendingFiles,
+    clearAllImages,
     loadPropertyImages,
-    reorderImages
+    reorderImages,
+    reorderPendingFiles
   };
 };
 
