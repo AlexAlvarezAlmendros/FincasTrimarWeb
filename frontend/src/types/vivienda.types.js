@@ -40,6 +40,10 @@ export const Estado = {
 };
 
 export const EstadoVenta = {
+  PENDIENTE: 'Pendiente',
+  CONTACTADA: 'Contactada',
+  CAPTADA: 'Captada',
+  RECHAZADA: 'Rechazada',
   DISPONIBLE: 'Disponible',
   RESERVADA: 'Reservada',
   VENDIDA: 'Vendida',
@@ -106,7 +110,12 @@ export const ViviendaModel = {
     fechaPublicacion: null,
     createdAt: null,
     updatedAt: null,
-    imagenes: []
+    imagenes: [],
+    // Campos de captación
+    comisionGanada: 0,
+    captadoPor: '',
+    porcentajeCaptacion: 0,
+    fechaCaptacion: null
   },
 
   /**

@@ -12,13 +12,19 @@ class ViviendaRepository {
    */
   async findAll({ 
     q, minPrice, maxPrice, rooms, bathRooms, tipoInmueble, tipoVivienda,
-    provincia, poblacion, published = true, page = 1, pageSize = 20 
+    provincia, poblacion, estadoVenta, captadoPor, published = true, page = 1, pageSize = 20, includeDrafts = false 
   } = {}) {
     try {
-      logger.info(`🔍 findAll llamado con pageSize=${pageSize}, published=${published}`);
+      logger.info(`🔍 findAll llamado con pageSize=${pageSize}, published=${published}, includeDrafts=${includeDrafts}`);
       
       const conditions = [];
       const params = [];
+      
+      // Filtro de borradores (por defecto excluir borradores en consultas públicas)
+      if (!includeDrafts) {
+        conditions.push('IsDraft = ?');
+        params.push(0);
+      }
       
       // Filtro de publicación
       if (published !== undefined) {
@@ -75,6 +81,17 @@ class ViviendaRepository {
         params.push(poblacion);
       }
       
+      // Filtros de captación
+      if (estadoVenta) {
+        conditions.push('EstadoVenta = ?');
+        params.push(estadoVenta);
+      }
+      
+      if (captadoPor) {
+        conditions.push('CaptadoPor = ?');
+        params.push(captadoPor);
+      }
+      
       // Construir WHERE clause
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
       
@@ -87,7 +104,8 @@ class ViviendaRepository {
           Id, Name, ShortDescription, Price, Rooms, BathRooms, Garage, 
           SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
           TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
-          Published, FechaPublicacion, CreatedAt, UpdatedAt,
+          Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
+          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion,
           CASE 
             WHEN LENGTH(Description) > 1000 THEN SUBSTR(Description, 1, 1000) || '...' 
             ELSE Description 
@@ -124,6 +142,71 @@ class ViviendaRepository {
       };
     } catch (error) {
       logger.error('Error en ViviendaRepository.findAll:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene solo las viviendas que son borradores
+   */
+  async findDrafts({ q, page = 1, pageSize = 20 } = {}) {
+    try {
+      logger.info(`🔍 findDrafts llamado con pageSize=${pageSize}`);
+      
+      const conditions = ['IsDraft = ?'];
+      const params = [1]; // Solo borradores
+      
+      // Búsqueda de texto libre en borradores
+      if (q) {
+        conditions.push('(Name LIKE ? OR Description LIKE ? OR Poblacion LIKE ?)');
+        const searchTerm = `%${q}%`;
+        params.push(searchTerm, searchTerm, searchTerm);
+      }
+      
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      const offset = (page - 1) * pageSize;
+      
+      // Query para borradores con los mismos campos que findAll
+      const sql = `
+        SELECT 
+          Id, Name, ShortDescription, Price, Rooms, BathRooms, Garage, 
+          SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
+          TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
+          Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
+          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion,
+          CASE 
+            WHEN LENGTH(Description) > 1000 THEN SUBSTR(Description, 1, 1000) || '...' 
+            ELSE Description 
+          END as Description,
+          CASE 
+            WHEN LENGTH(Caracteristicas) > 5000 THEN '[]' 
+            ELSE Caracteristicas 
+          END as Caracteristicas
+        FROM Vivienda 
+        ${whereClause}
+        ORDER BY UpdatedAt DESC 
+        LIMIT ? OFFSET ?
+      `;
+      
+      const result = await executeQuery(sql, [...params, String(pageSize), String(offset)]);
+      
+      // Obtener total para paginación
+      const countSql = `SELECT COUNT(*) as total FROM Vivienda ${whereClause}`;
+      const countResult = await executeQuery(countSql, params);
+      const total = countResult.rows[0]?.total || 0;
+      
+      return {
+        data: result.rows.map(this.transformRow),
+        pagination: {
+          page: Number(page),
+          pageSize: Number(pageSize),
+          total: Number(total),
+          totalPages: Math.ceil(total / pageSize),
+          hasMore: (page * pageSize) < total
+        }
+      };
+    } catch (error) {
+      logger.error('Error en ViviendaRepository.findDrafts:', error);
       throw error;
     }
   }
@@ -165,7 +248,16 @@ class ViviendaRepository {
   async create(viviendaData) {
     try {
       const id = uuidv4();
-      const fechaPublicacion = viviendaData.published ? new Date().toISOString() : null;
+      
+      // Lógica de publicación automática: 
+      // - Si es borrador (isDraft=true), no publicar
+      // - Si no es borrador y estado es "Disponible", publicar automáticamente
+      // - Si no es borrador y hay checkbox published, respetar checkbox
+      const isDraft = Boolean(viviendaData.isDraft);
+      const autoPublish = !isDraft && viviendaData.estadoVenta === 'Disponible';
+      const shouldPublish = isDraft ? false : (autoPublish || viviendaData.published);
+      
+      const fechaPublicacion = shouldPublish ? new Date().toISOString() : null;
       const caracteristicasJson = JSON.stringify(viviendaData.caracteristicas || []);
       
       // Preparar parámetros y validar cada uno
@@ -190,8 +282,13 @@ class ViviendaRepository {
         viviendaData.tipoAnuncio || null,            // 18: TipoAnuncio
         viviendaData.estadoVenta || null,            // 19: EstadoVenta
         caracteristicasJson,                         // 20: Caracteristicas
-        viviendaData.published ? 1 : 0,              // 21: Published
-        fechaPublicacion                             // 22: FechaPublicacion
+        shouldPublish ? 1 : 0,                       // 21: Published
+        fechaPublicacion,                            // 22: FechaPublicacion
+        Number(viviendaData.comisionGanada) || 0.0,  // 23: ComisionGanada
+        viviendaData.captadoPor || null,             // 24: CaptadoPor
+        Number(viviendaData.porcentajeCaptacion) || 0.0, // 25: PorcentajeCaptacion
+        viviendaData.fechaCaptacion || null,         // 26: FechaCaptacion
+        isDraft ? 1 : 0                             // 27: IsDraft
       ];
 
       // Log detallado de parámetros para debugging
@@ -208,8 +305,9 @@ class ViviendaRepository {
           Id, Name, ShortDescription, Description, Price, Rooms, BathRooms,
           Garage, SquaredMeters, Provincia, Poblacion, Calle, Numero,
           TipoInmueble, TipoVivienda, Estado, Planta, TipoAnuncio,
-          EstadoVenta, Caracteristicas, Published, FechaPublicacion
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          EstadoVenta, Caracteristicas, Published, FechaPublicacion,
+          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion, IsDraft
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, params);
       
       return await this.findById(id);
@@ -225,7 +323,16 @@ class ViviendaRepository {
   async update(id, viviendaData) {
     try {
       const caracteristicasJson = JSON.stringify(viviendaData.caracteristicas || []);
-      const fechaPublicacion = viviendaData.published ? new Date().toISOString() : null;
+      
+      // Lógica de publicación automática para actualizaciones:
+      // - Si es borrador (isDraft=true), no publicar
+      // - Si no es borrador y estado es "Disponible", publicar automáticamente
+      // - Si no es borrador y hay checkbox published, respetar checkbox
+      const isDraft = Boolean(viviendaData.isDraft);
+      const autoPublish = !isDraft && viviendaData.estadoVenta === 'Disponible';
+      const shouldPublish = isDraft ? false : (autoPublish || viviendaData.published);
+      
+      const fechaPublicacion = shouldPublish ? new Date().toISOString() : null;
       
       await executeQuery(`
         UPDATE Vivienda SET
@@ -233,7 +340,8 @@ class ViviendaRepository {
           BathRooms = ?, Garage = ?, SquaredMeters = ?, Provincia = ?, Poblacion = ?,
           Calle = ?, Numero = ?, TipoInmueble = ?, TipoVivienda = ?, Estado = ?,
           Planta = ?, TipoAnuncio = ?, EstadoVenta = ?, Caracteristicas = ?,
-          Published = ?, FechaPublicacion = ?, UpdatedAt = CURRENT_TIMESTAMP
+          Published = ?, FechaPublicacion = ?, ComisionGanada = ?, CaptadoPor = ?,
+          PorcentajeCaptacion = ?, FechaCaptacion = ?, IsDraft = ?, UpdatedAt = CURRENT_TIMESTAMP
         WHERE Id = ?
       `, [
         viviendaData.name, viviendaData.shortDescription, viviendaData.description,
@@ -242,7 +350,10 @@ class ViviendaRepository {
         viviendaData.poblacion, viviendaData.calle, viviendaData.numero,
         viviendaData.tipoInmueble, viviendaData.tipoVivienda, viviendaData.estado,
         viviendaData.planta, viviendaData.tipoAnuncio, viviendaData.estadoVenta,
-        caracteristicasJson, viviendaData.published ? 1 : 0, fechaPublicacion, id
+        caracteristicasJson, shouldPublish ? 1 : 0, fechaPublicacion,
+        Number(viviendaData.comisionGanada) || 0.0, viviendaData.captadoPor || null,
+        Number(viviendaData.porcentajeCaptacion) || 0.0, viviendaData.fechaCaptacion || null,
+        isDraft ? 1 : 0, id
       ]);
       
       return await this.findById(id);
@@ -316,9 +427,140 @@ class ViviendaRepository {
       caracteristicas: row.Caracteristicas ? JSON.parse(row.Caracteristicas) : [],
       published: Boolean(row.Published),
       fechaPublicacion: row.FechaPublicacion,
+      isDraft: Boolean(row.IsDraft),
+      comisionGanada: row.ComisionGanada || 0.0,
+      captadoPor: row.CaptadoPor,
+      porcentajeCaptacion: row.PorcentajeCaptacion || 0.0,
+      fechaCaptacion: row.FechaCaptacion,
       createdAt: row.CreatedAt,
       updatedAt: row.UpdatedAt
     };
+  }
+
+  /**
+   * Obtiene el conteo de propiedades por estado de venta
+   */
+  async getPropertyCountsByStatus() {
+    try {
+      const query = `
+        SELECT EstadoVenta as status, COUNT(*) as count
+        FROM Vivienda
+        WHERE Published = 1
+        GROUP BY EstadoVenta
+      `;
+      
+      const result = await executeQuery(query, []);
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting property counts by status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el conteo total de propiedades
+   */
+  async getTotalPropertiesCount() {
+    try {
+      const query = 'SELECT COUNT(*) as count FROM Vivienda';
+      const result = await executeQuery(query, []);
+      return result.rows[0]?.count || 0;
+    } catch (error) {
+      logger.error('Error getting total properties count:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el conteo de propiedades publicadas
+   */
+  async getPublishedPropertiesCount() {
+    try {
+      const query = 'SELECT COUNT(*) as count FROM Vivienda WHERE Published = 1';
+      const result = await executeQuery(query, []);
+      return result.rows[0]?.count || 0;
+    } catch (error) {
+      logger.error('Error getting published properties count:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las ventas mensuales (propiedades vendidas/cerradas)
+   */
+  async getMonthlySales() {
+    try {
+      const query = `
+        SELECT 
+          strftime('%Y-%m', FechaPublicacion) as month,
+          COUNT(*) as sales,
+          SUM(Price) as revenue
+        FROM Vivienda
+        WHERE EstadoVenta IN ('Vendida', 'Cerrada')
+          AND FechaPublicacion IS NOT NULL
+          AND FechaPublicacion >= date('now', '-12 months')
+        GROUP BY strftime('%Y-%m', FechaPublicacion)
+        ORDER BY month ASC
+      `;
+      
+      const result = await executeQuery(query, []);
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting monthly sales:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene estadísticas por tipo de propiedad
+   */
+  async getPropertyTypeStats() {
+    try {
+      const query = `
+        SELECT 
+          TipoVivienda as type,
+          COUNT(*) as count,
+          AVG(Price) as averagePrice,
+          MIN(Price) as minPrice,
+          MAX(Price) as maxPrice
+        FROM Vivienda
+        WHERE Published = 1
+        GROUP BY TipoVivienda
+        ORDER BY count DESC
+      `;
+      
+      const result = await executeQuery(query, []);
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting property type stats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene estadísticas por ubicación
+   */
+  async getLocationStats() {
+    try {
+      const query = `
+        SELECT 
+          Poblacion as location,
+          COUNT(*) as count,
+          AVG(Price) as averagePrice
+        FROM Vivienda
+        WHERE Published = 1
+          AND Poblacion IS NOT NULL
+        GROUP BY Poblacion
+        ORDER BY count DESC
+        LIMIT 10
+      `;
+      
+      const result = await executeQuery(query, []);
+      return result.rows;
+    } catch (error) {
+      logger.error('Error getting location stats:', error);
+      throw error;
+    }
   }
 }
 

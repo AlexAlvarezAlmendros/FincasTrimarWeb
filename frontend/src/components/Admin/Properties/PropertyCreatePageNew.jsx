@@ -45,6 +45,7 @@ const ImageUploadSection = ({
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
+    console.log('Archivos seleccionados:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
     if (files.length > 0) {
       addFiles(files);
     }
@@ -114,7 +115,7 @@ const ImageUploadSection = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
             multiple
             onChange={handleFileSelect}
             style={{ display: 'none' }}
@@ -164,6 +165,7 @@ const PropertyCreatePage = () => {
   // Estado para el popup de éxito
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successData, setSuccessData] = useState(null);
+  const [wasSavedAsDraft, setWasSavedAsDraft] = useState(false);
   
   // Estado para resetear el HtmlExtractor
   const [htmlExtractorReset, setHtmlExtractorReset] = useState(0);
@@ -191,6 +193,7 @@ const PropertyCreatePage = () => {
     formData,
     updateField,
     createVivienda,
+    createDraft,
     isCreating,
     error,
     success,
@@ -235,18 +238,6 @@ const PropertyCreatePage = () => {
     setHasLoadedData(false);
   }, [id]);
 
-  // Cargar datos si estamos en modo edición
-  useEffect(() => {
-    if (isEditing && id && !hasLoadedData) {
-      console.log('Cargando datos para edición, ID:', id);
-      setHasLoadedData(true);
-      loadProperty(id).catch(err => {
-        console.error('Error cargando propiedad para edición:', err);
-        setHasLoadedData(false); // Resetear en caso de error para permitir reintento
-      });
-    }
-  }, [isEditing, id, hasLoadedData]);
-
   // Extraer funciones necesarias del imageManager
   const {
     images,
@@ -265,8 +256,34 @@ const PropertyCreatePage = () => {
     reorderImages,
     reorderPendingFiles,
     clearPendingFiles,
-    clearAllImages
+    clearAllImages,
+    loadPropertyImages
   } = imageManager;
+
+  // Cargar datos si estamos en modo edición
+  useEffect(() => {
+    if (isEditing && id && !hasLoadedData) {
+      console.log('Cargando datos para edición, ID:', id);
+      setHasLoadedData(true);
+      
+      const loadData = async () => {
+        try {
+          // Cargar datos de la propiedad
+          await loadProperty(id);
+          
+          // Cargar imágenes de la propiedad
+          await loadPropertyImages(id);
+          
+          console.log('✅ Datos y imágenes cargados correctamente');
+        } catch (err) {
+          console.error('Error cargando datos para edición:', err);
+          setHasLoadedData(false); // Resetear en caso de error para permitir reintento
+        }
+      };
+      
+      loadData();
+    }
+  }, [isEditing, id, hasLoadedData, loadProperty, loadPropertyImages]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -284,7 +301,11 @@ const PropertyCreatePage = () => {
       if (window.confirm('¿Estás seguro de que quieres descartar los cambios y recargar los datos originales?')) {
         try {
           await loadProperty(id);
-          // También recargar imágenes si es necesario
+          // También recargar imágenes
+          await loadPropertyImages(id);
+          // Limpiar archivos pendientes
+          clearPendingFiles();
+          console.log('✅ Datos e imágenes recargados correctamente');
         } catch (error) {
           console.error('Error recargando datos:', error);
         }
@@ -303,6 +324,7 @@ const PropertyCreatePage = () => {
   const handleSuccessPopupClose = () => {
     setShowSuccessPopup(false);
     setSuccessData(null);
+    setWasSavedAsDraft(false);
     
     if (isEditing) {
       // En modo edición, volver al listado
@@ -319,6 +341,20 @@ const PropertyCreatePage = () => {
       
       // Scroll hacia arriba para mejor UX
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Función para guardar como borrador
+  const handleSaveDraft = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setWasSavedAsDraft(true);
+      await createDraft(formData, id);
+    } catch (error) {
+      console.error('Error guardando borrador:', error);
+      setWasSavedAsDraft(false);
+      // El error ya se maneja en el hook
     }
   };
 
@@ -723,22 +759,27 @@ const PropertyCreatePage = () => {
               </select>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="planta">Planta</label>
-              <select
-                id="planta"
-                value={formData.planta}
-                onChange={(e) => updateField('planta', e.target.value)}
-                className="form-select"
-              >
-                <option value="">🏢 Seleccionar planta...</option>
-                {Object.entries(Planta).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Solo mostrar selector de Planta para Piso, Ático o Dúplex */}
+            {(formData.tipoVivienda === 'Piso' || 
+              formData.tipoVivienda === 'Ático' || 
+              formData.tipoVivienda === 'Dúplex') && (
+              <div className="form-group">
+                <label htmlFor="planta">Planta</label>
+                <select
+                  id="planta"
+                  value={formData.planta}
+                  onChange={(e) => updateField('planta', e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">🏢 Seleccionar planta...</option>
+                  {Object.entries(Planta).map(([key, value]) => (
+                    <option key={key} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="form-row">
@@ -809,25 +850,7 @@ const PropertyCreatePage = () => {
           />
         </div>
 
-        <div className="form-section">
-          <h2 className="section-title">📢 Estado de Publicación</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.published}
-                  onChange={(e) => updateField('published', e.target.checked)}
-                />
-                <span>Publicar inmediatamente</span>
-              </label>
-              <small className="form-help">
-                Si está marcado, la vivienda será visible públicamente
-              </small>
-            </div>
-          </div>
-        </div>
+        {/* Sección de publicación eliminada - ahora se auto-publica según estado */}
 
         <div className="form-actions">
           <button 
@@ -849,6 +872,18 @@ const PropertyCreatePage = () => {
             <i className="fas fa-redo"></i>
             Resetear
           </button>
+
+          {!id && (
+            <button 
+              type="button"
+              onClick={handleSaveDraft}
+              className="btn btn-secondary"
+              disabled={isCreating || !formData.name}
+            >
+              <i className="fas fa-save"></i>
+              Guardar Borrador
+            </button>
+          )}
           
           <button 
             type="submit" 
@@ -894,8 +929,16 @@ const PropertyCreatePage = () => {
       <SuccessPopup
         isVisible={showSuccessPopup}
         onClose={handleSuccessPopupClose}
-        title={`¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`}
-        message={`La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'guardada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`}
+        title={
+          wasSavedAsDraft 
+            ? '¡Borrador guardado exitosamente!'
+            : `¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`
+        }
+        message={
+          wasSavedAsDraft
+            ? `El borrador "${successData?.name || 'Nueva vivienda'}" ha sido guardado correctamente. Puedes encontrarlo en la sección de borradores para continuar editándolo más tarde.`
+            : `La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'publicada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`
+        }
         autoClose={true}
         autoCloseDelay={4000}
       />

@@ -159,6 +159,69 @@ export const useCreateViviendaSimple = (options = {}) => {
   }, [formData, onSuccess, onError]);
 
   /**
+   * Crear o actualizar vivienda como borrador
+   */
+  const createDraft = useCallback(async (data = formData, propertyId = null) => {
+    try {
+      setIsCreating(true);
+      setError(null);
+
+      console.log('Guardando como borrador:', data);
+      console.log('ID de propiedad (para edición):', propertyId);
+
+      // Validación básica mínima para borradores
+      if (!data.name || data.name.trim().length < 3) {
+        throw new Error('El nombre debe tener al menos 3 caracteres para guardar como borrador');
+      }
+
+      // Preparar datos para el backend con flag de borrador
+      const backendData = ViviendaFormModel.toVivienda(data);
+      backendData.IsDraft = 1; // Forzar como borrador
+      console.log('Datos preparados para backend (borrador):', backendData);
+
+      // Determinar si es creación o actualización
+      const isUpdate = Boolean(propertyId);
+      const url = isUpdate ? `/api/v1/viviendas/${propertyId}` : '/api/v1/viviendas';
+      const method = isUpdate ? 'PUT' : 'POST';
+
+      // Enviar al backend usando useApi (con autenticación)
+      const response = await apiRef.current(url, {
+        method,
+        body: JSON.stringify(backendData)
+      });
+      console.log('Respuesta del backend (borrador):', response);
+
+      if (!response.success) {
+        throw new Error(response.error?.message || `Error ${isUpdate ? 'actualizando' : 'creando'} borrador`);
+      }
+
+      setSuccess(true);
+      if (onSuccess) onSuccess(response.data);
+
+      return response;
+    } catch (err) {
+      console.error('Error en createDraft:', err);
+      
+      // Manejo específico de errores de autenticación
+      let errorMessage = err.message || 'Error inesperado';
+      
+      if (err.message?.includes('Unauthorized') || err.message?.includes('401')) {
+        errorMessage = 'No tienes permisos para guardar borradores. Inicia sesión primero.';
+      } else if (err.message?.includes('Forbidden') || err.message?.includes('403')) {
+        errorMessage = 'No tienes los permisos necesarios para guardar borradores.';
+      } else if (err.message?.includes('Token')) {
+        errorMessage = 'Sesión expirada. Inicia sesión nuevamente.';
+      }
+      
+      setError(errorMessage);
+      if (onError) onError(err);
+      throw err;
+    } finally {
+      setIsCreating(false);
+    }
+  }, [formData, onSuccess, onError]);
+
+  /**
    * Resetear formulario
    */
   const resetForm = useCallback(() => {
@@ -179,6 +242,7 @@ export const useCreateViviendaSimple = (options = {}) => {
     // Acciones
     updateField,
     createVivienda,
+    createDraft,
     loadProperty,
     resetForm,
 

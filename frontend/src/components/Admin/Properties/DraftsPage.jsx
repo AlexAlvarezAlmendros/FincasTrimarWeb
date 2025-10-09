@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
+import propertyService from '../../../services/propertyService.js';
 import './DraftsPage.css';
 
 // Hook personalizado para datos de borradores
 const useDrafts = () => {
+  const { getAccessTokenSilently } = useAuth0();
+  
   const [data, setData] = useState({
     drafts: [],
     loading: true,
@@ -26,93 +30,28 @@ const useDrafts = () => {
   }, [filters]);
 
   const fetchDrafts = async () => {
-    setData(prev => ({ ...prev, loading: true }));
+    setData(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 600));
+      // Obtener token de autenticación
+      const token = await getAccessTokenSilently();
       
-      // Mock data - en producción vendría de la API
-      const mockDrafts = [
-        {
-          id: '2',
-          name: 'Chalet adosado en Sant Cugat del Vallès',
-          shortDescription: 'Magnífico chalet con jardín y piscina privada',
-          price: 450000,
-          rooms: 4,
-          bathRooms: 3,
-          garage: 2,
-          squaredMeters: 180,
-          provincia: 'Barcelona',
-          poblacion: 'Sant Cugat del Vallès',
-          tipoInmueble: 'Vivienda',
-          tipoVivienda: 'Chalet',
-          tipoAnuncio: 'Venta',
-          estadoVenta: 'Disponible',
-          published: false,
-          createdAt: '2024-09-30T15:30:00Z',
-          updatedAt: '2024-10-01T09:15:00Z',
-          completionPercentage: 85,
-          missingFields: ['Imágenes', 'Descripción completa'],
-          images: [
-            'https://i.ibb.co/sample3.jpg'
-          ]
-        },
-        {
-          id: '5',
-          name: 'Casa rural en Anoia rehabilitada',
-          shortDescription: 'Perfecta para desconectar, con todos los servicios',
-          price: 180000,
-          rooms: 3,
-          bathRooms: 2,
-          garage: 0,
-          squaredMeters: 140,
-          provincia: 'Barcelona',
-          poblacion: 'Capellades',
-          tipoInmueble: 'Vivienda',
-          tipoVivienda: 'Casa',
-          tipoAnuncio: 'Venta',
-          estadoVenta: 'Disponible',
-          published: false,
-          createdAt: '2024-09-27T16:20:00Z',
-          updatedAt: '2024-09-29T10:30:00Z',
-          completionPercentage: 60,
-          missingFields: ['Imágenes', 'Descripción completa', 'Características'],
-          images: [
-            'https://i.ibb.co/sample7.jpg'
-          ]
-        },
-        {
-          id: '6',
-          name: 'Oficina en zona comercial de Igualada',
-          shortDescription: '',
-          price: 120000,
-          rooms: 0,
-          bathRooms: 1,
-          garage: 0,
-          squaredMeters: 85,
-          provincia: 'Barcelona',
-          poblacion: 'Igualada',
-          tipoInmueble: 'Oficina',
-          tipoVivienda: 'Oficina',
-          tipoAnuncio: 'Venta',
-          estadoVenta: 'Disponible',
-          published: false,
-          createdAt: '2024-09-25T11:00:00Z',
-          updatedAt: '2024-09-25T11:00:00Z',
-          completionPercentage: 30,
-          missingFields: ['Descripción breve', 'Descripción completa', 'Imágenes', 'Características'],
-          images: []
-        }
-      ];
+      // Llamar al servicio de borradores
+      const response = await propertyService.getDrafts({ token });
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al cargar borradores');
+      }
 
-      // Aplicar filtros
-      let filteredDrafts = mockDrafts;
+      const drafts = response.data || [];
+      
+      // Aplicar filtros del frontend (búsqueda)
+      let filteredDrafts = drafts;
       
       if (filters.search) {
         filteredDrafts = filteredDrafts.filter(draft => 
-          draft.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-          draft.poblacion.toLowerCase().includes(filters.search.toLowerCase())
+          (draft.name || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+          (draft.poblacion || '').toLowerCase().includes(filters.search.toLowerCase())
         );
       }
 
@@ -146,39 +85,74 @@ const useDrafts = () => {
         }
       });
     } catch (error) {
+      console.error('Error cargando borradores:', error);
       setData(prev => ({
         ...prev,
         loading: false,
-        error: 'Error al cargar los borradores'
+        error: error.message || 'Error al cargar los borradores'
       }));
     }
   };
 
   const publishDraft = async (draftId) => {
     try {
-      // Simular llamada API
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Obtener token de autenticación
+      const token = await getAccessTokenSilently();
       
+      // Obtener los datos del borrador actual
+      const draft = data.drafts.find(d => d.id === draftId);
+      if (!draft) {
+        throw new Error('Borrador no encontrado');
+      }
+      
+      // Actualizar el borrador para marcarlo como no borrador (publicado)
+      const updateData = { ...draft, isDraft: false };
+      const response = await propertyService.updateProperty(draftId, updateData, { token });
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al publicar borrador');
+      }
+      
+      // Remover el borrador de la lista (ya no es borrador)
       setData(prev => ({
         ...prev,
         drafts: prev.drafts.filter(draft => draft.id !== draftId)
       }));
+      
+      console.log('Borrador publicado exitosamente');
     } catch (error) {
       console.error('Error publishing draft:', error);
+      // Podrías mostrar un mensaje de error aquí
     }
   };
 
   const deleteDraft = async (draftId) => {
     try {
-      // Simular llamada API
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Confirmar eliminación
+      if (!window.confirm('¿Estás seguro de que quieres eliminar este borrador?')) {
+        return;
+      }
       
+      // Obtener token de autenticación
+      const token = await getAccessTokenSilently();
+      
+      // Eliminar el borrador
+      const response = await propertyService.deleteProperty(draftId, { token });
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al eliminar borrador');
+      }
+      
+      // Remover de la lista local
       setData(prev => ({
         ...prev,
         drafts: prev.drafts.filter(draft => draft.id !== draftId)
       }));
+      
+      console.log('Borrador eliminado exitosamente');
     } catch (error) {
       console.error('Error deleting draft:', error);
+      // Podrías mostrar un mensaje de error aquí
     }
   };
 

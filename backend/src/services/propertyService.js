@@ -25,6 +25,8 @@ class PropertyService {
         tipoVivienda: filters.tipoVivienda,
         provincia: filters.provincia,
         poblacion: filters.poblacion,
+        estadoVenta: filters.estadoVenta,
+        captadoPor: filters.captadoPor,
         published: filters.published !== undefined ? filters.published : true,
         page: filters.page || 1,
         pageSize: filters.pageSize || 20
@@ -68,6 +70,61 @@ class PropertyService {
       return result;
     } catch (error) {
       logger.error('Error en PropertyService.searchProperties:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca borradores según los filtros especificados
+   */
+  async getDrafts(filters = {}) {
+    try {
+      logger.info('Buscando borradores con filtros:', filters);
+      
+      const result = await viviendaRepository.findDrafts({
+        q: filters.q,
+        page: filters.page || 1,
+        pageSize: filters.pageSize || 20
+      });
+      
+      // Obtener imágenes principales para borradores
+      if (result.data && result.data.length > 0) {
+        const propertyIds = result.data.map(property => property.id);
+        
+        try {
+          const mainImages = await imagenesViviendaRepository.getMainImagesForProperties(propertyIds);
+          const imageCounts = await imagenesViviendaRepository.getImageCountsForProperties(propertyIds);
+          
+          // Mapear imágenes principales y conteos a cada borrador
+          const imageMap = {};
+          const countMap = {};
+          
+          mainImages.forEach(img => {
+            imageMap[img.viviendaId] = img.url;
+          });
+          
+          imageCounts.forEach(count => {
+            countMap[count.viviendaId] = count.count;
+          });
+          
+          result.data.forEach(property => {
+            property.imagenPrincipal = imageMap[property.id] || null;
+            property.totalImagenes = countMap[property.id] || 0;
+          });
+        } catch (imgError) {
+          logger.warn('Error al obtener imágenes para borradores:', imgError);
+          // Continuar sin imágenes
+          result.data.forEach(property => {
+            property.imagenPrincipal = null;
+            property.totalImagenes = 0;
+          });
+        }
+      }
+      
+      logger.info(`Borradores encontrados: ${result.data?.length || 0}`);
+      return result;
+    } catch (error) {
+      logger.error('Error en PropertyService.getDrafts:', error);
       throw error;
     }
   }

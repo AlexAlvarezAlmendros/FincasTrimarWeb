@@ -13,69 +13,85 @@ export const propertySchema = z.object({
   
   shortDescription: z.string()
     .max(300, 'La descripción corta no puede exceder 300 caracteres')
+    .transform(val => val === '' ? undefined : val)
     .optional(),
   
   description: z.string()
     .max(2000, 'La descripción no puede exceder 2000 caracteres')
+    .transform(val => val === '' ? undefined : val)
     .optional(),
   
-  price: z.number()
+  price: z.coerce.number()
     .int('El precio debe ser un número entero')
     .min(0, 'El precio no puede ser negativo'),
   
-  rooms: z.number()
+  rooms: z.coerce.number()
     .int('Las habitaciones deben ser un número entero')
     .min(0, 'No puede tener habitaciones negativas')
     .default(0),
   
-  bathRooms: z.number()
+  bathRooms: z.coerce.number()
     .int('Los baños deben ser un número entero')
     .min(0, 'No puede tener baños negativos')
     .default(0),
   
-  garage: z.number()
+  garage: z.coerce.number()
     .int('Los garajes deben ser un número entero')
     .min(0, 'No puede tener garajes negativos')
     .default(0),
   
-  squaredMeters: z.number()
+  squaredMeters: z.coerce.number()
     .int('Los metros cuadrados deben ser un número entero')
     .min(0, 'No puede tener metros negativos')
     .optional(),
   
   provincia: z.string()
     .max(100, 'La provincia no puede exceder 100 caracteres')
+    .transform(val => val === '' ? undefined : val)
     .optional(),
   
   poblacion: z.string()
     .max(100, 'La población no puede exceder 100 caracteres')
+    .transform(val => val === '' ? undefined : val)
     .optional(),
   
   calle: z.string()
     .max(100, 'La calle no puede exceder 100 caracteres')
+    .transform(val => val === '' ? undefined : val)
     .optional(),
   
   numero: z.string()
     .max(20, 'El número no puede exceder 20 caracteres')
+    .transform(val => val === '' ? undefined : val)
     .optional(),
   
-  tipoInmueble: z.enum([
-    'Vivienda', 'Oficina', 'Local', 'Nave', 
-    'Garaje', 'Terreno', 'Trastero', 'Edificio', 'ObraNueva'
-  ]).optional(),
+  tipoInmueble: z.string()
+    .refine(val => val === '' || ['Vivienda', 'Oficina', 'Local', 'Nave', 'Garaje', 'Terreno', 'Trastero', 'Edificio', 'ObraNueva'].includes(val))
+    .transform(val => val === '' ? undefined : val)
+    .optional(),
   
-  tipoVivienda: z.enum([
-    'Piso', 'Ático', 'Dúplex', 'Casa', 
-    'Chalet', 'Villa', 'Masía', 'Finca', 'Loft'
-  ]).optional(),
+  tipoVivienda: z.string()
+    .refine(val => val === '' || ['Piso', 'Ático', 'Dúplex', 'Casa', 'Chalet', 'Villa', 'Masía', 'Finca', 'Loft'].includes(val))
+    .transform(val => val === '' ? undefined : val)
+    .optional(),
   
-  estado: z.enum(['ObraNueva', 'BuenEstado', 'AReformar']).optional(),
+  estado: z.string()
+    .refine(val => val === '' || ['ObraNueva', 'BuenEstado', 'AReformar'].includes(val))
+    .transform(val => val === '' ? undefined : val)
+    .optional(),
   
-  planta: z.enum(['UltimaPlanta', 'PlantaIntermedia', 'Bajo']).optional(),
+  planta: z.string()
+    .refine(val => val === '' || ['UltimaPlanta', 'PlantaIntermedia', 'Bajo'].includes(val))
+    .transform(val => val === '' ? undefined : val)
+    .optional(),
   
-  tipoAnuncio: z.enum(['Venta', 'Alquiler']).optional(),
+  tipoAnuncio: z.string()
+    .refine(val => val === '' || ['Venta', 'Alquiler'].includes(val))
+    .transform(val => val === '' ? undefined : val)
+    .optional(),
   
-  estadoVenta: z.enum(['Disponible', 'Reservada', 'Vendida', 'Cerrada'])
+  estadoVenta: z.string()
+    .refine(val => ['Pendiente', 'Contactada', 'Captada', 'Rechazada', 'Disponible', 'Reservada', 'Vendida', 'Cerrada'].includes(val))
     .default('Disponible'),
   
   caracteristicas: z.array(z.enum([
@@ -85,7 +101,30 @@ export const propertySchema = z.object({
     'FuegoATierra', 'Calefacción', 'Guardilla', 'CocinaOffice'
   ])).default([]),
   
-  published: z.boolean().default(false)
+  published: z.boolean().default(false),
+  
+  // Campos de borrador
+  isDraft: z.boolean().default(false),
+  
+  // Campos de captación
+  comisionGanada: z.coerce.number()
+    .min(0, 'La comisión no puede ser negativa')
+    .max(100, 'La comisión no puede exceder 100%')
+    .default(0),
+    
+  captadoPor: z.string()
+    .max(100, 'El campo captadoPor no puede exceder 100 caracteres')
+    .transform(val => val === '' ? undefined : val)
+    .optional(),
+    
+  porcentajeCaptacion: z.coerce.number()
+    .min(0, 'El porcentaje de captación no puede ser negativo')
+    .max(100, 'El porcentaje de captación no puede exceder 100%')
+    .default(0),
+    
+  fechaCaptacion: z.string()
+    .transform(val => val === '' ? undefined : val)
+    .optional()
 });
 
 // Esquema para filtros de búsqueda
