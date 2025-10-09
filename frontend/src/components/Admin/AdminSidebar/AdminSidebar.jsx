@@ -24,13 +24,6 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath }) => {
       ]
     },
     {
-      id: 'captacion',
-      path: '/admin/captacion',
-      icon: '🤝',
-      label: 'Captación',
-      roles: ['Admin', 'Seller']
-    },
-    {
       id: 'messages',
       path: '/admin/mensajes',
       icon: '💬',
