@@ -10,11 +10,10 @@ class EmailService {
     this.isConfigured = false;
     
     this.config = {
-      clientId: process.env.GMAIL_CLIENT_ID,
-      clientSecret: process.env.GMAIL_CLIENT_SECRET,
-      refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-      senderEmail: process.env.GMAIL_SENDER_EMAIL,
-      senderName: process.env.GMAIL_SENDER_NAME || 'Inmobiliaria Fincas Trimar'
+      user: process.env.GMAIL_USER,
+      appPassword: process.env.GMAIL_APP_PASSWORD,
+      fromName: process.env.GMAIL_FROM_NAME || 'Fincas Trimar',
+      fromEmail: process.env.GMAIL_FROM_EMAIL || process.env.GMAIL_USER
     };
     
     this.initialize();
@@ -25,28 +24,30 @@ class EmailService {
    */
   initialize() {
     try {
-      const { clientId, clientSecret, refreshToken, senderEmail } = this.config;
+      const { user, appPassword, fromEmail } = this.config;
       
-      if (!clientId || !clientSecret || !refreshToken || !senderEmail) {
+      if (!user || !appPassword) {
         logger.warn('⚠️  Configuración de Gmail incompleta - servicio de email deshabilitado');
-        logger.warn('Variables requeridas: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, GMAIL_SENDER_EMAIL');
+        logger.warn('Variables requeridas: GMAIL_USER, GMAIL_APP_PASSWORD');
+        logger.info('💡 Para configurar Gmail App Password:');
+        logger.info('   1. Activar autenticación de 2 factores en Gmail');
+        logger.info('   2. Ir a Configuración > Seguridad > App passwords');
+        logger.info('   3. Generar nueva app password para "Mail"');
+        logger.info('   4. Usar esa password de 16 caracteres en GMAIL_APP_PASSWORD');
         return;
       }
 
       this.transporter = nodemailer.createTransporter({
         service: 'gmail',
         auth: {
-          type: 'OAuth2',
-          user: senderEmail,
-          clientId: clientId,
-          clientSecret: clientSecret,
-          refreshToken: refreshToken,
-          accessToken: undefined // Se genera automáticamente
+          user: user,
+          pass: appPassword
         }
       });
 
       this.isConfigured = true;
-      logger.info('✅ Servicio de email configurado correctamente');
+      logger.info('✅ Servicio de email configurado correctamente con Gmail App Password');
+      logger.info(`📧 Emails se enviarán desde: ${fromEmail}`);
       
     } catch (error) {
       logger.error('❌ Error configurando servicio de email:', error);
@@ -105,8 +106,8 @@ class EmailService {
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #3A8DFF; margin: 0; font-size: 28px;">🏠 ${this.config.senderName}</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Nuevo mensaje de contacto</p>
+            <h1 style="color: #3A8DFF; margin: 0; font-size: 28px;">🏠 ${this.config.fromName}</h1>
+                        <p style="color: #666; margin: 5px 0 0 0;">Nuevo mensaje de contacto</p>
           </div>
 
           <div style="background-color: #fff; border: 1px solid #e1e5e9; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -165,7 +166,7 @@ class EmailService {
 
           <div style="text-align: center; margin-top: 20px; padding: 20px; color: #666; font-size: 12px; border-top: 1px solid #e1e5e9;">
             <p style="margin: 0;">Este email fue generado automáticamente por el sistema de contacto web</p>
-            <p style="margin: 5px 0 0 0;">${this.config.senderName} • Gestión Inmobiliaria</p>
+            <p style="margin: 5px 0 0 0;">${this.config.fromName} • Gestión Inmobiliaria</p>
           </div>
 
         </body>
@@ -185,7 +186,7 @@ class EmailService {
       descripcion
     } = mensaje;
 
-    let text = `NUEVO CONTACTO - ${this.config.senderName}\n\n`;
+    let text = `NUEVO CONTACTO - ${this.config.fromName}\n\n`;
     text += `Asunto: ${asunto || 'Consulta General'}\n`;
     text += `Fecha: ${new Date().toLocaleDateString('es-ES')}\n\n`;
     
@@ -226,7 +227,7 @@ class EmailService {
       const { vivienda, mensaje, recipientEmail } = emailData;
       
       // Email destinatario (por defecto el configurado, o parámetro específico)
-      const toEmail = recipientEmail || this.config.senderEmail;
+      const toEmail = recipientEmail || this.config.fromEmail;
       
       // Generar contenido
       const html = this.generateContactEmailHTML({ vivienda, mensaje });
@@ -234,7 +235,7 @@ class EmailService {
       
       // Configurar email
       const mailOptions = {
-        from: `"${this.config.senderName}" <${this.config.senderEmail}>`,
+        from: `"${this.config.fromName}" <${this.config.fromEmail}>`,
         to: toEmail,
         replyTo: mensaje.email, // Responder directamente al cliente
         subject: `🏠 Nuevo contacto: ${mensaje.asunto || 'Consulta General'}`,
@@ -276,10 +277,10 @@ class EmailService {
         return { success: true, simulated: true };
       }
 
-      const toEmail = recipientEmail || this.config.senderEmail;
+      const toEmail = recipientEmail || this.config.fromEmail;
       
       const mailOptions = {
-        from: `"${this.config.senderName}" <${this.config.senderEmail}>`,
+        from: `"${this.config.fromName}" <${this.config.fromEmail}>`,
         to: toEmail,
         subject: `[${type.toUpperCase()}] ${subject}`,
         text: message,
@@ -290,7 +291,7 @@ class EmailService {
               <p style="white-space: pre-wrap;">${message}</p>
             </div>
             <p style="color: #666; font-size: 12px; margin-top: 20px;">
-              ${this.config.senderName} - Sistema Automático
+              ${this.config.fromName} - Sistema Automático
             </p>
           </div>
         `

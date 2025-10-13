@@ -190,6 +190,84 @@ const messageController = {
       logger.error('Error getting recent messages:', error);
       next(error);
     }
+  },
+
+  /**
+   * POST /api/v1/messages/send-contact
+   * Envía un mensaje de contacto y guarda en BD (Público)
+   */
+  async sendContact(req, res, next) {
+    try {
+      const contactData = {
+        viviendaId: req.body.viviendaId || null, // Opcional - para contactos desde detalle de vivienda
+        nombre: req.body.nombre,
+        email: req.body.email,
+        telefono: req.body.telefono || null,
+        asunto: req.body.asunto || 'Contacto desde web',
+        descripcion: req.body.descripcion,
+        tipo: req.body.tipo || 'general' // general, propiedad, venta, etc.
+      };
+
+      // Validación básica
+      if (!contactData.nombre || !contactData.email || !contactData.descripcion) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'MISSING_REQUIRED_FIELDS',
+            message: 'Los campos nombre, email y descripción son obligatorios'
+          }
+        });
+      }
+
+      // Crear mensaje y enviar email
+      const result = await messageService.createMessage(contactData);
+      
+      res.status(201).json({
+        success: true,
+        data: {
+          id: result.id,
+          estado: result.estado,
+          fecha: result.fecha
+        },
+        message: 'Tu mensaje ha sido enviado correctamente. Nos pondremos en contacto contigo pronto.'
+      });
+
+    } catch (error) {
+      logger.error('Error sending contact:', error);
+      
+      // Respuestas específicas para errores conocidos
+      if (error.code === 'INVALID_EMAIL') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_EMAIL',
+            message: 'El formato del email no es válido'
+          }
+        });
+      }
+
+      if (error.code === 'INVALID_NAME') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_NAME',
+            message: 'El nombre debe tener al menos 2 caracteres'
+          }
+        });
+      }
+
+      if (error.code === 'INVALID_DESCRIPTION') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_DESCRIPTION',
+            message: 'La descripción debe tener al menos 10 caracteres'
+          }
+        });
+      }
+
+      next(error);
+    }
   }
 };
 

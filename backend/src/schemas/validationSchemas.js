@@ -168,3 +168,52 @@ export const messageSchema = z.object({
   estado: z.enum(['Nuevo', 'EnCurso', 'Cerrado']).default('Nuevo'),
   pinned: z.boolean().default(false)
 });
+
+// Esquema específico para formularios de contacto (más estricto)
+export const contactFormSchema = z.object({
+  viviendaId: z.string().uuid().optional(), // Opcional - para contactos desde detalle de vivienda
+  
+  nombre: z.string()
+    .trim()
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(100, 'El nombre no puede exceder 100 caracteres')
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/, 'El nombre solo puede contener letras y espacios'),
+  
+  email: z.string()
+    .trim()
+    .email('El formato del email no es válido')
+    .max(100, 'El email no puede exceder 100 caracteres')
+    .toLowerCase(),
+  
+  telefono: z.string()
+    .trim()
+    .max(20, 'El teléfono no puede exceder 20 caracteres')
+    .regex(/^[+]?[\d\s\-()]+$/, 'El teléfono contiene caracteres no válidos')
+    .optional()
+    .transform(val => val === '' ? undefined : val),
+  
+  asunto: z.string()
+    .trim()
+    .min(3, 'El asunto debe tener al menos 3 caracteres')
+    .max(200, 'El asunto no puede exceder 200 caracteres')
+    .default('Contacto desde web'),
+  
+  descripcion: z.string()
+    .trim()
+    .min(10, 'La descripción debe tener al menos 10 caracteres')
+    .max(500, 'La descripción no puede exceder 500 caracteres'),
+  
+  tipo: z.enum(['general', 'propiedad', 'venta', 'compra', 'alquiler', 'valoracion'])
+    .default('general'),
+  
+  acepta_politicas: z.boolean()
+    .refine(val => val === true, 'Debe aceptar la política de privacidad'),
+  
+  // Campo honeypot para prevenir spam
+  website: z.string()
+    .optional()
+    .refine(val => !val || val === '', 'Campo de seguridad no válido')
+});
+
+// Esquema para validar parámetros de ID UUID
+export const uuidSchema = z.string().uuid('ID no válido');

@@ -1,5 +1,6 @@
 import mensajeRepository from '../repos/mensajeRepository.js';
 import viviendaRepository from '../repos/viviendaRepository.js';
+import emailService from './emailService.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -107,7 +108,24 @@ class MessageService {
       
       const newMessage = await mensajeRepository.create(cleanData);
       
-      // TODO: Aquí se enviaría el email de notificación
+      // Enviar email de notificación
+      try {
+        const vivienda = messageData.viviendaId 
+          ? await viviendaRepository.findById(messageData.viviendaId)
+          : null;
+        
+        await emailService.sendContactEmail({
+          vivienda,
+          mensaje: cleanData
+        });
+        
+        logger.info(`📧 Email de contacto enviado para mensaje ID: ${newMessage.id}`);
+      } catch (emailError) {
+        logger.error('❌ Error enviando email de notificación:', emailError);
+        // No fallar la operación completa por un error de email
+        // El mensaje se guarda en BD aunque el email falle
+      }
+      
       logger.info(`Mensaje creado exitosamente con ID: ${newMessage.id}`);
       
       return newMessage;

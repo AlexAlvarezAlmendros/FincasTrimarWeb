@@ -526,6 +526,156 @@ class PropertyService {
       throw error;
     }
   }
+
+  /**
+   * Obtiene propiedades en proceso de captación
+   * Estados válidos: Pendiente, Contactada, Captada, Rechazada
+   */
+  async getCaptacionProperties(filters = {}) {
+    try {
+      logger.info('Obteniendo propiedades de captación con filtros:', filters);
+      
+      // Estados de captación válidos
+      const captacionStates = ['Pendiente', 'Contactada', 'Captada', 'Rechazada'];
+      
+      const result = await viviendaRepository.findAll({
+        q: filters.q,
+        estadoVenta: filters.estadoVenta || captacionStates,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        tipoInmueble: filters.tipoInmueble,
+        tipoVivienda: filters.tipoVivienda,
+        provincia: filters.provincia,
+        poblacion: filters.poblacion,
+        captadoPor: filters.captadoPor,
+        published: true, // Solo propiedades publicadas
+        page: filters.page || 1,
+        pageSize: filters.pageSize || 20
+      });
+      
+      // Obtener imágenes principales para las propiedades
+      if (result.data && result.data.length > 0) {
+        const propertyIds = result.data.map(property => property.id);
+        
+        try {
+          const mainImages = await imagenesViviendaRepository.getMainImagesForProperties(propertyIds);
+          const imageCounts = await imagenesViviendaRepository.getImageCountsForProperties(propertyIds);
+          
+          // Mapear imágenes principales y conteos a cada propiedad
+          const imageMap = {};
+          const countMap = {};
+          
+          mainImages.forEach(img => {
+            imageMap[img.viviendaId] = img.url;
+          });
+          
+          imageCounts.forEach(count => {
+            countMap[count.viviendaId] = count.count;
+          });
+          
+          result.data.forEach(property => {
+            property.mainImage = imageMap[property.id] || null;
+            property.imageCount = countMap[property.id] || 0;
+          });
+        } catch (imageError) {
+          logger.error('Error loading images for captacion properties, continuing without them:', imageError);
+          result.data.forEach(property => {
+            property.mainImage = null;
+            property.imageCount = 0;
+          });
+        }
+      }
+      
+      logger.info(`Propiedades de captación encontradas: ${result.data?.length || 0}`);
+      return result;
+    } catch (error) {
+      logger.error('Error en PropertyService.getCaptacionProperties:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza los datos de captación de una propiedad
+   */
+  async updateCaptacionData(propertyId, captacionData) {
+    try {
+      logger.info(`Actualizando datos de captación para propiedad ${propertyId}:`, captacionData);
+      
+      // Validar que la propiedad existe
+      const existingProperty = await viviendaRepository.findById(propertyId);
+      if (!existingProperty) {
+        const error = new Error('Propiedad no encontrada');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      // Preparar datos de actualización
+      const updateData = {};
+      
+      if (captacionData.estadoVenta !== undefined) {
+        // Validar estado de captación
+        const validStates = ['Pendiente', 'Contactada', 'Captada', 'Rechazada'];
+        if (!validStates.includes(captacionData.estadoVenta)) {
+          const error = new Error(`Estado de captación no válido. Estados permitidos: ${validStates.join(', ')}`);
+          error.statusCode = 400;
+          throw error;
+        }
+        updateData.estadoVenta = captacionData.estadoVenta;
+      }
+
+      if (captacionData.fechaCaptacion !== undefined) {
+        // Validar formato de fecha
+        const date = new Date(captacionData.fechaCaptacion);
+        if (isNaN(date.getTime())) {
+          const error = new Error('Fecha de captación no válida');
+          error.statusCode = 400;
+          throw error;
+        }
+        updateData.fechaCaptacion = captacionData.fechaCaptacion;
+      }
+
+      if (captacionData.porcentajeCaptacion !== undefined) {
+        if (captacionData.porcentajeCaptacion !== null) {
+          const porcentaje = parseFloat(captacionData.porcentajeCaptacion);
+          if (isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100) {
+            const error = new Error('El porcentaje de captación debe ser un número entre 0 y 100');
+            error.statusCode = 400;
+            throw error;
+          }
+          updateData.porcentajeCaptacion = porcentaje;
+        } else {
+          updateData.porcentajeCaptacion = null;
+        }
+      }
+
+      if (captacionData.captadoPor !== undefined) {
+        updateData.captadoPor = captacionData.captadoPor || null;
+      }
+
+      if (captacionData.comisionGanada !== undefined) {
+        if (captacionData.comisionGanada !== null) {
+          const comision = parseFloat(captacionData.comisionGanada);
+          if (isNaN(comision) || comision < 0 || comision > 100) {
+            const error = new Error('La comisión ganada debe ser un número entre 0 y 100');
+            error.statusCode = 400;
+            throw error;
+          }
+          updateData.comisionGanada = comision;
+        } else {
+          updateData.comisionGanada = null;
+        }
+      }
+
+      // Realizar la actualización
+      const updatedProperty = await viviendaRepository.update(propertyId, updateData);
+      
+      logger.info(`Datos de captación actualizados exitosamente para propiedad: ${propertyId}`);
+      return updatedProperty;
+    } catch (error) {
+      logger.error('Error en PropertyService.updateCaptacionData:', error);
+      throw error;
+    }
+  }
 }
 
 // Exportar instancia singleton

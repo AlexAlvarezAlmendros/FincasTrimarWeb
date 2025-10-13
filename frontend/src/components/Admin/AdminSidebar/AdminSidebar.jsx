@@ -20,7 +20,8 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath }) => {
       submenu: [
         { path: '/admin/viviendas', label: 'Todas las viviendas', icon: '📋' },
         { path: '/admin/viviendas/crear', label: 'Crear nueva', icon: '➕' },
-        { path: '/admin/viviendas/borradores', label: 'Borradores', icon: '📝', badge: '2' }
+        { path: '/admin/viviendas/borradores', label: 'Borradores', icon: '📝', badge: '2' },
+        { path: '/admin/viviendas/captacion', label: 'Captación', icon: '🎯' }
       ]
     },
     {
