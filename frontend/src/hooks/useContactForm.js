@@ -21,7 +21,7 @@ const useContactForm = ({
     asunto: '',
     descripcion: '', // Usado como 'mensaje' en la UI pero enviado como 'descripcion' al backend
     tipo: 'general',
-    acepta_politicas: false,
+    acepta_politicas: true, // Siempre true automáticamente
     website: '', // Campo honeypot para prevenir spam
     ...initialData
   });
@@ -66,11 +66,6 @@ const useContactForm = ({
       newErrors.descripcion = 'El mensaje debe tener al menos 10 caracteres';
     }
 
-    // Validar aceptación de políticas (requerido)
-    if (!data.acepta_politicas) {
-      newErrors.acepta_politicas = 'Debes aceptar la política de privacidad';
-    }
-
     return newErrors;
   }, []);
 
@@ -78,6 +73,11 @@ const useContactForm = ({
    * Actualizar campo del formulario
    */
   const updateField = useCallback((field, value) => {
+    // Prevenir cambios en acepta_politicas - siempre debe ser true
+    if (field === 'acepta_politicas') {
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -96,9 +96,13 @@ const useContactForm = ({
    * Actualizar múltiples campos a la vez
    */
   const updateFields = useCallback((newData) => {
+    // Prevenir cambios en acepta_politicas - siempre debe ser true
+    const { acepta_politicas, ...safeData } = newData;
+    
     setFormData(prev => ({
       ...prev,
-      ...newData
+      ...safeData,
+      acepta_politicas: true // Forzar siempre true
     }));
   }, []);
 
@@ -122,7 +126,7 @@ const useContactForm = ({
       asunto: '',
       descripcion: '',
       tipo: 'general',
-      acepta_politicas: false,
+      acepta_politicas: true, // Siempre true automáticamente
       website: '',
       ...initialData
     });
@@ -160,7 +164,7 @@ const useContactForm = ({
         asunto: formData.asunto.trim(),
         descripcion: formData.descripcion.trim(),
         tipo: formData.tipo || 'general',
-        acepta_politicas: formData.acepta_politicas,
+        acepta_politicas: true, // Siempre true automáticamente
         website: formData.website || ''
       };
 
@@ -171,7 +175,7 @@ const useContactForm = ({
 
       // Realizar petición al backend
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-      const response = await fetch(`${API_BASE_URL}/api/messages/send-contact`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/messages/send-contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -241,7 +245,7 @@ const useContactForm = ({
       asunto: '',
       descripcion: '',
       tipo: 'general',
-      acepta_politicas: false,
+      acepta_politicas: true, // Siempre true automáticamente
       website: '',
       ...initialData
     };

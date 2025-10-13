@@ -7,7 +7,7 @@ import useContactForm from '../hooks/useContactForm';
  */
 const ContactForm = ({
   viviendaId = null,
-  initialData = {},
+  initialData = { acepta_politicas: true },
   showPhone = true,
   showSubjectSelect = true,
   subjectOptions = [

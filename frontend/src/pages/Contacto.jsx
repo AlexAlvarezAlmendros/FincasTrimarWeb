@@ -13,7 +13,8 @@ export default function Contacto() {
     updateField,
     submitForm,
     showSuccess,
-    showError
+    showError,
+    canSubmit
   } = useContactForm({
     onSuccess: () => {
       console.log('✅ Mensaje enviado exitosamente desde página de Contacto');
@@ -251,24 +252,6 @@ export default function Contacto() {
                     tabIndex="-1"
                     autoComplete="off"
                   />
-
-                  <div className="form-group-contacto checkbox-group">
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={formData.acepta_politicas || false}
-                        onChange={(e) => handleInputChange('acepta_politicas', e.target.checked)}
-                        required
-                        disabled={isSubmitting}
-                        className={errors.acepta_politicas ? 'error' : ''}
-                      />
-                      <span className="checkmark"></span>
-                      Acepto la <a href="/politica-privacidad" target="_blank" rel="noopener noreferrer">política de privacidad</a> y el tratamiento de mis datos personales *
-                    </label>
-                    {errors.acepta_politicas && (
-                      <span className="field-error">{errors.acepta_politicas}</span>
-                    )}
-                  </div>
 
                   <button 
                     type="submit" 
