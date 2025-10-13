@@ -120,4 +120,21 @@ privateRoutes.delete('/viviendas/:id/imagenes/:imageId',
   propertyController.deletePropertyImage
 );
 
+/**
+ * @route GET /api/v1/viviendas/captacion
+ * @desc Obtener propiedades en proceso de captación
+ * @access Private (Admin, Seller)
+ */
+privateRoutes.get('/viviendas/captacion', propertyController.getCaptacionProperties);
+
+/**
+ * @route PATCH /api/v1/viviendas/:id/captacion
+ * @desc Actualizar datos de captación de una propiedad
+ * @access Private (Admin, Seller)
+ */
+privateRoutes.patch('/viviendas/:id/captacion', 
+  validateUUID('id'), 
+  propertyController.updateCaptacionData
+);
+
 export { publicRoutes, privateRoutes };
