@@ -833,14 +833,19 @@
 
 .lightbox-content {
   position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
+  width: 90vw;
+  height: 90vh;
+  max-width: 1200px;
+  max-height: 800px;
   cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lightbox-content img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   border-radius: var(--radius-md);
 }
@@ -961,6 +966,14 @@
   .similar-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Ajustes para lightbox en tablets */
+  .lightbox-content {
+    width: 92vw;
+    height: 85vh;
+    max-width: 900px;
+    max-height: 700px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -992,6 +1005,14 @@
 
   .image-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Ajustes específicos para lightbox en móviles */
+  .lightbox-content {
+    width: 95vw;
+    height: 80vh;
+    max-width: none;
+    max-height: none;
   }
 
   .lightbox-prev,
