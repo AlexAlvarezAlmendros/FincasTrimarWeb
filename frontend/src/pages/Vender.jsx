@@ -1,42 +1,60 @@
-import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import useContactForm from '../hooks/useContactForm';
 import './Vender.css';
 
 export default function Vender() {
-  const [formData, setFormData] = useState({
-    nombre: '',
-    telefono: ''
+  // Usar el hook de contacto con valores por defecto para campos no presentes en el formulario
+  const {
+    formData,
+    isSubmitting,
+    submitMessage,
+    errors,
+    updateField,
+    submitForm,
+    showSuccess,
+    showError
+  } = useContactForm({
+    initialData: {
+      // Valores por defecto hardcoded para campos no presentes en el formulario
+      email: 'vender@fincastrimar.com', // Email por defecto para identificar origen
+      asunto: 'Solicitud de información para vender inmueble',
+      descripcion: 'El cliente solicita información para vender su inmueble. Contacto desde página Vender.',
+      tipo: 'venta'
+    },
+    onSuccess: () => {
+      console.log('✅ Solicitud de venta enviada exitosamente');
+    },
+    onError: (error) => {
+      console.error('❌ Error enviando solicitud de venta:', error);
+    }
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    updateField(name, value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitMessage('');
-
-    try {
-      // TODO: Integrar con el servicio de mensajes del backend
-      console.log('Formulario enviado:', formData);
-      
-      // Simular envío
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSubmitMessage('¡Gracias! Nos pondremos en contacto contigo pronto.');
-      setFormData({ nombre: '', telefono: '' });
-    } catch (error) {
-      setSubmitMessage('Ha ocurrido un error. Por favor, inténtalo de nuevo.');
-    } finally {
-      setIsSubmitting(false);
+    
+    // Proporcionar valores por defecto para campos no presentes en el formulario
+    // Estos valores se añaden temporalmente para la validación y envío
+    if (!formData.email || formData.email === 'vender@fincastrimar.com') {
+      updateField('email', 'contacto@fincastrimar.com');
     }
+    
+    if (!formData.asunto || formData.asunto === 'Solicitud de información para vender inmueble') {
+      updateField('asunto', 'Solicitud de información para vender inmueble');
+    }
+    
+    if (!formData.descripcion || formData.descripcion === 'El cliente solicita información para vender su inmueble. Contacto desde página Vender.') {
+      updateField('descripcion', `El cliente ${formData.nombre || 'Usuario'} solicita información para vender su inmueble. Teléfono: ${formData.telefono || 'No proporcionado'}. Contacto desde página Vender.`);
+    }
+    
+    // Pequeña pausa para que se actualicen los valores antes de enviar
+    setTimeout(() => {
+      submitForm();
+    }, 100);
   };
 
   return (
@@ -80,9 +98,13 @@ export default function Vender() {
                     onChange={handleInputChange}
                     required
                     aria-required="true"
-                    className="vender-form-input"
+                    className={`vender-form-input ${errors.nombre ? 'error' : ''}`}
                     placeholder="Introduce tu nombre completo"
+                    disabled={isSubmitting}
                   />
+                  {errors.nombre && (
+                    <span className="field-error">{errors.nombre}</span>
+                  )}
                 </div>
 
                 <div className="vender-form-group">
@@ -97,9 +119,13 @@ export default function Vender() {
                     onChange={handleInputChange}
                     required
                     aria-required="true"
-                    className="vender-form-input"
+                    className={`vender-form-input ${errors.telefono ? 'error' : ''}`}
                     placeholder="Introduce tu número de teléfono"
+                    disabled={isSubmitting}
                   />
+                  {errors.telefono && (
+                    <span className="field-error">{errors.telefono}</span>
+                  )}
                 </div>
 
                 <button 
@@ -115,7 +141,7 @@ export default function Vender() {
               {submitMessage && (
                 <div 
                   id="submit-status"
-                  className={`submit-message ${submitMessage.includes('error') ? 'error' : 'success'}`}
+                  className={`submit-message ${showError ? 'error' : 'success'}`}
                   role="alert"
                   aria-live="polite"
                 >
