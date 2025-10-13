@@ -600,6 +600,20 @@
   min-height: 80px;
 }
 
+/* Error styles for form validation */
+.form-group input.error,
+.form-group textarea.error {
+  border-color: var(--color-semantic-danger, #EF4444);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+.field-error {
+  color: var(--color-semantic-danger, #EF4444);
+  font-size: var(--font-size-sm, 14px);
+  margin-top: 4px;
+  display: block;
+}
+
 .submit-button {
   background: var(--color-primary);
   color: var(--color-neutral-0);

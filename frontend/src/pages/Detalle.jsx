@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useVivienda, useSimilarViviendas } from '../hooks/useViviendas.js';
-import useContactMessage from '../hooks/useContactMessage.js';
+import useContactForm from '../hooks/useContactForm.js';
 import GoogleMapEmbed from '../components/GoogleMapEmbed/GoogleMapEmbed.jsx';
 import SafeHtmlRenderer from '../components/SafeHtmlRenderer/SafeHtmlRenderer.jsx';
 import './Detalle.css';
@@ -22,40 +22,142 @@ export default function Detalle() {
     isLoading: loadingSimilar 
   } = useSimilarViviendas(id, 2);
 
-  // Hook para mensajes de contacto
+  // Hook para formulario de contacto
   const {
-    contactForm,
-    isSubmitting,
-    submitError,
+    formData,
+    errors,
+    isSubmitting: hookIsSubmitting,
     submitSuccess,
+    submitError,
     updateField,
-    sendMessage,
-    updatePropertyMessage
-  } = useContactMessage('', property?.name || '');
+    submitForm,
+    resetForm
+  } = useContactForm({
+    email: 'detalle@fincastrimar.com',
+    asunto: `Solicitud de visita para ${property?.name || 'vivienda'}`,
+    descripcion: `Estoy interesado en agendar una visita para esta vivienda. ${property?.name ? 'Propiedad: ' + property.name : ''} ${property?.poblacion ? 'Ubicación: ' + property.poblacion : ''}`,
+    tipo: 'detalle'
+  });
+
+  // Estados locales para el envío personalizado
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Estados locales para UI
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
 
-  // Actualizar mensaje cuando cambia la propiedad
+  // Actualizar información cuando cambia la propiedad
   React.useEffect(() => {
     if (property?.name) {
-      updatePropertyMessage(property.name);
+      updateField('asunto', `Solicitud de visita para ${property.name}`);
     }
-  }, [property?.name, updatePropertyMessage]);
-
-  const handleContactFormChange = (field, value) => {
-    updateField(field, value);
-  };
+  }, [property?.name, updateField]);
 
   const handleContactFormSubmit = async (e) => {
     e.preventDefault();
     
     if (isSubmitting) return;
     
-    // Enviar mensaje usando el hook
-    await sendMessage(property?.id || id, property?.name || 'Vivienda');
+    // Limpiar mensajes anteriores
+    setShowSuccess(false);
+    setShowError(false);
+    setErrorMessage('');
+    setIsSubmitting(true);
+    
+    try {
+      // Obtener la URL actual de la vivienda
+      const currentUrl = window.location.href;
+      
+      // Generar información completa de la vivienda
+      const infoVivienda = property ? `
+INFORMACIÓN DE LA VIVIENDA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Nombre: ${property.name}
+• Precio: ${property.price ? property.price.toLocaleString('es-ES') + ' €' : 'No especificado'}
+• Habitaciones: ${property.rooms || 'No especificado'}
+• Baños: ${property.bathRooms || 'No especificado'}
+• Metros²: ${property.squaredMeters || 'No especificado'}
+• Ubicación: ${[property.calle, property.numero, property.poblacion, property.provincia].filter(Boolean).join(', ') || 'No especificada'}
+• Tipo: ${property.tipoVivienda || 'No especificado'} - ${property.tipoAnuncio || 'No especificado'}
+• ID: ${property.id || id}
+• URL: ${currentUrl}` : `
+• ID de vivienda: ${id}
+• URL: ${currentUrl}`;
+
+      // Crear el mensaje completo que se enviará
+      const descripcionCompleta = `${formData.descripcion || 'Estoy interesado en agendar una visita para esta vivienda.'} 
+
+DATOS DE CONTACTO:
+━━━━━━━━━━━━━━━━━━━━━━━
+• Nombre: ${formData.nombre}
+• Email: ${formData.email}
+• Teléfono: ${formData.telefono || 'No proporcionado'}
+${infoVivienda}`;
+
+      // Enviar directamente con los datos correctos
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      
+      const payload = {
+        nombre: formData.nombre.trim(),
+        email: formData.email.trim().toLowerCase(),
+        telefono: formData.telefono ? formData.telefono.trim() : '',
+        asunto: formData.asunto.trim(),
+        descripcion: descripcionCompleta.trim(),
+        tipo: formData.tipo || 'detalle',
+        acepta_politicas: true,
+        website: formData.website || ''
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/messages/send-contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Éxito: mostrar mensaje y limpiar formulario
+      setShowSuccess(true);
+      
+      // Limpiar formulario después de un breve delay para que el usuario vea el mensaje
+      setTimeout(() => {
+        resetForm();
+        // Volver a establecer los valores por defecto específicos para detalle
+        updateField('asunto', `Solicitud de visita para ${property?.name || 'vivienda'}`);
+        updateField('descripcion', 'Estoy interesado en agendar una visita para esta vivienda.');
+        updateField('tipo', 'detalle');
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error enviando mensaje:', error);
+      
+      let friendlyErrorMessage = 'Error al enviar el mensaje. Por favor, inténtalo de nuevo.';
+      
+      if (error.message.includes('400')) {
+        friendlyErrorMessage = 'Datos del formulario incorrectos. Por favor, revisa la información.';
+      } else if (error.message.includes('429')) {
+        friendlyErrorMessage = 'Has enviado demasiados mensajes. Espera un momento antes de intentar de nuevo.';
+      } else if (error.message.includes('500')) {
+        friendlyErrorMessage = 'Error interno del servidor. Intenta contactarnos por teléfono.';
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        friendlyErrorMessage = 'Error de conexión. Verifica tu conexión a internet.';
+      }
+
+      setErrorMessage(friendlyErrorMessage);
+      setShowError(true);
+      
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const openLightbox = (index) => {
@@ -275,7 +377,7 @@ export default function Detalle() {
               <h3>Agenda una visita</h3>
               
               {/* Mensajes de estado */}
-              {submitSuccess && (
+              {showSuccess && (
                 <div className="success-message" style={{
                   background: '#d4edda',
                   color: '#155724',
@@ -284,11 +386,11 @@ export default function Detalle() {
                   marginBottom: '16px',
                   border: '1px solid #c3e6cb'
                 }}>
-                  Mensaje enviado correctamente. Nos pondremos en contacto contigo pronto.
+                  ¡Gracias! Hemos recibido tu solicitud de visita. Te responderemos lo antes posible.
                 </div>
               )}
               
-              {submitError && (
+              {showError && (
                 <div className="error-message" style={{
                   background: '#f8d7da',
                   color: '#721c24',
@@ -297,7 +399,7 @@ export default function Detalle() {
                   marginBottom: '16px',
                   border: '1px solid #f5c6cb'
                 }}>
-                  {submitError}
+                  {errorMessage}
                 </div>
               )}
               
@@ -305,44 +407,52 @@ export default function Detalle() {
                 <div className="form-group">
                   <textarea
                     placeholder="¿Estás interesado en agendar una visita para este inmueble?"
-                    value={contactForm.mensaje}
-                    onChange={(e) => handleContactFormChange('mensaje', e.target.value)}
+                    value={formData.descripcion}
+                    onChange={(e) => updateField('descripcion', e.target.value)}
                     rows="3"
                     required
                     disabled={isSubmitting}
+                    className={errors.descripcion ? 'error' : ''}
                   />
+                  {errors.descripcion && <div className="field-error">{errors.descripcion}</div>}
                 </div>
                 
                 <div className="form-group">
                   <input
                     type="text"
                     placeholder="Tu nombre *"
-                    value={contactForm.nombre}
-                    onChange={(e) => handleContactFormChange('nombre', e.target.value)}
+                    value={formData.nombre}
+                    onChange={(e) => updateField('nombre', e.target.value)}
                     required
                     disabled={isSubmitting}
+                    className={errors.nombre ? 'error' : ''}
                   />
+                  {errors.nombre && <div className="field-error">{errors.nombre}</div>}
                 </div>
                 
                 <div className="form-group">
                   <input
                     type="email"
                     placeholder="Tu Email *"
-                    value={contactForm.email}
-                    onChange={(e) => handleContactFormChange('email', e.target.value)}
+                    value={formData.email}
+                    onChange={(e) => updateField('email', e.target.value)}
                     required
                     disabled={isSubmitting}
+                    className={errors.email ? 'error' : ''}
                   />
+                  {errors.email && <div className="field-error">{errors.email}</div>}
                 </div>
                 
                 <div className="form-group">
                   <input
                     type="tel"
                     placeholder="Tu Teléfono"
-                    value={contactForm.telefono}
-                    onChange={(e) => handleContactFormChange('telefono', e.target.value)}
+                    value={formData.telefono}
+                    onChange={(e) => updateField('telefono', e.target.value)}
                     disabled={isSubmitting}
+                    className={errors.telefono ? 'error' : ''}
                   />
+                  {errors.telefono && <div className="field-error">{errors.telefono}</div>}
                 </div>
                 
                 <button 
@@ -353,6 +463,24 @@ export default function Detalle() {
                 >
                   {isSubmitting ? 'Enviando...' : 'AGENDAR VISITA'}
                 </button>
+
+                {/* Mensaje de error al final del formulario */}
+                {showError && (
+                  <div className="form-error-message" style={{
+                    background: '#f8d7da',
+                    color: '#721c24',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    marginTop: '16px',
+                    border: '1px solid #f5c6cb',
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}>
+                    <div style={{ marginBottom: '8px', fontSize: '16px' }}>❌ Error al enviar</div>
+                    <div>{errorMessage}</div>
+                  </div>
+                )}
               </form>
               
               {/* Botón y número de teléfono */}
