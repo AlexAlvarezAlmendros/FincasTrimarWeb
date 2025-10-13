@@ -1,7 +1,9 @@
 import { 
   propertySchema, 
   searchFiltersSchema, 
-  messageSchema 
+  messageSchema,
+  contactFormSchema,
+  uuidSchema
 } from '../schemas/validationSchemas.js';
 
 /**
@@ -62,23 +64,29 @@ export const validateSearchFilters = validateSchema(searchFiltersSchema, 'query'
 export const validateMessage = validateSchema(messageSchema, 'body');
 
 /**
+ * Middleware específico para validar formularios de contacto (más estricto)
+ */
+export const validateContactForm = validateSchema(contactFormSchema, 'body');
+
+/**
  * Middleware para validar UUID en parámetros
  */
 export const validateUUID = (paramName = 'id') => {
   return (req, res, next) => {
     const uuid = req.params[paramName];
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     
-    if (!uuidRegex.test(uuid)) {
+    try {
+      uuidSchema.parse(uuid);
+      next();
+    } catch (error) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'INVALID_UUID',
-          message: `El parámetro ${paramName} debe ser un UUID válido`
+          message: `El parámetro ${paramName} debe ser un UUID válido`,
+          details: error.errors
         }
       });
     }
-    
-    next();
   };
 };

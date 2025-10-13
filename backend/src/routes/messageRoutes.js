@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import messageController from '../controllers/messageController.js';
-import { validateMessage, validateUUID } from '../middlewares/validationMiddleware.js';
+import { validateMessage, validateContactForm, validateUUID } from '../middlewares/validationMiddleware.js';
 
 // Rutas públicas para mensajes
 const publicRoutes = Router();
@@ -11,6 +11,13 @@ const publicRoutes = Router();
  * @access Public
  */
 publicRoutes.post('/messages', validateMessage, messageController.createMessage);
+
+/**
+ * @route POST /api/v1/messages/send-contact
+ * @desc Enviar mensaje de contacto con validación estricta y email automático
+ * @access Public
+ */
+publicRoutes.post('/messages/send-contact', validateContactForm, messageController.sendContact);
 
 // Rutas privadas para mensajes (requieren autenticación de Admin)
 const privateRoutes = Router();

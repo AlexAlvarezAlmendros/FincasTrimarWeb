@@ -7,6 +7,7 @@ import AdminDashboard from '../components/Admin/Dashboard';
 import PropertiesListPage from '../components/Admin/Properties/PropertiesListPage';
 import PropertyCreatePage from '../components/Admin/Properties/PropertyCreatePageNew';
 import DraftsPage from '../components/Admin/Properties/DraftsPage';
+import CaptacionPage from '../components/Admin/Properties/CaptacionPage';
 
 // Importar otras páginas del admin
 import MessagesPage from '../components/Admin/Messages/MessagesPage';
@@ -27,6 +28,7 @@ export default function Admin() {
         <Route path="viviendas" element={<PropertiesListPage />} />
         <Route path="viviendas/crear" element={<PropertyCreatePage />} />
         <Route path="viviendas/borradores" element={<DraftsPage />} />
+        <Route path="viviendas/captacion" element={<CaptacionPage />} />
         <Route path="viviendas/:id/edit" element={<PropertyCreatePage />} />
         
         {/* Otras rutas del admin */}

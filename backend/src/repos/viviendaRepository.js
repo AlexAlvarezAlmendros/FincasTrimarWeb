@@ -83,8 +83,16 @@ class ViviendaRepository {
       
       // Filtros de captación
       if (estadoVenta) {
-        conditions.push('EstadoVenta = ?');
-        params.push(estadoVenta);
+        if (Array.isArray(estadoVenta)) {
+          // Para array de estados (usado en captación)
+          const placeholders = estadoVenta.map(() => '?').join(',');
+          conditions.push(`EstadoVenta IN (${placeholders})`);
+          params.push(...estadoVenta);
+        } else {
+          // Para estado único
+          conditions.push('EstadoVenta = ?');
+          params.push(estadoVenta);
+        }
       }
       
       if (captadoPor) {

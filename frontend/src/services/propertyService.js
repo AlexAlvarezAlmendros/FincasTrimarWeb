@@ -589,6 +589,99 @@ class PropertyService {
     }
   }
 
+  /**
+   * Obtiene propiedades en proceso de captación
+   * @param {Object} options - Opciones de la petición
+   * @param {string} options.token - Token de autenticación
+   * @param {Object} filters - Filtros de búsqueda
+   * @returns {Promise<Object>} Respuesta con propiedades de captación
+   */
+  async getCaptacionProperties({ token, ...filters } = {}) {
+    try {
+      // Limpiar filtros nulos/undefined
+      const cleanFilters = {};
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          cleanFilters[key] = value;
+        }
+      });
+      
+      // Construir query string
+      const queryParams = new URLSearchParams();
+      Object.entries(cleanFilters).forEach(([key, value]) => {
+        queryParams.append(key, value.toString());
+      });
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const url = `${this.apiUrl}${this.baseEndpoint}/captacion?${queryParams.toString()}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al obtener propiedades de captación');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('PropertyService.getCaptacionProperties error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza los datos de captación de una propiedad
+   * @param {string} propertyId - ID de la propiedad
+   * @param {Object} captacionData - Datos de captación a actualizar
+   * @param {Object} options - Opciones de la petición
+   * @param {string} options.token - Token de autenticación
+   * @returns {Promise<Object>} Respuesta con la propiedad actualizada
+   */
+  async updateCaptacionData(propertyId, captacionData, { token } = {}) {
+    try {
+      if (!propertyId) {
+        throw new Error('ID de propiedad requerido');
+      }
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const url = `${this.apiUrl}${this.baseEndpoint}/${propertyId}/captacion`;
+      
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(captacionData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al actualizar datos de captación');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('PropertyService.updateCaptacionData error:', error);
+      throw error;
+    }
+  }
 
 }
 
