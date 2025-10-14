@@ -1,48 +1,38 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Contacto.css';
+import '../components/ContactForm/ContactForm.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import useContactForm from '../hooks/useContactForm';
 
 export default function Contacto() {
-  const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
-    telefono: '',
-    asunto: '',
-    mensaje: ''
+  const {
+    formData,
+    isSubmitting,
+    submitMessage,
+    errors,
+    updateField,
+    submitForm,
+    showSuccess,
+    showError,
+    canSubmit
+  } = useContactForm({
+    onSuccess: () => {
+      console.log('✅ Mensaje enviado exitosamente desde página de Contacto');
+    },
+    onError: (error) => {
+      console.error('❌ Error enviando mensaje desde página de Contacto:', error);
+    }
   });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState('');
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    // Mapear 'mensaje' a 'descripcion' para el hook
+    const mappedField = field === 'mensaje' ? 'descripcion' : field;
+    updateField(mappedField, value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitMessage('');
-
-    try {
-      // TODO: Conectar con API real
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulación
-      
-      setSubmitMessage('¡Gracias! Hemos recibido tu mensaje. Te responderemos lo antes posible.');
-      setFormData({
-        nombre: '',
-        email: '',
-        telefono: '',
-        asunto: '',
-        mensaje: ''
-      });
-    } catch (error) {
-      setSubmitMessage('Error al enviar el mensaje. Por favor, inténtalo de nuevo.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submitForm();
   };
 
   return (
@@ -51,8 +41,8 @@ export default function Contacto() {
       <section className="contact-header">
         <div className="container">
           <div className="header-content">
-            <h1 className="page-title">Contacta con nosotros</h1>
-            <p className="page-subtitle">
+            <h1 className="page-title-contacto">Contacta con nosotros</h1>
+            <p className="page-subtitle-contacto">
               Estamos aquí para ayudarte con todas tus necesidades inmobiliarias. 
               No dudes en ponerte en contacto con nuestro equipo.
             </p>
@@ -91,7 +81,6 @@ export default function Contacto() {
                         </a>
                         <div className="contact-hours">
                           <span className="hour-item"><FontAwesomeIcon icon="calendar-alt" /> Lun - Vie: 9:00 - 18:00</span>
-                          <span className="hour-item"><FontAwesomeIcon icon="clock" /> Sáb: 10:00 - 14:00</span>
                         </div>
                       </div>
                     </div>
@@ -158,9 +147,9 @@ export default function Contacto() {
                   Completa el formulario y nos pondremos en contacto contigo lo antes posible.
                 </p>
 
-                <form onSubmit={handleSubmit} className="contact-form">
-                  <div className="form-row">
-                    <div className="form-group">
+                <form onSubmit={handleSubmit} className="contact-form-contacto">
+                  <div className="form-row-contacto">
+                    <div className="form-group-contacto">
                       <label htmlFor="nombre">Nombre *</label>
                       <input
                         type="text"
@@ -170,10 +159,14 @@ export default function Contacto() {
                         placeholder="Tu nombre completo"
                         required
                         disabled={isSubmitting}
+                        className={errors.nombre ? 'error' : ''}
                       />
+                      {errors.nombre && (
+                        <span className="field-error">{errors.nombre}</span>
+                      )}
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group-contacto">
                       <label htmlFor="email">Email *</label>
                       <input
                         type="email"
@@ -183,12 +176,16 @@ export default function Contacto() {
                         placeholder="tu@email.com"
                         required
                         disabled={isSubmitting}
+                        className={errors.email ? 'error' : ''}
                       />
+                      {errors.email && (
+                        <span className="field-error">{errors.email}</span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
+                  <div className="form-row-contacto">
+                    <div className="form-group-contacto">
                       <label htmlFor="telefono">Teléfono</label>
                       <input
                         type="tel"
@@ -197,10 +194,14 @@ export default function Contacto() {
                         onChange={(e) => handleInputChange('telefono', e.target.value)}
                         placeholder="Tu número de teléfono"
                         disabled={isSubmitting}
+                        className={errors.telefono ? 'error' : ''}
                       />
+                      {errors.telefono && (
+                        <span className="field-error">{errors.telefono}</span>
+                      )}
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group-contacto">
                       <label htmlFor="asunto">Asunto *</label>
                       <select
                         id="asunto"
@@ -208,6 +209,7 @@ export default function Contacto() {
                         onChange={(e) => handleInputChange('asunto', e.target.value)}
                         required
                         disabled={isSubmitting}
+                        className={errors.asunto ? 'error' : ''}
                       >
                         <option value="">Selecciona un asunto</option>
                         <option value="comprar">Quiero comprar</option>
@@ -217,32 +219,50 @@ export default function Contacto() {
                         <option value="informacion">Solicitar información</option>
                         <option value="otro">Otro</option>
                       </select>
+                      {errors.asunto && (
+                        <span className="field-error">{errors.asunto}</span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group-contacto">
                     <label htmlFor="mensaje">Mensaje *</label>
                     <textarea
                       id="mensaje"
                       rows="5"
-                      value={formData.mensaje}
+                      value={formData.descripcion || ''}
                       onChange={(e) => handleInputChange('mensaje', e.target.value)}
                       placeholder="Cuéntanos en qué podemos ayudarte..."
                       required
                       disabled={isSubmitting}
+                      className={errors.descripcion ? 'error' : ''}
                     />
+                    {errors.descripcion && (
+                      <span className="field-error">{errors.descripcion}</span>
+                    )}
                   </div>
+
+                  {/* Campo honeypot (oculto para prevenir spam) */}
+                  <input
+                    type="text"
+                    name="website"
+                    value={formData.website || ''}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    style={{ display: 'none' }}
+                    tabIndex="-1"
+                    autoComplete="off"
+                  />
 
                   <button 
                     type="submit" 
                     className="submit-button"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !canSubmit}
                   >
                     {isSubmitting ? 'Enviando...' : 'ENVIAR MENSAJE'}
                   </button>
 
                   {submitMessage && (
-                    <div className={`submit-message ${submitMessage.includes('Error') ? 'submit-message--error' : 'submit-message--success'}`}>
+                    <div className={`submit-message ${showError ? 'submit-message--error' : 'submit-message--success'}`}>
                       {submitMessage}
                     </div>
                   )}

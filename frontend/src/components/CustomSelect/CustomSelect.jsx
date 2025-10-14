@@ -22,6 +22,10 @@ const CustomSelect = ({
       if (selectRef.current && !selectRef.current.contains(event.target)) {
         setIsOpen(false);
         setSelectedIndex(-1);
+        // Limpiar la clase de apertura hacia arriba
+        if (selectRef.current) {
+          selectRef.current.classList.remove('open-upward');
+        }
       }
     };
 
@@ -29,6 +33,10 @@ const CustomSelect = ({
       if (event.key === 'Escape') {
         setIsOpen(false);
         setSelectedIndex(-1);
+        // Limpiar la clase de apertura hacia arriba
+        if (selectRef.current) {
+          selectRef.current.classList.remove('open-upward');
+        }
       }
     };
 
@@ -47,6 +55,19 @@ const CustomSelect = ({
     if (!disabled) {
       setIsOpen(!isOpen);
       setSelectedIndex(-1);
+      
+      // En móviles, verificar si debe abrirse hacia arriba para evitar que se corte
+      if (selectRef.current && window.innerWidth <= 480) {
+        const rect = selectRef.current.getBoundingClientRect();
+        const remainingSpace = window.innerHeight - rect.bottom;
+        const estimatedDropdownHeight = Math.min(options.length * 48 + 16, window.innerHeight * 0.6);
+        
+        if (remainingSpace < estimatedDropdownHeight && rect.top > estimatedDropdownHeight) {
+          selectRef.current.classList.add('open-upward');
+        } else {
+          selectRef.current.classList.remove('open-upward');
+        }
+      }
     }
   };
 
@@ -54,6 +75,10 @@ const CustomSelect = ({
     onChange(option.value);
     setIsOpen(false);
     setSelectedIndex(-1);
+    // Limpiar la clase de apertura hacia arriba
+    if (selectRef.current) {
+      selectRef.current.classList.remove('open-upward');
+    }
   };
 
   const handleKeyDown = (e) => {

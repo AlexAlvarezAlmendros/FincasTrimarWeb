@@ -13,6 +13,8 @@
   position: sticky;
   top: var(--header-height, 80px);
   z-index: 100;
+  /* Asegurar que hay espacio para los desplegables */
+  overflow: visible;
 }
 
 .filter-card {
@@ -21,6 +23,14 @@
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-sm);
+  /* Asegurar que los desplegables internos se muestren correctamente */
+  position: relative;
+  overflow: visible;
+}
+
+/* Asegurar z-index correcto para los CustomSelect dentro de filtros */
+.filter-card .custom-select-dropdown {
+  z-index: 1001; /* Mayor que el z-index del filter-bar */
 }
 
 .main-filters {
@@ -474,12 +484,29 @@
 @media (max-width: 480px) {
   .filter-bar {
     padding: var(--spacing-md) 0;
+    /* Asegurar que no limita el espacio de los desplegables */
+    position: static;
   }
 
   .filter-card {
     margin: 0 var(--spacing-md);
     padding: var(--spacing-md);
     border-radius: var(--radius-md);
+  }
+  
+  /* Mejoras específicas para CustomSelect en móviles */
+  .filter-card .custom-select-dropdown {
+    /* En móviles muy pequeños, asegurar máximo espacio */
+    max-width: calc(100vw - 2 * var(--spacing-md));
+    left: 0;
+    right: 0;
+  }
+  
+  /* Para filtros avanzados en móviles, dar más espacio */
+  .advanced-filters {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-neutral-200);
   }
 
   .results {
@@ -489,8 +516,6 @@
   .container {
     padding: 0 var(--spacing-md);
   }
-
-
 }
 
 /* Accessibility improvements */
