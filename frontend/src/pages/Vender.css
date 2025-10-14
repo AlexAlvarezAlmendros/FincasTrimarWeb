@@ -620,3 +620,23 @@
   outline: 2px solid #3A8DFF;
   outline-offset: 4px;
 }
+
+/* Error styles for form validation */
+.vender-form-input.error {
+  border-color: #EF4444;
+  background-color: #FEF2F2;
+}
+
+.vender-form-input.error:focus {
+  border-color: #DC2626;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.field-error {
+  display: block;
+  color: #DC2626;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 4px;
+  line-height: 1.4;
+}

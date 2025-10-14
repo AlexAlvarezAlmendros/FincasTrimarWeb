@@ -37,7 +37,7 @@ class EmailService {
         return;
       }
 
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: user,
@@ -50,7 +50,7 @@ class EmailService {
       logger.info(`📧 Emails se enviarán desde: ${fromEmail}`);
       
     } catch (error) {
-      logger.error('❌ Error configurando servicio de email:', error);
+      logger.error('Error configurando servicio de email:', error);
       this.isConfigured = false;
     }
   }
@@ -101,7 +101,7 @@ class EmailService {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Nuevo Contacto - ${this.config.senderName}</title>
+          <title>Nuevo Contacto - ${this.config.fromName}</title>
         </head>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           

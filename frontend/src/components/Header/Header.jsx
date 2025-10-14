@@ -68,7 +68,6 @@ const Header = () => {
                   className="header-logo-image"
                 />
             </div>
-            <span className="brand-text">Finques Trimar</span>
           </Link>
         </div>
 
@@ -110,7 +109,7 @@ const Header = () => {
             <div className="auth-authenticated">
               {/* Botón crear vivienda para usuarios autenticados */}
               <Link to="/admin" className="btn btn--primary">
-                CREAR VIVIENDA
+                Dashboard
               </Link>
               
               {/* Menú de usuario */}
