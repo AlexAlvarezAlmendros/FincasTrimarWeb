@@ -127,13 +127,15 @@
 
 .contact-method {
   display: flex;
+  flex-direction: column;
   gap: var(--spacing-lg);
-  align-items: flex-start;
+  align-items: center;
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-neutral-200);
   background: var(--color-neutral-50);
   transition: all 0.3s ease;
+  text-align: center;
 }
 
 .contact-method:hover {
@@ -163,6 +165,21 @@
   letter-spacing: 0.5px;
 }
 
+/* Asegurar centrado específico para el featured method */
+.featured-method .method-content {
+  text-align: center !important;
+}
+
+.featured-method .method-header {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.featured-method .method-details {
+  align-items: center !important;
+  text-align: center !important;
+}
+
 /* Method Icons */
 .method-icon {
   width: 60px;
@@ -176,6 +193,7 @@
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
+  margin: 0 auto;
 }
 
 .phone-icon {
@@ -203,15 +221,18 @@
 .method-content {
   flex: 1;
   min-width: 0;
+  text-align: center;
 }
 
 .method-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: var(--spacing-sm);
   flex-wrap: wrap;
   gap: var(--spacing-xs);
+  text-align: center;
+  flex-direction: column;
 }
 
 .method-header h4 {
@@ -246,6 +267,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  align-items: center;
 }
 
 .primary-contact {
@@ -265,6 +287,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  align-items: center;
 }
 
 .hour-item {
