@@ -16,7 +16,11 @@ export function useApi() {
     // Agregar token de autorización si el usuario está autenticado
     if (isAuthenticated) {
       try {
-        const token = await getAccessTokenSilently();
+        // Configurar opciones para token de larga duración
+        const token = await getAccessTokenSilently({
+          cacheMode: 'cache-first', // Priorizar el cache para tokens de larga duración
+          timeoutInSeconds: 60, // Timeout extendido para refresh
+        });
         console.log('🔑 Token obtenido:', token.substring(0, 50) + '...');
         headers.Authorization = `Bearer ${token}`;
       } catch (error) {

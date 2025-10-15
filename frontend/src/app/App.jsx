@@ -19,10 +19,12 @@ export default function App() {
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "openid profile email"
+        scope: "openid profile email offline_access"
       }}
       cacheLocation="localstorage"
       useRefreshTokens={true}
+      useRefreshTokensFallback={false}
+      sessionCheckExpiryDays={730} // 2 años = 730 días
     >
       <AuthWrapper>
         <BrowserRouter>
