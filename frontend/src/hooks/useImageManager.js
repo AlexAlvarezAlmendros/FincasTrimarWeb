@@ -179,55 +179,7 @@ export const useImageManager = (propertyId = null, options = {}) => {
     }
   }, [propertyId, getAccessTokenSilently, onError]);
 
-  const uploadPendingFiles = useCallback(async () => {
-    if (pendingFiles.length === 0 || !propertyId) return { success: true };
-
-    try {
-      setUploadState(ImageStates.UPLOADING);
-      setUploadProgress(0);
-      onUploadStart?.();
-
-      const files = pendingFiles.map(pf => pf.file);
-      const response = await propertyService.uploadPropertyImages(
-        propertyId, 
-        files, 
-        getAccessTokenSilently,
-        (progress) => {
-          if (isMountedRef.current) {
-            setUploadProgress(progress);
-            onUploadProgress?.(progress);
-          }
-        }
-      );
-
-      if (isMountedRef.current) {
-        if (response.success && response.data) {
-          const newImages = response.data.map(img => ({
-            id: img.id,
-            url: img.url,
-            orden: img.orden || 0
-          }));
-
-          setImages(prev => [...prev, ...newImages].sort((a, b) => a.orden - b.orden));
-          clearPendingFiles();
-          setUploadState(ImageStates.SUCCESS);
-          onUploadComplete?.(newImages);
-        }
-        
-        clearError();
-        return { success: true, data: response.data };
-      }
-    } catch (err) {
-      console.error('Error uploading files:', err);
-      if (isMountedRef.current) {
-        setError(`Error subiendo imágenes: ${err.message}`);
-        setUploadState(ImageStates.ERROR);
-        onError?.(err);
-      }
-      return { success: false, error: err.message };
-    }
-  }, [pendingFiles, propertyId, getAccessTokenSilently, onUploadStart, onUploadProgress, onUploadComplete, onError]);
-
+  // Declarar estas funciones ANTES de uploadPendingFiles para evitar errores de inicialización
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -242,6 +194,73 @@ export const useImageManager = (propertyId = null, options = {}) => {
     setPendingFiles([]);
   }, [pendingFiles]);
 
+  const uploadPendingFiles = useCallback(async (propId = propertyId) => {
+    if (pendingFiles.length === 0) {
+      console.log('⚠️ No hay archivos pendientes para subir');
+      return { success: true, data: [] };
+    }
+
+    if (!propId) {
+      const error = 'ID de propiedad requerido para subir imágenes';
+      console.error('❌', error);
+      setError(error);
+      return { success: false, error };
+    }
+
+    try {
+      console.log(`📤 Iniciando subida de ${pendingFiles.length} archivos para vivienda ${propId}`);
+      
+      setUploadState(ImageStates.UPLOADING);
+      setUploadProgress(0);
+      onUploadStart?.();
+
+      const files = pendingFiles.map(pf => pf.file);
+      
+      const response = await propertyService.uploadPropertyImages(
+        propId, 
+        files, 
+        getAccessTokenSilently,
+        (progress) => {
+          if (isMountedRef.current) {
+            console.log(`📊 Progreso de subida: ${progress}%`);
+            setUploadProgress(progress);
+            onUploadProgress?.(progress);
+          }
+        }
+      );
+
+      console.log('✅ Respuesta de subida:', response);
+
+      if (isMountedRef.current) {
+        if (response.success && response.data) {
+          const newImages = response.data.map(img => ({
+            id: img.id,
+            url: img.url,
+            orden: img.orden || 0
+          }));
+
+          console.log(`✅ ${newImages.length} imágenes procesadas correctamente`);
+
+          setImages(prev => [...prev, ...newImages].sort((a, b) => a.orden - b.orden));
+          clearPendingFiles();
+          setUploadState(ImageStates.SUCCESS);
+          onUploadComplete?.(newImages);
+        }
+        
+        clearError();
+        return { success: true, data: response.data };
+      }
+    } catch (err) {
+      console.error('❌ Error uploading files:', err);
+      if (isMountedRef.current) {
+        setError(`Error subiendo imágenes: ${err.message}`);
+        setUploadState(ImageStates.ERROR);
+        onError?.(err);
+      }
+      return { success: false, error: err.message };
+    }
+  }, [pendingFiles, propertyId, getAccessTokenSilently, onUploadStart, onUploadProgress, onUploadComplete, onError, clearPendingFiles, clearError]);
+
   const clearAllImages = useCallback(() => {
     setImages([]);
     clearPendingFiles();
@@ -250,13 +269,22 @@ export const useImageManager = (propertyId = null, options = {}) => {
     clearError();
   }, [clearPendingFiles]);
 
-  const reorderPendingFiles = useCallback((startIndex, endIndex) => {
-    setPendingFiles(prev => {
-      const result = Array.from(prev);
-      const [removed] = result.splice(startIndex, 1);
-      result.splice(endIndex, 0, removed);
-      return result;
-    });
+  const reorderPendingFiles = useCallback((reorderedFiles) => {
+    // Si se pasa un array directamente, usarlo; 
+    // si son índices (para compatibilidad), reordenar
+    if (Array.isArray(reorderedFiles)) {
+      setPendingFiles(reorderedFiles);
+    } else {
+      // Modo compatible con índices (startIndex, endIndex)
+      const startIndex = reorderedFiles;
+      const endIndex = arguments[1];
+      setPendingFiles(prev => {
+        const result = Array.from(prev);
+        const [removed] = result.splice(startIndex, 1);
+        result.splice(endIndex, 0, removed);
+        return result;
+      });
+    }
   }, []);
 
   // Valores calculados

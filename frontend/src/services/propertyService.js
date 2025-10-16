@@ -535,6 +535,105 @@ class PropertyService {
   }
 
   /**
+   * Sube archivos de imagen a ImgBB y los asocia a una vivienda
+   * Este método combina la subida y la asociación en un solo flujo
+   * @param {string} propertyId - ID de la propiedad
+   * @param {Array<File>} files - Archivos de imagen a subir
+   * @param {Function} getAccessToken - Función para obtener token de Auth0
+   * @param {Function} onProgress - Callback opcional para progreso
+   * @returns {Promise<Object>} Respuesta con las imágenes creadas
+   */
+  async uploadPropertyImages(propertyId, files, getAccessToken, onProgress = null) {
+    try {
+      if (!propertyId) {
+        throw new Error('ID de propiedad requerido');
+      }
+
+      if (!files || files.length === 0) {
+        throw new Error('Archivos de imagen requeridos');
+      }
+
+      if (!getAccessToken) {
+        throw new Error('Función de autenticación requerida');
+      }
+
+      console.log(`📤 Subiendo ${files.length} imágenes para vivienda ${propertyId}`);
+
+      // Obtener token de autenticación
+      const token = await getAccessToken();
+
+      // PASO 1: Subir imágenes a ImgBB
+      if (onProgress) onProgress(10);
+      
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('images', file);
+      });
+
+      console.log('🔄 Subiendo archivos a ImgBB...');
+      
+      const uploadResponse = await fetch(`${this.apiUrl}/api/v1/images`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al subir imágenes a ImgBB');
+      }
+
+      const uploadResult = await uploadResponse.json();
+      console.log('✅ Imágenes subidas a ImgBB:', uploadResult);
+
+      if (!uploadResult.success || !uploadResult.data.images || uploadResult.data.images.length === 0) {
+        throw new Error('No se pudieron subir las imágenes a ImgBB');
+      }
+
+      if (onProgress) onProgress(60);
+
+      // PASO 2: Asociar URLs de ImgBB a la vivienda
+      console.log('🔗 Asociando imágenes a la vivienda...');
+      
+      const imagesToAssociate = uploadResult.data.images.map((img, index) => ({
+        url: img.url,
+        orden: index + 1
+      }));
+
+      const associateResponse = await fetch(`${this.apiUrl}${this.baseEndpoint}/${propertyId}/imagenes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ images: imagesToAssociate })
+      });
+
+      if (!associateResponse.ok) {
+        const errorData = await associateResponse.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al asociar imágenes a la vivienda');
+      }
+
+      const associateResult = await associateResponse.json();
+      console.log('✅ Imágenes asociadas correctamente:', associateResult);
+
+      if (onProgress) onProgress(100);
+
+      // Retornar las imágenes asociadas
+      return {
+        success: true,
+        data: associateResult.data.images || []
+      };
+
+    } catch (error) {
+      console.error('❌ PropertyService.uploadPropertyImages error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtiene todas las viviendas en estado borrador
    * @param {Object} options Opciones adicionales (token, etc.)
    * @returns {Promise<Object>} Respuesta con lista de borradores
