@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import propertyController from '../controllers/propertyController.js';
 import { 
-  validatePropertyCreation, 
+  validatePropertyCreation,
+  validatePropertyUpdate,
   validateUUID
 } from '../middlewares/validationMiddleware.js';
 
@@ -62,12 +63,12 @@ privateRoutes.post('/viviendas', validatePropertyCreation, propertyController.cr
 
 /**
  * @route PUT /api/v1/viviendas/:id
- * @desc Actualizar propiedad existente
+ * @desc Actualizar propiedad existente (parcial)
  * @access Private (Owner, Admin)
  */
 privateRoutes.put('/viviendas/:id', 
   validateUUID('id'), 
-  validatePropertyCreation, 
+  validatePropertyUpdate,  // Cambio: ahora permite updates parciales
   propertyController.updateProperty
 );
 

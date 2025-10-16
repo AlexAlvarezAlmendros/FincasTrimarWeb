@@ -216,9 +216,10 @@ class PropertyService {
    * Actualiza una propiedad existente
    * @param {string} id - ID de la propiedad
    * @param {Object} propertyData - Datos actualizados
+   * @param {Function} getAccessToken - Función para obtener el token de Auth0
    * @returns {Promise<Object>} Propiedad actualizada
    */
-  async updateProperty(id, propertyData) {
+  async updateProperty(id, propertyData, getAccessToken = null) {
     try {
       if (!id) {
         throw new Error('ID de propiedad requerido');
@@ -228,11 +229,25 @@ class PropertyService {
         throw new Error('Datos de propiedad requeridos');
       }
 
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      // Agregar token si está disponible
+      if (getAccessToken) {
+        try {
+          const token = await getAccessToken();
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('🔑 Token agregado al header de updateProperty');
+        } catch (error) {
+          console.error('❌ Error obteniendo token:', error);
+          throw new Error('Error de autenticación');
+        }
+      }
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(propertyData)
       });
       
@@ -256,17 +271,27 @@ class PropertyService {
    * @param {string} id - ID de la propiedad
    * @returns {Promise<Object>} Resultado de la eliminación
    */
-  async deleteProperty(id) {
+  async deleteProperty(id, getAccessToken = null) {
     try {
       if (!id) {
         throw new Error('ID de propiedad requerido');
       }
 
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      // Agregar token si está disponible
+      if (getAccessToken) {
+        const token = await getAccessToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('🗑️ Eliminando propiedad:', id);
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       });
       
       if (!response.ok) {
@@ -274,12 +299,20 @@ class PropertyService {
         if (response.status === 404) {
           throw new Error('Propiedad no encontrada');
         }
+        if (response.status === 401) {
+          throw new Error('No autorizado. Inicia sesión primero.');
+        }
+        if (response.status === 403) {
+          throw new Error('No tienes permisos para eliminar esta propiedad');
+        }
         throw new Error(errorData.error?.message || 'Error al eliminar la propiedad');
       }
       
-      return await response.json();
+      const result = await response.json();
+      console.log('✅ Propiedad eliminada correctamente');
+      return result;
     } catch (error) {
-      console.error('PropertyService.deleteProperty error:', error);
+      console.error('❌ PropertyService.deleteProperty error:', error);
       throw error;
     }
   }

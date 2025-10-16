@@ -215,5 +215,9 @@ export const contactFormSchema = z.object({
     .refine(val => !val || val === '', 'Campo de seguridad no válido')
 });
 
+// Esquema para actualización parcial de propiedades
+// Todos los campos son opcionales, pero si se envían deben ser válidos
+export const propertyUpdateSchema = propertySchema.partial();
+
 // Esquema para validar parámetros de ID UUID
 export const uuidSchema = z.string().uuid('ID no válido');

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useViviendas } from '../../../hooks/useViviendas.js';
 import propertyService from '../../../services/propertyService.js';
 import './PropertiesListPage.css';
@@ -61,7 +62,8 @@ const PropertiesTable = ({
   loading, 
   onToggleReserve,
   onMarkAsSold, 
-  onUnpublish 
+  onUnpublish,
+  onDelete 
 }) => {
   const [actionConfirm, setActionConfirm] = useState(null);
 
@@ -109,6 +111,9 @@ const PropertiesTable = ({
         break;
       case 'unpublish':
         onUnpublish(propertyId);
+        break;
+      case 'delete':
+        onDelete(propertyId);
         break;
       default:
         break;
@@ -316,6 +321,33 @@ const PropertiesTable = ({
                       📴
                     </button>
                   )}
+
+                  {actionConfirm?.propertyId === property.id && actionConfirm?.action === 'delete' ? (
+                    <div className="action-confirm">
+                      <button
+                        onClick={handleActionConfirm}
+                        className="action-btn action-btn--confirm-delete"
+                        title="Confirmar eliminación"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={handleActionCancel}
+                        className="action-btn action-btn--cancel"
+                        title="Cancelar"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleActionClick(property.id, 'delete')}
+                      className="action-btn action-btn--delete"
+                      title="Eliminar vivienda"
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
@@ -328,6 +360,8 @@ const PropertiesTable = ({
 
 // Componente principal
 const PropertiesListPage = () => {
+  const { getAccessTokenSilently } = useAuth0();
+  
   // Usar el hook real para obtener datos de la BBDD
   const {
     viviendas: properties,
@@ -365,40 +399,56 @@ const PropertiesListPage = () => {
       
       await propertyService.updateProperty(propertyId, {
         estadoVenta: newStatus
-      });
+      }, getAccessTokenSilently);
 
       // Refrescar la lista después del cambio
       refreshViviendas();
     } catch (error) {
       console.error('Error toggling property reservation:', error);
     }
-  }, [properties, refreshViviendas]);
+  }, [properties, refreshViviendas, getAccessTokenSilently]);
 
   const markAsSold = useCallback(async (propertyId) => {
     try {
       await propertyService.updateProperty(propertyId, {
         estadoVenta: 'Vendida'
-      });
+      }, getAccessTokenSilently);
 
       // Refrescar la lista después del cambio
       refreshViviendas();
     } catch (error) {
       console.error('Error marking property as sold:', error);
     }
-  }, [refreshViviendas]);
+  }, [refreshViviendas, getAccessTokenSilently]);
 
   const unpublishProperty = useCallback(async (propertyId) => {
     try {
       await propertyService.updateProperty(propertyId, {
         published: false
-      });
+      }, getAccessTokenSilently);
 
       // Refrescar la lista después del cambio
       refreshViviendas();
     } catch (error) {
       console.error('Error unpublishing property:', error);
     }
-  }, [refreshViviendas]);
+  }, [refreshViviendas, getAccessTokenSilently]);
+
+  const deleteProperty = useCallback(async (propertyId) => {
+    try {
+      console.log('🗑️ Eliminando vivienda:', propertyId);
+      
+      await propertyService.deleteProperty(propertyId, getAccessTokenSilently);
+      
+      console.log('✅ Vivienda eliminada correctamente');
+      
+      // Refrescar la lista después del cambio
+      refreshViviendas();
+    } catch (error) {
+      console.error('❌ Error deleting property:', error);
+      alert('Error al eliminar la vivienda: ' + error.message);
+    }
+  }, [refreshViviendas, getAccessTokenSilently]);
 
   // Función para manejar cambios en filtros
   const handleFiltersChange = useCallback((newFilters) => {
@@ -455,6 +505,7 @@ const PropertiesListPage = () => {
           onToggleReserve={toggleReserveProperty}
           onMarkAsSold={markAsSold}
           onUnpublish={unpublishProperty}
+          onDelete={deleteProperty}
         />
       </div>
     </div>
