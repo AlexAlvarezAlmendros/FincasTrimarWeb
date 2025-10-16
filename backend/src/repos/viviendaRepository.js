@@ -106,32 +106,62 @@ class ViviendaRepository {
       // Calcular offset para paginación
       const offset = (page - 1) * pageSize;
       
-      // Query principal con paginación - SELECT específico para evitar problemas de memoria
-      const sql = `
-        SELECT 
-          Id, Name, ShortDescription, Price, Rooms, BathRooms, Garage, 
-          SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
-          TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
-          Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
-          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion,
-          CASE 
-            WHEN LENGTH(Description) > 1000 THEN SUBSTR(Description, 1, 1000) || '...' 
-            ELSE Description 
-          END as Description,
-          CASE 
-            WHEN LENGTH(Caracteristicas) > 5000 THEN '[]' 
-            ELSE Caracteristicas 
-          END as Caracteristicas
+      params.push(pageSize, offset);
+      
+      logger.info(`🔍 Ejecutando consulta optimizada con LIMIT ${pageSize}`);
+      
+      // FIX: Turso tiene problemas con LIMIT >= 7 cuando incluye campos grandes (Description, Caracteristicas)
+      // Solución: Obtener IDs primero, luego datos individuales
+      
+      // Paso 1: Obtener solo los IDs (rápido y confiable)
+      const idSql = `
+        SELECT Id
         FROM Vivienda 
         ${whereClause}
         ORDER BY FechaPublicacion DESC 
         LIMIT ? OFFSET ?
       `;
       
-      params.push(pageSize, offset);
+      const idResult = await executeQuery(idSql, params);
       
-      logger.info(`🔍 Ejecutando consulta optimizada con LIMIT ${pageSize}`);
-      const result = await executeQuery(sql, params);
+      if (idResult.rows.length === 0) {
+        // Query para contar total
+        const countSql = `SELECT COUNT(*) as total FROM Vivienda ${whereClause}`;
+        const countParams = params.slice(0, -2);
+        const countResult = await executeQuery(countSql, countParams);
+        const total = countResult.rows[0].total;
+        
+        return {
+          data: [],
+          pagination: {
+            page,
+            pageSize,
+            total,
+            totalPages: Math.ceil(total / pageSize)
+          }
+        };
+      }
+      
+      // Paso 2: Obtener datos completos para cada ID individualmente
+      logger.info(`📦 Obteniendo datos completos para ${idResult.rows.length} propiedades`);
+      const properties = [];
+      
+      for (const row of idResult.rows) {
+        const propertyResult = await executeQuery(`
+          SELECT 
+            Id, Name, ShortDescription, Description, Price, Rooms, BathRooms, Garage, 
+            SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
+            TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
+            Caracteristicas, Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
+            ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion
+          FROM Vivienda 
+          WHERE Id = ?
+        `, [row.Id]);
+        
+        if (propertyResult.rows.length > 0) {
+          properties.push(propertyResult.rows[0]);
+        }
+      }
       
       // Query para contar total de resultados
       const countSql = `SELECT COUNT(*) as total FROM Vivienda ${whereClause}`;
@@ -140,7 +170,7 @@ class ViviendaRepository {
       const total = countResult.rows[0].total;
       
       return {
-        data: result.rows.map(this.transformRow),
+        data: properties.map(this.transformRow),
         pagination: {
           page,
           pageSize,
@@ -177,19 +207,11 @@ class ViviendaRepository {
       // Query para borradores con los mismos campos que findAll
       const sql = `
         SELECT 
-          Id, Name, ShortDescription, Price, Rooms, BathRooms, Garage, 
+          Id, Name, ShortDescription, Description, Price, Rooms, BathRooms, Garage, 
           SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
           TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
-          Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
-          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion,
-          CASE 
-            WHEN LENGTH(Description) > 1000 THEN SUBSTR(Description, 1, 1000) || '...' 
-            ELSE Description 
-          END as Description,
-          CASE 
-            WHEN LENGTH(Caracteristicas) > 5000 THEN '[]' 
-            ELSE Caracteristicas 
-          END as Caracteristicas
+          Caracteristicas, Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
+          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion
         FROM Vivienda 
         ${whereClause}
         ORDER BY UpdatedAt DESC 
@@ -412,11 +434,33 @@ class ViviendaRepository {
   transformRow(row) {
     if (!row) return null;
     
+    // Truncar descripción larga para evitar problemas de memoria en listados
+    let description = row.Description;
+    if (description && description.length > 1000) {
+      description = description.substring(0, 1000) + '...';
+    }
+    
+    // Procesar características de forma segura
+    let caracteristicas = [];
+    try {
+      if (row.Caracteristicas) {
+        // Si las características son muy grandes, usar array vacío por seguridad
+        if (row.Caracteristicas.length > 5000) {
+          caracteristicas = [];
+        } else {
+          caracteristicas = JSON.parse(row.Caracteristicas);
+        }
+      }
+    } catch (error) {
+      logger.warn(`Error parsing caracteristicas for property ${row.Id}:`, error.message);
+      caracteristicas = [];
+    }
+    
     return {
       id: row.Id,
       name: row.Name,
       shortDescription: row.ShortDescription,
-      description: row.Description,
+      description: description,
       price: row.Price,
       rooms: row.Rooms,
       bathRooms: row.BathRooms,
@@ -432,7 +476,7 @@ class ViviendaRepository {
       planta: row.Planta,
       tipoAnuncio: row.TipoAnuncio,
       estadoVenta: row.EstadoVenta,
-      caracteristicas: row.Caracteristicas ? JSON.parse(row.Caracteristicas) : [],
+      caracteristicas: caracteristicas,
       published: Boolean(row.Published),
       fechaPublicacion: row.FechaPublicacion,
       isDraft: Boolean(row.IsDraft),
