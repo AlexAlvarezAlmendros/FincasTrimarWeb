@@ -14,6 +14,7 @@ import NotFound from '../pages/NotFound';
 import RequireAuth from '../components/RequireAuth';
 import AuthWrapper from '../components/Auth/AuthWrapper';
 import ScrollToTop from '../components/ScrollToTop/ScrollToTop';
+import CookieBanner from '../components/CookieBanner/CookieBanner';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
       <AuthWrapper>
         <BrowserRouter>
           <ScrollToTop />
+          <CookieBanner />
           <Routes>
           {/* Todas las rutas principales usan el Layout */}
           {/* Rutas públicas con Layout principal */}
