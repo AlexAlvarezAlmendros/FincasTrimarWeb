@@ -1,0 +1,30 @@
+# Archivos de desarrollo
+*.log
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+
+# Node modules (se reinstalan)
+node_modules
+
+# Archivos temporales
+temp
+*.temp
+*.tmp
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Tests
+__tests__
+*.test.js
+*.spec.js
+
+# Archivos de migración y seeds (opcional)
+# migrations/
+# seeds/
