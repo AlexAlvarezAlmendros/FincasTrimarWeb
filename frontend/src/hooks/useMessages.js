@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import messageService from '../services/messageService.js';
+import { useApi } from './useApi.js';
 
 /**
  * Estados posibles del hook
@@ -22,7 +22,6 @@ const HookStates = {
 const createDefaultFilters = () => ({
   q: '',
   estado: '', // '', 'Nuevo', 'EnCurso', 'Cerrado'
-  pinned: null, // null, true, false
   page: 1,
   pageSize: 20,
   sortBy: 'fecha_desc' // fecha_desc, fecha_asc, estado_asc
@@ -82,6 +81,9 @@ const messageCache = new MessageCache();
  * Hook principal para gestionar mensajes
  */
 export const useMessages = (initialFilters = {}, options = {}) => {
+  // Hook de API para autenticación
+  const api = useApi();
+
   // Opciones del hook
   const {
     enableCache = true,
@@ -103,10 +105,16 @@ export const useMessages = (initialFilters = {}, options = {}) => {
     ...initialFilters
   }));
 
-  // Referencias para prevenir memory leaks
+  // Referencias para prevenir memory leaks y almacenar la función api
   const abortControllerRef = useRef(null);
   const debounceTimeoutRef = useRef(null);
   const isMountedRef = useRef(true);
+  const apiRef = useRef(api);
+
+  // Actualizar la referencia de api cuando cambie
+  useEffect(() => {
+    apiRef.current = api;
+  }, [api]);
 
   // Limpiar referencias al desmontar
   useEffect(() => {
@@ -180,26 +188,45 @@ export const useMessages = (initialFilters = {}, options = {}) => {
         }
       }
 
-      // Realizar petición al API
-      const response = await messageService.getMessages(searchFilters);
+      // Construir query params solo con valores válidos
+      const queryParams = new URLSearchParams();
+      
+      if (searchFilters.estado) queryParams.append('estado', searchFilters.estado);
+      if (searchFilters.q) queryParams.append('q', searchFilters.q);
+      if (searchFilters.page) queryParams.append('page', searchFilters.page);
+      if (searchFilters.pageSize) queryParams.append('pageSize', searchFilters.pageSize);
+      if (searchFilters.sortBy) queryParams.append('sortBy', searchFilters.sortBy);
+
+      const queryString = queryParams.toString();
+      const path = `/api/v1/messages${queryString ? `?${queryString}` : ''}`;
+
+      // Realizar petición al API con autenticación usando la ref
+      const response = await apiRef.current(path, { method: 'GET' });
 
       // Verificar si el componente sigue montado
       if (!isMountedRef.current) return;
 
+      // Procesar respuesta
+      const messagesData = response.data || [];
+      const paginationData = response.pagination || createDefaultPagination();
+
       // Guardar en cache
       if (enableCache) {
-        messageCache.set(cacheKey, response);
+        messageCache.set(cacheKey, {
+          data: messagesData,
+          pagination: paginationData
+        });
       }
       
-      safeSetMessages(response.data || []);
-      safeSetPagination(response.pagination || createDefaultPagination());
+      safeSetMessages(messagesData);
+      safeSetPagination(paginationData);
       safeSetState(HookStates.SUCCESS);
 
       if (onSuccess) {
-        onSuccess(response);
+        onSuccess({ data: messagesData, pagination: paginationData });
       }
 
-      return response;
+      return { data: messagesData, pagination: paginationData };
 
     } catch (error) {
       if (error.name === 'AbortError') {
@@ -208,7 +235,8 @@ export const useMessages = (initialFilters = {}, options = {}) => {
 
       console.error('Error fetching messages:', error);
       
-      safeSetError(error.message || 'Error al obtener mensajes');
+      const errorMessage = error.error?.message || error.message || 'Error al obtener mensajes';
+      safeSetError(errorMessage);
       safeSetState(HookStates.ERROR);
 
       if (onError) {
@@ -270,7 +298,10 @@ export const useMessages = (initialFilters = {}, options = {}) => {
    */
   const updateMessage = useCallback(async (messageId, updateData) => {
     try {
-      const response = await messageService.updateMessage(messageId, updateData);
+      const response = await apiRef.current(`/api/v1/messages/${messageId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updateData)
+      });
       
       // Actualizar el mensaje en el estado local
       safeSetMessages(prevMessages => 
@@ -296,13 +327,9 @@ export const useMessages = (initialFilters = {}, options = {}) => {
     return updateMessage(messageId, { estado: 'Cerrado' });
   }, [updateMessage]);
 
-  const togglePin = useCallback(async (messageId, pinned) => {
-    return updateMessage(messageId, { pinned });
-  }, [updateMessage]);
-
   const deleteMessage = useCallback(async (messageId) => {
     try {
-      await messageService.deleteMessage(messageId);
+      await apiRef.current(`/api/v1/messages/${messageId}`, { method: 'DELETE' });
       
       // Remover el mensaje del estado local
       safeSetMessages(prevMessages => 
@@ -348,7 +375,8 @@ export const useMessages = (initialFilters = {}, options = {}) => {
     if (autoFetch && state === HookStates.IDLE) {
       fetchMessages(filters);
     }
-  }, []); // Solo en mount inicial
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo en mount inicial - fetchMessages y filters son estables
 
   /**
    * Estados derivados computados
@@ -383,7 +411,6 @@ export const useMessages = (initialFilters = {}, options = {}) => {
     updateMessage,
     markAsRead,
     markAsClosed,
-    togglePin,
     deleteMessage,
     goToPage,
     resetFilters,
@@ -399,6 +426,7 @@ export const useMessages = (initialFilters = {}, options = {}) => {
  * Hook específico para obtener un solo mensaje por ID
  */
 export const useMessage = (id, options = {}) => {
+  const api = useApi();
   const { enableCache = true, autoFetch = true, onError, onSuccess } = options;
   
   const [state, setState] = useState(HookStates.IDLE);
@@ -407,6 +435,12 @@ export const useMessage = (id, options = {}) => {
   
   const abortControllerRef = useRef(null);
   const isMountedRef = useRef(true);
+  const apiRef = useRef(api);
+
+  // Actualizar la referencia de api cuando cambie
+  useEffect(() => {
+    apiRef.current = api;
+  }, [api]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -450,23 +484,25 @@ export const useMessage = (id, options = {}) => {
         }
       }
 
-      const response = await messageService.getMessageById(messageId);
+      const response = await apiRef.current(`/api/v1/messages/${messageId}`, { method: 'GET' });
       
       if (!isMountedRef.current) return;
 
+      const messageData = response.data;
+
       // Guardar en cache
       if (enableCache) {
-        messageCache.set(cacheKey, response);
+        messageCache.set(cacheKey, { data: messageData });
       }
 
-      setMessage(response.data);
+      setMessage(messageData);
       setState(HookStates.SUCCESS);
 
       if (onSuccess) {
-        onSuccess(response.data);
+        onSuccess(messageData);
       }
 
-      return response.data;
+      return messageData;
 
     } catch (error) {
       if (error.name === 'AbortError') return;
@@ -474,7 +510,8 @@ export const useMessage = (id, options = {}) => {
       console.error('Error fetching message:', error);
       
       if (isMountedRef.current) {
-        setError(error.message || 'Error al obtener el mensaje');
+        const errorMessage = error.error?.message || error.message || 'Error al obtener el mensaje';
+        setError(errorMessage);
         setState(HookStates.ERROR);
         
         if (onError) {
@@ -493,7 +530,8 @@ export const useMessage = (id, options = {}) => {
     if (autoFetch && id && state === HookStates.IDLE) {
       fetchMessage(id);
     }
-  }, [id, autoFetch, fetchMessage, state]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, autoFetch]);
 
   const isLoading = useMemo(() => state === HookStates.LOADING, [state]);
   const isError = useMemo(() => state === HookStates.ERROR, [state]);

@@ -1,9 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import { useCallback } from 'react';
 
 export function useApi() {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
 
-  return async function api(path, opts = {}) {
+  return useCallback(async (path, opts = {}) => {
     const headers = {
       ...(opts.headers || {}),
     };
@@ -21,7 +22,8 @@ export function useApi() {
           cacheMode: 'cache-first', // Priorizar el cache para tokens de larga duración
           timeoutInSeconds: 60, // Timeout extendido para refresh
         });
-        console.log('🔑 Token obtenido:', token.substring(0, 50) + '...');
+        // Solo loguear una vez cuando se obtiene el token (comentado para producción)
+        // console.log('🔑 Token obtenido:', token.substring(0, 50) + '...');
         headers.Authorization = `Bearer ${token}`;
       } catch (error) {
         console.warn('❌ No se pudo obtener el token de acceso:', error);
@@ -47,5 +49,5 @@ export function useApi() {
     }
 
     return response.json();
-  };
+  }, [getAccessTokenSilently, isAuthenticated]);
 }

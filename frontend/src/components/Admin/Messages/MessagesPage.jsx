@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useMessages } from '../../../hooks/useMessages.js';
-import messageService from '../../../services/messageService.js';
+import { useApi } from '../../../hooks/useApi.js';
 import './MessagesPage.css';
 
 // Componente de filtros
@@ -41,21 +41,6 @@ const MessageFilters = ({ filters, onFiltersChange, stats }) => {
             <option value="Cerrado">
               Cerrados {stats?.cerrado ? `(${stats.cerrado})` : ''}
             </option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <select
-            value={filters.pinned === null ? '' : filters.pinned.toString()}
-            onChange={(e) => {
-              const value = e.target.value;
-              handleFilterChange('pinned', value === '' ? null : value === 'true');
-            }}
-            className="filter-select"
-          >
-            <option value="">Todos</option>
-            <option value="true">Solo fijados</option>
-            <option value="false">No fijados</option>
           </select>
         </div>
 
@@ -102,14 +87,6 @@ const MessageStats = ({ stats }) => {
           <div className="stat-label">Cerrados</div>
         </div>
       </div>
-      
-      <div className="stat-card stat-card--pinned">
-        <div className="stat-icon">📌</div>
-        <div className="stat-content">
-          <div className="stat-number">{stats?.fijados || 0}</div>
-          <div className="stat-label">Fijados</div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -120,7 +97,6 @@ const MessagesTable = ({
   loading, 
   onMarkAsRead,
   onMarkAsClosed, 
-  onTogglePin,
   onDelete 
 }) => {
   const [actionConfirm, setActionConfirm] = useState(null);
@@ -228,14 +204,11 @@ const MessagesTable = ({
           {messages.map(message => (
             <tr 
               key={message.id} 
-              className={`message-row ${message.estado === 'Nuevo' ? 'message-row--new' : ''} ${message.pinned ? 'message-row--pinned' : ''}`}
+              className={`message-row ${message.estado === 'Nuevo' ? 'message-row--new' : ''}`}
             >
               <td className="col-status">
                 <div className="status-content">
                   {getStatusBadge(message)}
-                  {message.pinned && (
-                    <span className="pin-indicator" title="Mensaje fijado">📌</span>
-                  )}
                 </div>
               </td>
               
@@ -313,14 +286,6 @@ const MessagesTable = ({
                     </button>
                   )}
 
-                  <button
-                    onClick={() => onTogglePin(message.id, !message.pinned)}
-                    className={`action-btn ${message.pinned ? 'action-btn--unpin' : 'action-btn--pin'}`}
-                    title={message.pinned ? 'Quitar de fijados' : 'Fijar mensaje'}
-                  >
-                    {message.pinned ? '📌' : '📍'}
-                  </button>
-
                   {message.estado !== 'Cerrado' && (
                     <>
                       {actionConfirm?.messageId === message.id && actionConfirm?.action === 'close' ? (
@@ -375,7 +340,7 @@ const MessagesTable = ({
                       className="action-btn action-btn--delete"
                       title="Eliminar mensaje"
                     >
-                      �️
+                      🗑️
                     </button>
                   )}
                 </div>
@@ -468,6 +433,13 @@ const MessagesPagination = ({ pagination, onPageChange }) => {
 // Componente principal
 const MessagesPage = () => {
   const [messageStats, setMessageStats] = useState(null);
+  const api = useApi();
+  const apiRef = useRef(api);
+
+  // Actualizar la referencia cuando cambie
+  useEffect(() => {
+    apiRef.current = api;
+  }, [api]);
 
   // Hook para obtener mensajes
   const {
@@ -479,7 +451,6 @@ const MessagesPage = () => {
     updateFilters,
     markAsRead,
     markAsClosed,
-    togglePin,
     deleteMessage,
     goToPage,
     refreshMessages
@@ -487,76 +458,53 @@ const MessagesPage = () => {
     pageSize: 20
   });
 
-  // Funciones para las acciones de la tabla
-  const handleMarkAsRead = useCallback(async (messageId) => {
-    try {
-      await markAsRead(messageId);
-      // Refrescar estadísticas después del cambio
-      loadMessageStats();
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  }, [markAsRead]);
-
-  const handleMarkAsClosed = useCallback(async (messageId) => {
-    try {
-      await markAsClosed(messageId);
-      // Refrescar estadísticas después del cambio
-      loadMessageStats();
-    } catch (error) {
-      console.error('Error marking message as closed:', error);
-    }
-  }, [markAsClosed]);
-
-  const handleTogglePin = useCallback(async (messageId, pinned) => {
-    try {
-      await togglePin(messageId, pinned);
-      // Refrescar estadísticas después del cambio
-      loadMessageStats();
-    } catch (error) {
-      console.error('Error toggling message pin:', error);
-    }
-  }, [togglePin]);
-
-  const handleDelete = useCallback(async (messageId) => {
-    try {
-      await deleteMessage(messageId);
-      // Refrescar estadísticas después del cambio
-      loadMessageStats();
-    } catch (error) {
-      console.error('Error deleting message:', error);
-    }
-  }, [deleteMessage]);
-
-  const handleFiltersChange = useCallback((newFilters) => {
-    updateFilters(newFilters, { debounce: true, resetPagination: true });
-  }, [updateFilters]);
-
-  const handleExport = useCallback(async () => {
-    try {
-      const blob = await messageService.exportMessages(filters);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `mensajes_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Error exporting messages:', error);
-    }
-  }, [filters]);
-
   // Cargar estadísticas de mensajes
   const loadMessageStats = useCallback(async () => {
     try {
-      const response = await messageService.getMessageStats();
+      const response = await apiRef.current('/api/v1/messages/stats', { method: 'GET' });
       setMessageStats(response.data);
     } catch (error) {
       console.error('Error loading message stats:', error);
     }
   }, []);
+
+  // Funciones para las acciones de la tabla
+  const handleMarkAsRead = useCallback(async (messageId) => {
+    try {
+      await markAsRead(messageId);
+      // Refrescar mensajes y estadísticas
+      await refreshMessages();
+      loadMessageStats();
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  }, [markAsRead, refreshMessages, loadMessageStats]);
+
+  const handleMarkAsClosed = useCallback(async (messageId) => {
+    try {
+      await markAsClosed(messageId);
+      // Refrescar mensajes y estadísticas
+      await refreshMessages();
+      loadMessageStats();
+    } catch (error) {
+      console.error('Error marking message as closed:', error);
+    }
+  }, [markAsClosed, refreshMessages, loadMessageStats]);
+
+  const handleDelete = useCallback(async (messageId) => {
+    try {
+      await deleteMessage(messageId);
+      // Refrescar mensajes y estadísticas
+      await refreshMessages();
+      loadMessageStats();
+    } catch (error) {
+      console.error('Error deleting message:', error);
+    }
+  }, [deleteMessage, refreshMessages, loadMessageStats]);
+
+  const handleFiltersChange = useCallback((newFilters) => {
+    updateFilters(newFilters, { debounce: true, resetPagination: true });
+  }, [updateFilters]);
 
   // Cargar estadísticas al montar el componente
   React.useEffect(() => {
@@ -576,13 +524,6 @@ const MessagesPage = () => {
           </p>
         </div>
         <div className="header-actions">
-          <button 
-            onClick={handleExport}
-            className="btn btn--secondary"
-            disabled={loading}
-          >
-            <span>📊</span> Exportar CSV
-          </button>
           <button 
             onClick={refreshMessages}
             className="btn btn--secondary"
@@ -631,7 +572,6 @@ const MessagesPage = () => {
           loading={loading}
           onMarkAsRead={handleMarkAsRead}
           onMarkAsClosed={handleMarkAsClosed}
-          onTogglePin={handleTogglePin}
           onDelete={handleDelete}
         />
 
