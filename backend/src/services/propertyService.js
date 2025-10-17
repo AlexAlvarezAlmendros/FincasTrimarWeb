@@ -530,6 +530,8 @@ class PropertyService {
   /**
    * Obtiene propiedades en proceso de captación
    * Estados válidos: Pendiente, Contactada, Captada, Rechazada
+   * Solo aplica filtros de estado y paginación
+   * Las propiedades en captación deben tener Published = 0
    */
   async getCaptacionProperties(filters = {}) {
     try {
@@ -538,17 +540,11 @@ class PropertyService {
       // Estados de captación válidos
       const captacionStates = ['Pendiente', 'Contactada', 'Captada', 'Rechazada'];
       
+      // Solo aplicar filtro de estado y paginación
+      // IMPORTANTE: Las viviendas en captación deben estar NO publicadas (Published = 0)
       const result = await viviendaRepository.findAll({
-        q: filters.q,
         estadoVenta: filters.estadoVenta || captacionStates,
-        minPrice: filters.minPrice,
-        maxPrice: filters.maxPrice,
-        tipoInmueble: filters.tipoInmueble,
-        tipoVivienda: filters.tipoVivienda,
-        provincia: filters.provincia,
-        poblacion: filters.poblacion,
-        captadoPor: filters.captadoPor,
-        published: true, // Solo propiedades publicadas
+        published: false, // Solo viviendas NO publicadas (Published = 0)
         page: filters.page || 1,
         pageSize: filters.pageSize || 20
       });

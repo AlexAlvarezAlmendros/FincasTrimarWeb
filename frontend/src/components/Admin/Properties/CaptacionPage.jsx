@@ -26,18 +26,60 @@ const useCaptacion = () => {
       totalPages: 1,
       totalItems: 0,
       itemsPerPage: 20
+    },
+    stats: {
+      total: 0,
+      pendiente: 0,
+      contactada: 0,
+      captada: 0,
+      rechazada: 0
     }
   });
 
   const [filters, setFilters] = useState({
     search: '',
     estadoVenta: '', // Filtro por estado de captación
-    sortBy: 'fechaCaptacion_desc' // fechaCaptacion_desc, fechaCaptacion_asc, name_asc, name_desc
+    sortBy: 'fechaCaptacion_desc', // fechaCaptacion_desc, fechaCaptacion_asc, name_asc, name_desc
+    page: 1 // Página actual
   });
 
+  // Cargar estadísticas globales (una sola vez al montar)
+  useEffect(() => {
+    fetchGlobalStats();
+  }, []);
+
+  // Cargar propiedades cuando cambie la página o el estado
   useEffect(() => {
     fetchCaptacionProperties();
-  }, [filters]);
+  }, [filters.page, filters.estadoVenta]);
+
+  const fetchGlobalStats = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      
+      // Obtener todas las viviendas en captación sin paginación (solo necesitamos contar)
+      const responses = await Promise.all([
+        propertyService.getCaptacionProperties({ token, estadoVenta: 'Pendiente', pageSize: 1 }),
+        propertyService.getCaptacionProperties({ token, estadoVenta: 'Contactada', pageSize: 1 }),
+        propertyService.getCaptacionProperties({ token, estadoVenta: 'Captada', pageSize: 1 }),
+        propertyService.getCaptacionProperties({ token, estadoVenta: 'Rechazada', pageSize: 1 }),
+        propertyService.getCaptacionProperties({ token, pageSize: 1 }) // Total (todos los estados)
+      ]);
+
+      const stats = {
+        pendiente: responses[0].pagination?.total || 0,
+        contactada: responses[1].pagination?.total || 0,
+        captada: responses[2].pagination?.total || 0,
+        rechazada: responses[3].pagination?.total || 0,
+        total: responses[4].pagination?.total || 0
+      };
+
+      setData(prev => ({ ...prev, stats }));
+    } catch (error) {
+      console.error('Error cargando estadísticas globales:', error);
+      // No bloqueamos la UI si fallan las estadísticas
+    }
+  };
 
   const fetchCaptacionProperties = async () => {
     setData(prev => ({ ...prev, loading: true, error: null }));
@@ -49,7 +91,9 @@ const useCaptacion = () => {
       // Llamar al servicio para obtener propiedades en estados de captación
       const response = await propertyService.getCaptacionProperties({ 
         token,
-        ...filters
+        estadoVenta: filters.estadoVenta,
+        page: filters.page,
+        pageSize: 20
       });
       
       if (!response.success) {
@@ -58,7 +102,7 @@ const useCaptacion = () => {
 
       const properties = response.data || [];
       
-      // Aplicar filtros del frontend (búsqueda)
+      // Aplicar filtros del frontend (búsqueda y ordenación)
       let filteredProperties = properties;
       
       if (filters.search) {
@@ -95,10 +139,10 @@ const useCaptacion = () => {
         properties: filteredProperties,
         loading: false,
         error: null,
-        pagination: {
-          currentPage: 1,
-          totalPages: Math.ceil(filteredProperties.length / 20),
-          totalItems: filteredProperties.length,
+        pagination: response.pagination || {
+          currentPage: filters.page,
+          totalPages: Math.ceil((response.pagination?.total || filteredProperties.length) / 20),
+          totalItems: response.pagination?.total || filteredProperties.length,
           itemsPerPage: 20
         }
       });
@@ -144,7 +188,8 @@ const useCaptacion = () => {
     filters,
     setFilters,
     updateCaptacionData,
-    refetch: fetchCaptacionProperties
+    refetch: fetchCaptacionProperties,
+    changePage: (newPage) => setFilters(prev => ({ ...prev, page: newPage }))
   };
 };
 
@@ -337,6 +382,83 @@ const CaptacionPropertyCard = ({
   );
 };
 
+// Componente de paginación
+const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 7;
+    
+    if (totalPages <= maxVisible) {
+      // Mostrar todas las páginas si son pocas
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Mostrar páginas con elipsis
+      if (currentPage <= 3) {
+        // Cerca del inicio
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // Cerca del final
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        // En el medio
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    
+    return pages;
+  };
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="pagination">
+      <button
+        className="pagination-btn pagination-prev"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        aria-label="Página anterior"
+      >
+        ← Anterior
+      </button>
+
+      <div className="pagination-numbers">
+        {getPageNumbers().map((page, index) => (
+          page === '...' ? (
+            <span key={`ellipsis-${index}`} className="pagination-ellipsis">
+              ...
+            </span>
+          ) : (
+            <button
+              key={page}
+              className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+              onClick={() => onPageChange(page)}
+              aria-label={`Página ${page}`}
+              aria-current={currentPage === page ? 'page' : undefined}
+            >
+              {page}
+            </button>
+          )
+        ))}
+      </div>
+
+      <button
+        className="pagination-btn pagination-next"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        aria-label="Página siguiente"
+      >
+        Siguiente →
+      </button>
+
+      <div className="pagination-info">
+        Página {currentPage} de {totalPages} ({totalItems} {totalItems === 1 ? 'resultado' : 'resultados'})
+      </div>
+    </div>
+  );
+};
+
 // Componente principal
 const CaptacionPage = () => {
   const {
@@ -344,9 +466,11 @@ const CaptacionPage = () => {
     loading,
     error,
     pagination,
+    stats,
     filters,
     setFilters,
-    updateCaptacionData
+    updateCaptacionData,
+    changePage
   } = useCaptacion();
 
   const [editingProperty, setEditingProperty] = useState(null);
@@ -371,20 +495,6 @@ const CaptacionPage = () => {
       // Aquí podrías mostrar un mensaje de error al usuario
     }
   };
-
-  // Estadísticas por estado
-  const getStats = () => {
-    const stats = {
-      total: properties.length,
-      pendiente: properties.filter(p => p.estadoVenta === CAPTACION_STATES.PENDIENTE).length,
-      contactada: properties.filter(p => p.estadoVenta === CAPTACION_STATES.CONTACTADA).length,
-      captada: properties.filter(p => p.estadoVenta === CAPTACION_STATES.CAPTADA).length,
-      rechazada: properties.filter(p => p.estadoVenta === CAPTACION_STATES.RECHAZADA).length
-    };
-    return stats;
-  };
-
-  const stats = getStats();
 
   if (loading) {
     return (
@@ -427,23 +537,23 @@ const CaptacionPage = () => {
       <div className="stats-section">
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-value">{stats.total}</div>
+            <div className="stat-value">{stats?.total || 0}</div>
             <div className="stat-label">Total</div>
           </div>
           <div className="stat-card stat-pending">
-            <div className="stat-value">{stats.pendiente}</div>
+            <div className="stat-value">{stats?.pendiente || 0}</div>
             <div className="stat-label">Pendientes</div>
           </div>
           <div className="stat-card stat-contacted">
-            <div className="stat-value">{stats.contactada}</div>
+            <div className="stat-value">{stats?.contactada || 0}</div>
             <div className="stat-label">Contactadas</div>
           </div>
           <div className="stat-card stat-captured">
-            <div className="stat-value">{stats.captada}</div>
+            <div className="stat-value">{stats?.captada || 0}</div>
             <div className="stat-label">Captadas</div>
           </div>
           <div className="stat-card stat-rejected">
-            <div className="stat-value">{stats.rechazada}</div>
+            <div className="stat-value">{stats?.rechazada || 0}</div>
             <div className="stat-label">Rechazadas</div>
           </div>
         </div>
@@ -487,15 +597,25 @@ const CaptacionPage = () => {
             </div>
           </div>
         ) : (
-          <div className="captacion-grid">
-            {properties.map(property => (
-              <CaptacionPropertyCard
-                key={property.id}
-                property={property}
-                onEdit={handleEditProperty}
-              />
-            ))}
-          </div>
+          <>
+            <div className="captacion-grid">
+              {properties.map(property => (
+                <CaptacionPropertyCard
+                  key={property.id}
+                  property={property}
+                  onEdit={handleEditProperty}
+                />
+              ))}
+            </div>
+
+            {/* Paginación */}
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              onPageChange={changePage}
+            />
+          </>
         )}
       </div>
 

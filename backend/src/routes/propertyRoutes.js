@@ -31,18 +31,20 @@ publicRoutes.get('/viviendas/stats', propertyController.getStats);
 publicRoutes.get('/viviendas/drafts', propertyController.getDrafts);
 
 /**
- * @route GET /api/v1/viviendas/:id
- * @desc Obtener detalles de una propiedad específica
- * @access Public
- */
-publicRoutes.get('/viviendas/:id', validateUUID('id'), propertyController.getPropertyById);
-
-/**
  * @route GET /api/v1/viviendas/:id/similar
  * @desc Obtener propiedades similares
  * @access Public
+ * NOTA: Esta ruta debe estar ANTES de /viviendas/:id para evitar conflictos
  */
 publicRoutes.get('/viviendas/:id/similar', validateUUID('id'), propertyController.getSimilarProperties);
+
+/**
+ * @route GET /api/v1/viviendas/:id
+ * @desc Obtener detalles de una propiedad específica
+ * @access Public
+ * NOTA: Esta ruta debe estar DESPUÉS de las rutas específicas (stats, drafts, :id/similar)
+ */
+publicRoutes.get('/viviendas/:id', validateUUID('id'), propertyController.getPropertyById);
 
 /**
  * @route POST /api/v1/viviendas/search
@@ -53,6 +55,16 @@ publicRoutes.post('/viviendas/search', propertyController.searchProperties);
 
 // Rutas privadas para propiedades (requieren autenticación)
 const privateRoutes = Router();
+
+/**
+ * @route GET /api/v1/viviendas/captacion
+ * @desc Obtener propiedades en proceso de captación
+ * @access Private (Admin, Seller)
+ * NOTA: Esta ruta se registra directamente en app.js ANTES de las rutas públicas
+ * para evitar que /viviendas/:id capture "captacion" como un ID
+ */
+// privateRoutes.get('/viviendas/captacion', propertyController.getCaptacionProperties);
+// ☝️ Comentado porque se registra directamente en app.js
 
 /**
  * @route POST /api/v1/viviendas
@@ -120,13 +132,6 @@ privateRoutes.delete('/viviendas/:id/imagenes/:imageId',
   validateUUID('imageId'), 
   propertyController.deletePropertyImage
 );
-
-/**
- * @route GET /api/v1/viviendas/captacion
- * @desc Obtener propiedades en proceso de captación
- * @access Private (Admin, Seller)
- */
-privateRoutes.get('/viviendas/captacion', propertyController.getCaptacionProperties);
 
 /**
  * @route PATCH /api/v1/viviendas/:id/captacion
