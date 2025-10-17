@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import propertyService from '../../../services/propertyService.js';
 import CaptacionEditModal from './CaptacionEditModal.jsx';
+import CsvImportButton from './CsvImportButton.jsx';
 import './CaptacionPage.css';
 
 // Estados de captación válidos según el modelo de datos
@@ -55,7 +56,6 @@ const useCaptacion = () => {
 
   const fetchGlobalStats = async () => {
     try {
-      console.log('📊 Cargando estadísticas globales...');
       const token = await getAccessTokenSilently();
       
       // Obtener todas las viviendas en captación sin paginación (solo necesitamos contar)
@@ -67,8 +67,6 @@ const useCaptacion = () => {
         propertyService.getCaptacionProperties({ token, pageSize: 1 }) // Total (todos los estados)
       ]);
 
-      console.log('📊 Respuestas de estadísticas:', responses);
-
       const stats = {
         pendiente: responses[0].pagination?.total || 0,
         contactada: responses[1].pagination?.total || 0,
@@ -76,8 +74,6 @@ const useCaptacion = () => {
         rechazada: responses[3].pagination?.total || 0,
         total: responses[4].pagination?.total || 0
       };
-
-      console.log('📊 Estadísticas calculadas:', stats);
       setData(prev => ({ ...prev, stats }));
     } catch (error) {
       console.error('❌ Error cargando estadísticas globales:', error);
@@ -194,6 +190,10 @@ const useCaptacion = () => {
     setFilters,
     updateCaptacionData,
     refetch: fetchCaptacionProperties,
+    refetchAll: async () => {
+      await fetchGlobalStats();
+      await fetchCaptacionProperties();
+    },
     changePage: (newPage) => setFilters(prev => ({ ...prev, page: newPage }))
   };
 };
@@ -475,6 +475,8 @@ const CaptacionPage = () => {
     filters,
     setFilters,
     updateCaptacionData,
+    refetch,
+    refetchAll,
     changePage
   } = useCaptacion();
 
@@ -525,6 +527,10 @@ const CaptacionPage = () => {
           <Link to="/admin/viviendas" className="btn btn--secondary">
             📋 Ver todas
           </Link>
+          <CsvImportButton onImportComplete={() => {
+            // Recargar las propiedades y estadísticas después de importar
+            refetchAll();
+          }} />
           <Link to="/admin/viviendas/crear" className="btn btn--primary">
             ➕ Nueva vivienda
           </Link>
