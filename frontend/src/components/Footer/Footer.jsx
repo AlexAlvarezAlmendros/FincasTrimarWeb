@@ -45,7 +45,7 @@ const Footer = () => {
             <div className="footer-brand">
               <div className="footer-logo">
                 <img 
-                  src="./img/logo.svg" 
+                  src="/img/logo.svg" 
                   alt="Fincas Trimar Logo" 
                   className="footer-logo-image"
                 />
@@ -90,39 +90,7 @@ const Footer = () => {
 
           {/* Newsletter */}
           <div className="footer-section footer-newsletter">
-            <h4 className="footer-section-title">Suscríbete</h4>
-            <p className="newsletter-description">
-              Recibe las últimas novedades del mercado inmobiliario y nuestras mejores ofertas.
-            </p>
-            
-            <form onSubmit={handleNewsletterSubmit} className="newsletter-form">
-              <div className="newsletter-input-group">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Tu email"
-                  className="newsletter-input"
-                  required
-                  disabled={isSubmitting}
-                />
-                <button 
-                  type="submit" 
-                  className={`newsletter-button ${isSubmitting ? 'newsletter-button--loading' : ''}`}
-                  disabled={isSubmitting}
-                  aria-label="Suscribirse al newsletter"
-                >
-                  {isSubmitting ? <FontAwesomeIcon icon="fa-solid fa-spinner" spin /> : <FontAwesomeIcon icon="fa-solid fa-envelope" />}
-                </button>
-              </div>
-              
-              {submitMessage && (
-                <div className={`newsletter-message ${submitMessage.includes('Error') ? 'newsletter-message--error' : 'newsletter-message--success'}`}>
-                  {submitMessage}
-                </div>
-              )}
-            </form>
-            
+            <h4 className="footer-section-title">Contacto</h4>
             <div className="footer-contact-info">
               <div className="contact-item">
                 <span className="contact-icon"><FontAwesomeIcon icon="fa-solid fa-map-marker-alt" /></span>

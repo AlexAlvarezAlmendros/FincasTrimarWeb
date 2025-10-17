@@ -63,7 +63,7 @@ const Header = () => {
           <Link to="/" className="brand-link" onClick={closeMobileMenu}>
             <div className="brand-icon">
               <img 
-                  src="./img/logo.svg" 
+                  src="/img/logo.svg" 
                   alt="Fincas Trimar Logo" 
                   className="header-logo-image"
                 />
