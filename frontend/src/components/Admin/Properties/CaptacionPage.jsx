@@ -55,6 +55,7 @@ const useCaptacion = () => {
 
   const fetchGlobalStats = async () => {
     try {
+      console.log('📊 Cargando estadísticas globales...');
       const token = await getAccessTokenSilently();
       
       // Obtener todas las viviendas en captación sin paginación (solo necesitamos contar)
@@ -66,6 +67,8 @@ const useCaptacion = () => {
         propertyService.getCaptacionProperties({ token, pageSize: 1 }) // Total (todos los estados)
       ]);
 
+      console.log('📊 Respuestas de estadísticas:', responses);
+
       const stats = {
         pendiente: responses[0].pagination?.total || 0,
         contactada: responses[1].pagination?.total || 0,
@@ -74,9 +77,10 @@ const useCaptacion = () => {
         total: responses[4].pagination?.total || 0
       };
 
+      console.log('📊 Estadísticas calculadas:', stats);
       setData(prev => ({ ...prev, stats }));
     } catch (error) {
-      console.error('Error cargando estadísticas globales:', error);
+      console.error('❌ Error cargando estadísticas globales:', error);
       // No bloqueamos la UI si fallan las estadísticas
     }
   };
@@ -135,7 +139,8 @@ const useCaptacion = () => {
           break;
       }
 
-      setData({
+      setData(prev => ({
+        ...prev, // ✅ Preservar stats y otros datos previos
         properties: filteredProperties,
         loading: false,
         error: null,
@@ -145,7 +150,7 @@ const useCaptacion = () => {
           totalItems: response.pagination?.total || filteredProperties.length,
           itemsPerPage: 20
         }
-      });
+      }));
     } catch (error) {
       console.error('Error cargando propiedades de captación:', error);
       setData(prev => ({
