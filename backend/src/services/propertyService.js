@@ -662,8 +662,8 @@ class PropertyService {
         }
       }
 
-      // Realizar la actualización
-      const updatedProperty = await viviendaRepository.update(propertyId, updateData);
+      // Realizar la actualización usando el método específico para datos de captación
+      const updatedProperty = await viviendaRepository.updateCaptacionData(propertyId, updateData);
       
       logger.info(`Datos de captación actualizados exitosamente para propiedad: ${propertyId}`);
       return updatedProperty;

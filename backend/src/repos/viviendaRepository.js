@@ -438,6 +438,62 @@ class ViviendaRepository {
       throw error;
     }
   }
+
+  /**
+   * Actualiza solo los datos de captación de una vivienda
+   */
+  async updateCaptacionData(id, captacionData) {
+    try {
+      // Construir la consulta dinámicamente solo con los campos proporcionados
+      const fields = [];
+      const values = [];
+
+      if (captacionData.estadoVenta !== undefined) {
+        fields.push('EstadoVenta = ?');
+        values.push(captacionData.estadoVenta);
+      }
+
+      if (captacionData.fechaCaptacion !== undefined) {
+        fields.push('FechaCaptacion = ?');
+        values.push(captacionData.fechaCaptacion);
+      }
+
+      if (captacionData.porcentajeCaptacion !== undefined) {
+        fields.push('PorcentajeCaptacion = ?');
+        values.push(captacionData.porcentajeCaptacion);
+      }
+
+      if (captacionData.captadoPor !== undefined) {
+        fields.push('CaptadoPor = ?');
+        values.push(captacionData.captadoPor);
+      }
+
+      if (captacionData.comisionGanada !== undefined) {
+        fields.push('ComisionGanada = ?');
+        values.push(captacionData.comisionGanada);
+      }
+
+      // Siempre actualizar UpdatedAt
+      fields.push('UpdatedAt = CURRENT_TIMESTAMP');
+
+      if (fields.length === 1) {
+        // Solo UpdatedAt, no hay nada que actualizar
+        return await this.findById(id);
+      }
+
+      // Agregar el ID al final de los valores
+      values.push(id);
+
+      const sql = `UPDATE Vivienda SET ${fields.join(', ')} WHERE Id = ?`;
+      
+      await executeQuery(sql, values);
+      
+      return await this.findById(id);
+    } catch (error) {
+      logger.error('Error en ViviendaRepository.updateCaptacionData:', error);
+      throw error;
+    }
+  }
   
   /**
    * Transforma una fila de la DB al formato del modelo

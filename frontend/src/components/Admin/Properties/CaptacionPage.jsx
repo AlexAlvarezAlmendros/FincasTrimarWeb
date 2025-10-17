@@ -186,9 +186,7 @@ const useCaptacion = () => {
 
   const deleteProperty = async (propertyId) => {
     try {
-      const token = await getAccessTokenSilently();
-      
-      const response = await propertyService.deleteProperty(propertyId, token);
+      const response = await propertyService.deleteProperty(propertyId, getAccessTokenSilently);
       
       if (!response.success) {
         throw new Error(response.error?.message || 'Error al eliminar la propiedad');
