@@ -65,7 +65,7 @@
     order: 1;
   }
   
-  .contact-info {
+  .contact-info-contact {
     order: 2;
   }
   
@@ -73,7 +73,7 @@
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }/* Contact Info */
-.contact-info {
+.contact-info-contact {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);

@@ -114,14 +114,6 @@ const Header = () => {
               
               {/* Menú de usuario */}
               <div className="user-menu">
-                <div className="user-info">
-                  <img 
-                    src={user?.picture || '/default-avatar.png'} 
-                    alt={user?.name || 'Usuario'} 
-                    className="user-avatar"
-                  />
-                  <span className="user-name">{user?.name}</span>
-                </div>
                 <button 
                   onClick={handleLogout}
                   className="btn btn--secondary btn--logout"
