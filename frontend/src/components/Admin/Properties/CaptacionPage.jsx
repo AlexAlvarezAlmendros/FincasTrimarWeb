@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import propertyService from '../../../services/propertyService.js';
 import CaptacionEditModal from './CaptacionEditModal.jsx';
+import CsvImportButton from './CsvImportButton.jsx';
 import './CaptacionPage.css';
 
 // Estados de captación válidos según el modelo de datos
@@ -26,18 +27,59 @@ const useCaptacion = () => {
       totalPages: 1,
       totalItems: 0,
       itemsPerPage: 20
+    },
+    stats: {
+      total: 0,
+      pendiente: 0,
+      contactada: 0,
+      captada: 0,
+      rechazada: 0
     }
   });
 
   const [filters, setFilters] = useState({
     search: '',
     estadoVenta: '', // Filtro por estado de captación
-    sortBy: 'fechaCaptacion_desc' // fechaCaptacion_desc, fechaCaptacion_asc, name_asc, name_desc
+    sortBy: 'fechaCaptacion_desc', // fechaCaptacion_desc, fechaCaptacion_asc, name_asc, name_desc
+    page: 1 // Página actual
   });
 
+  // Cargar estadísticas globales (una sola vez al montar)
+  useEffect(() => {
+    fetchGlobalStats();
+  }, []);
+
+  // Cargar propiedades cuando cambie la página o el estado
   useEffect(() => {
     fetchCaptacionProperties();
-  }, [filters]);
+  }, [filters.page, filters.estadoVenta]);
+
+  const fetchGlobalStats = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      
+      // Obtener todas las viviendas en captación sin paginación (solo necesitamos contar)
+      const responses = await Promise.all([
+        propertyService.getCaptacionProperties({ token, estadoVenta: 'Pendiente', pageSize: 1 }),
+        propertyService.getCaptacionProperties({ token, estadoVenta: 'Contactada', pageSize: 1 }),
+        propertyService.getCaptacionProperties({ token, estadoVenta: 'Captada', pageSize: 1 }),
+        propertyService.getCaptacionProperties({ token, estadoVenta: 'Rechazada', pageSize: 1 }),
+        propertyService.getCaptacionProperties({ token, pageSize: 1 }) // Total (todos los estados)
+      ]);
+
+      const stats = {
+        pendiente: responses[0].pagination?.total || 0,
+        contactada: responses[1].pagination?.total || 0,
+        captada: responses[2].pagination?.total || 0,
+        rechazada: responses[3].pagination?.total || 0,
+        total: responses[4].pagination?.total || 0
+      };
+      setData(prev => ({ ...prev, stats }));
+    } catch (error) {
+      console.error('❌ Error cargando estadísticas globales:', error);
+      // No bloqueamos la UI si fallan las estadísticas
+    }
+  };
 
   const fetchCaptacionProperties = async () => {
     setData(prev => ({ ...prev, loading: true, error: null }));
@@ -49,7 +91,9 @@ const useCaptacion = () => {
       // Llamar al servicio para obtener propiedades en estados de captación
       const response = await propertyService.getCaptacionProperties({ 
         token,
-        ...filters
+        estadoVenta: filters.estadoVenta,
+        page: filters.page,
+        pageSize: 20
       });
       
       if (!response.success) {
@@ -58,7 +102,7 @@ const useCaptacion = () => {
 
       const properties = response.data || [];
       
-      // Aplicar filtros del frontend (búsqueda)
+      // Aplicar filtros del frontend (búsqueda y ordenación)
       let filteredProperties = properties;
       
       if (filters.search) {
@@ -91,17 +135,18 @@ const useCaptacion = () => {
           break;
       }
 
-      setData({
+      setData(prev => ({
+        ...prev, // ✅ Preservar stats y otros datos previos
         properties: filteredProperties,
         loading: false,
         error: null,
-        pagination: {
-          currentPage: 1,
-          totalPages: Math.ceil(filteredProperties.length / 20),
-          totalItems: filteredProperties.length,
+        pagination: response.pagination || {
+          currentPage: filters.page,
+          totalPages: Math.ceil((response.pagination?.total || filteredProperties.length) / 20),
+          totalItems: response.pagination?.total || filteredProperties.length,
           itemsPerPage: 20
         }
-      });
+      }));
     } catch (error) {
       console.error('Error cargando propiedades de captación:', error);
       setData(prev => ({
@@ -139,12 +184,46 @@ const useCaptacion = () => {
     }
   };
 
+  const deleteProperty = async (propertyId) => {
+    try {
+      const response = await propertyService.deleteProperty(propertyId, getAccessTokenSilently);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al eliminar la propiedad');
+      }
+      
+      // Eliminar la propiedad de la lista local
+      setData(prev => ({
+        ...prev,
+        properties: prev.properties.filter(property => property.id !== propertyId),
+        pagination: {
+          ...prev.pagination,
+          totalItems: prev.pagination.totalItems - 1
+        }
+      }));
+      
+      // Recargar estadísticas
+      await fetchGlobalStats();
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      throw error;
+    }
+  };
+
   return {
     ...data,
     filters,
     setFilters,
     updateCaptacionData,
-    refetch: fetchCaptacionProperties
+    deleteProperty,
+    refetch: fetchCaptacionProperties,
+    refetchAll: async () => {
+      await fetchGlobalStats();
+      await fetchCaptacionProperties();
+    },
+    changePage: (newPage) => setFilters(prev => ({ ...prev, page: newPage }))
   };
 };
 
@@ -204,8 +283,32 @@ const CaptacionFilters = ({ filters, onFiltersChange }) => {
 // Componente de tarjeta de propiedad en captación
 const CaptacionPropertyCard = ({ 
   property, 
-  onEdit
+  onEdit,
+  onDelete
 }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(property.id);
+    } catch (error) {
+      console.error('Error al eliminar propiedad:', error);
+      alert('Error al eliminar la propiedad. Por favor, intenta de nuevo.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+  };
   const formatDate = (dateString) => {
     if (!dateString) return 'Sin fecha';
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -317,13 +420,25 @@ const CaptacionPropertyCard = ({
       </div>
 
       <div className="captacion-actions">
-        <Link 
-          to={`/admin/viviendas/${property.id}/edit`}
-          className="action-btn action-btn--view"
-          title="Ver propiedad"
-        >
-          👁️ Ver
-        </Link>
+        {property.urlReferencia ? (
+          <a 
+            href={property.urlReferencia}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="action-btn action-btn--view"
+            title="Ver propiedad en portal externo"
+          >
+            👁️ Ver
+          </a>
+        ) : (
+          <button
+            disabled
+            className="action-btn action-btn--view action-btn--disabled"
+            title="No hay URL disponible"
+          >
+            👁️ Ver
+          </button>
+        )}
         
         <button
           onClick={() => onEdit(property)}
@@ -332,6 +447,125 @@ const CaptacionPropertyCard = ({
         >
           ✏️ Editar
         </button>
+
+        <button
+          onClick={handleDeleteClick}
+          className="action-btn action-btn--delete"
+          title="Eliminar propiedad"
+          disabled={isDeleting}
+        >
+          {isDeleting ? '⏳' : '🗑️'} Eliminar
+        </button>
+      </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteConfirm && (
+        <div className="delete-confirm-overlay" onClick={handleCancelDelete}>
+          <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-confirm-header">
+              <span className="delete-confirm-icon">⚠️</span>
+              <h3>¿Eliminar propiedad?</h3>
+            </div>
+            <div className="delete-confirm-content">
+              <p>¿Estás seguro de que deseas eliminar esta propiedad?</p>
+              <p className="delete-confirm-property-name">{property.name}</p>
+              <p className="delete-confirm-warning">Esta acción no se puede deshacer.</p>
+            </div>
+            <div className="delete-confirm-actions">
+              <button 
+                onClick={handleCancelDelete}
+                className="delete-confirm-btn delete-confirm-btn--cancel"
+                disabled={isDeleting}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleConfirmDelete}
+                className="delete-confirm-btn delete-confirm-btn--delete"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Componente de paginación
+const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 7;
+    
+    if (totalPages <= maxVisible) {
+      // Mostrar todas las páginas si son pocas
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Mostrar páginas con elipsis
+      if (currentPage <= 3) {
+        // Cerca del inicio
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // Cerca del final
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        // En el medio
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    
+    return pages;
+  };
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="pagination">
+      <button
+        className="pagination-btn pagination-prev"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        aria-label="Página anterior"
+      >
+        ← Anterior
+      </button>
+
+      <div className="pagination-numbers">
+        {getPageNumbers().map((page, index) => (
+          page === '...' ? (
+            <span key={`ellipsis-${index}`} className="pagination-ellipsis">
+              ...
+            </span>
+          ) : (
+            <button
+              key={page}
+              className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+              onClick={() => onPageChange(page)}
+              aria-label={`Página ${page}`}
+              aria-current={currentPage === page ? 'page' : undefined}
+            >
+              {page}
+            </button>
+          )
+        ))}
+      </div>
+
+      <button
+        className="pagination-btn pagination-next"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        aria-label="Página siguiente"
+      >
+        Siguiente →
+      </button>
+
+      <div className="pagination-info">
+        Página {currentPage} de {totalPages} ({totalItems} {totalItems === 1 ? 'resultado' : 'resultados'})
       </div>
     </div>
   );
@@ -344,9 +578,14 @@ const CaptacionPage = () => {
     loading,
     error,
     pagination,
+    stats,
     filters,
     setFilters,
-    updateCaptacionData
+    updateCaptacionData,
+    deleteProperty,
+    refetch,
+    refetchAll,
+    changePage
   } = useCaptacion();
 
   const [editingProperty, setEditingProperty] = useState(null);
@@ -372,19 +611,14 @@ const CaptacionPage = () => {
     }
   };
 
-  // Estadísticas por estado
-  const getStats = () => {
-    const stats = {
-      total: properties.length,
-      pendiente: properties.filter(p => p.estadoVenta === CAPTACION_STATES.PENDIENTE).length,
-      contactada: properties.filter(p => p.estadoVenta === CAPTACION_STATES.CONTACTADA).length,
-      captada: properties.filter(p => p.estadoVenta === CAPTACION_STATES.CAPTADA).length,
-      rechazada: properties.filter(p => p.estadoVenta === CAPTACION_STATES.RECHAZADA).length
-    };
-    return stats;
+  const handleDeleteProperty = async (propertyId) => {
+    try {
+      await deleteProperty(propertyId);
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      throw error;
+    }
   };
-
-  const stats = getStats();
 
   if (loading) {
     return (
@@ -410,6 +644,10 @@ const CaptacionPage = () => {
           <Link to="/admin/viviendas" className="btn btn--secondary">
             📋 Ver todas
           </Link>
+          <CsvImportButton onImportComplete={() => {
+            // Recargar las propiedades y estadísticas después de importar
+            refetchAll();
+          }} />
           <Link to="/admin/viviendas/crear" className="btn btn--primary">
             ➕ Nueva vivienda
           </Link>
@@ -427,23 +665,23 @@ const CaptacionPage = () => {
       <div className="stats-section">
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-value">{stats.total}</div>
+            <div className="stat-value">{stats?.total || 0}</div>
             <div className="stat-label">Total</div>
           </div>
           <div className="stat-card stat-pending">
-            <div className="stat-value">{stats.pendiente}</div>
+            <div className="stat-value">{stats?.pendiente || 0}</div>
             <div className="stat-label">Pendientes</div>
           </div>
           <div className="stat-card stat-contacted">
-            <div className="stat-value">{stats.contactada}</div>
+            <div className="stat-value">{stats?.contactada || 0}</div>
             <div className="stat-label">Contactadas</div>
           </div>
           <div className="stat-card stat-captured">
-            <div className="stat-value">{stats.captada}</div>
+            <div className="stat-value">{stats?.captada || 0}</div>
             <div className="stat-label">Captadas</div>
           </div>
           <div className="stat-card stat-rejected">
-            <div className="stat-value">{stats.rechazada}</div>
+            <div className="stat-value">{stats?.rechazada || 0}</div>
             <div className="stat-label">Rechazadas</div>
           </div>
         </div>
@@ -487,15 +725,26 @@ const CaptacionPage = () => {
             </div>
           </div>
         ) : (
-          <div className="captacion-grid">
-            {properties.map(property => (
-              <CaptacionPropertyCard
-                key={property.id}
-                property={property}
-                onEdit={handleEditProperty}
-              />
-            ))}
-          </div>
+          <>
+            <div className="captacion-grid">
+              {properties.map(property => (
+                <CaptacionPropertyCard
+                  key={property.id}
+                  property={property}
+                  onEdit={handleEditProperty}
+                  onDelete={handleDeleteProperty}
+                />
+              ))}
+            </div>
+
+            {/* Paginación */}
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              onPageChange={changePage}
+            />
+          </>
         )}
       </div>
 

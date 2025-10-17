@@ -13,6 +13,7 @@ import { publicRoutes as messagePublicRoutes, privateRoutes as messagePrivateRou
 import { imagePublicRoutes, imagePrivateRoutes } from './routes/imageRoutes.js';
 import htmlParserRoutes from './routes/htmlParserRoutes.js';
 import { privateRoutes as dashboardPrivateRoutes } from './routes/dashboardRoutes.js';
+import csvImportRoutes from './routes/csvImportRoutes.js';
 
 const app = express();
 
@@ -43,9 +44,16 @@ app.use('/api/', rateLimiter);
 
 // Middleware de autenticación (configurado en authMiddleware.js)
 import { debugCheckJwt } from './middlewares/authMiddleware.js';
+import propertyController from './controllers/propertyController.js';
 
-// Rutas públicas
+// Rutas públicas (sin autenticación)
 app.use('/api', healthRoutes);
+
+// IMPORTANTE: Registrar rutas específicas de captación ANTES de las rutas públicas generales
+// para evitar que /viviendas/:id capture "captacion" como un ID
+app.get('/api/v1/viviendas/captacion', debugCheckJwt, propertyController.getCaptacionProperties);
+
+// Rutas públicas generales
 app.use('/api/v1', propertyPublicRoutes);
 app.use('/api/v1', messagePublicRoutes);
 app.use('/api/v1', imagePublicRoutes);
@@ -57,6 +65,7 @@ app.use('/api/v1', propertyPrivateRoutes);
 app.use('/api/v1', messagePrivateRoutes);
 app.use('/api/v1', imagePrivateRoutes);
 app.use('/api/v1', dashboardPrivateRoutes);
+app.use('/api/v1/csv', csvImportRoutes);
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {

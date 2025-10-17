@@ -215,5 +215,46 @@ export const contactFormSchema = z.object({
     .refine(val => !val || val === '', 'Campo de seguridad no válido')
 });
 
+// Esquema para actualización parcial de propiedades
+// Todos los campos son opcionales, pero si se envían deben ser válidos
+export const propertyUpdateSchema = propertySchema.partial();
+
 // Esquema para validar parámetros de ID UUID
 export const uuidSchema = z.string().uuid('ID no válido');
+
+// Esquema para importación CSV de viviendas
+export const csvPropertySchema = z.object({
+  // Campos del CSV que usaremos
+  URL: z.string().url('URL no válida').optional(),
+  Titulo: z.string().min(5, 'El título debe tener al menos 5 caracteres'),
+  Precio: z.string().transform(val => {
+    // Limpiar el precio: remover símbolos de moneda, puntos de miles, etc.
+    const cleaned = val.replace(/[€$.,\s]/g, '');
+    return parseInt(cleaned, 10) || 0;
+  }),
+  Ubicacion: z.string().optional(),
+  Superficie: z.string().transform(val => {
+    const cleaned = val.replace(/[m²\s]/g, '');
+    return parseInt(cleaned, 10) || null;
+  }).optional(),
+  Habitaciones: z.string().transform(val => {
+    const cleaned = val.replace(/[^\d]/g, '');
+    return parseInt(cleaned, 10) || 0;
+  }).optional(),
+  Banos: z.string().transform(val => {
+    const cleaned = val.replace(/[^\d]/g, '');
+    return parseInt(cleaned, 10) || 0;
+  }).optional(),
+  Telefono: z.string().optional(),
+  Nombre_Contacto: z.string().optional(),
+  
+  // Campos que ignoramos pero pueden venir en el CSV
+  ID: z.any().optional(),
+  Portal: z.any().optional(),
+  Requiere_Formulario: z.any().optional(),
+  Fecha_Publicacion: z.any().optional(),
+  Fecha_Deteccion: z.any().optional(),
+  Ultima_Actualizacion: z.any().optional(),
+  Estado: z.any().optional(),
+  Notas: z.any().optional()
+});

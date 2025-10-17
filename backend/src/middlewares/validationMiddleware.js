@@ -1,5 +1,6 @@
 import { 
-  propertySchema, 
+  propertySchema,
+  propertyUpdateSchema,
   searchFiltersSchema, 
   messageSchema,
   contactFormSchema,
@@ -52,6 +53,11 @@ export const validateSchema = (schema, property = 'body') => {
  * Middleware específico para validar el cuerpo de creación de propiedades
  */
 export const validatePropertyCreation = validateSchema(propertySchema, 'body');
+
+/**
+ * Middleware específico para validar actualizaciones parciales de propiedades
+ */
+export const validatePropertyUpdate = validateSchema(propertyUpdateSchema, 'body');
 
 /**
  * Middleware específico para validar filtros de búsqueda en query params

@@ -36,6 +36,25 @@ const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
     }
   };
 
+  // Función para obtener el badge de estado
+  const getStatusBadge = () => {
+    if (property.estadoVenta === 'Reservada') {
+      return (
+        <div className={styles.statusBadge} data-status="reserved">
+          🔒 Reservada
+        </div>
+      );
+    }
+    if (property.estadoVenta === 'Vendida') {
+      return (
+        <div className={styles.statusBadge} data-status="sold">
+          ✅ Vendida
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <article 
       className={styles.propertyCard} 
@@ -46,6 +65,7 @@ const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
       aria-label={`Ver detalles de ${property.name}`}
     >
       <div className={styles.imageContainer}>
+        {getStatusBadge()}
         <img 
           src={property.mainImage || '/placeholder-house.jpg'} 
           alt={property.name}

@@ -41,6 +41,46 @@ Sigue el sistema de diseño definido en las instrucciones
   height: 100%;
 }
 
+.statusBadge {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  z-index: 10;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.statusBadge[data-status="reserved"] {
+  background: rgba(245, 158, 11, 0.95);
+  color: white;
+  border: 2px solid rgba(245, 158, 11, 1);
+}
+
+.statusBadge[data-status="sold"] {
+  background: rgba(16, 185, 129, 0.95);
+  color: white;
+  border: 2px solid rgba(16, 185, 129, 1);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .image {
   width: 100%;
   height: 100%;
@@ -195,6 +235,13 @@ Sigue el sistema de diseño definido en las instrucciones
     width: 100%;
     height: 200px;
     margin-bottom: var(--spacing-md);
+  }
+
+  .statusBadge {
+    top: var(--spacing-xs);
+    left: var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    padding: 4px var(--spacing-sm);
   }
 
   .image {

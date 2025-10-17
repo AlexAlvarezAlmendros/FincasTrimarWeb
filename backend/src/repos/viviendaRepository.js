@@ -153,7 +153,8 @@ class ViviendaRepository {
             SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
             TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
             Caracteristicas, Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
-            ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion
+            ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion,
+            TelefonoContacto, NombreContacto, UrlReferencia
           FROM Vivienda 
           WHERE Id = ?
         `, [row.Id]);
@@ -211,7 +212,8 @@ class ViviendaRepository {
           SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
           TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
           Caracteristicas, Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
-          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion
+          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion,
+          TelefonoContacto, NombreContacto, UrlReferencia
         FROM Vivienda 
         ${whereClause}
         ORDER BY UpdatedAt DESC 
@@ -318,7 +320,10 @@ class ViviendaRepository {
         viviendaData.captadoPor || null,             // 24: CaptadoPor
         Number(viviendaData.porcentajeCaptacion) || 0.0, // 25: PorcentajeCaptacion
         viviendaData.fechaCaptacion || null,         // 26: FechaCaptacion
-        isDraft ? 1 : 0                             // 27: IsDraft
+        isDraft ? 1 : 0,                             // 27: IsDraft
+        viviendaData.telefonoContacto || null,       // 28: TelefonoContacto
+        viviendaData.nombreContacto || null,         // 29: NombreContacto
+        viviendaData.urlReferencia || null           // 30: UrlReferencia
       ];
 
       // Log detallado de parámetros para debugging
@@ -336,8 +341,9 @@ class ViviendaRepository {
           Garage, SquaredMeters, Provincia, Poblacion, Calle, Numero,
           TipoInmueble, TipoVivienda, Estado, Planta, TipoAnuncio,
           EstadoVenta, Caracteristicas, Published, FechaPublicacion,
-          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion, IsDraft
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion, IsDraft,
+          TelefonoContacto, NombreContacto, UrlReferencia
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, params);
       
       return await this.findById(id);
@@ -371,7 +377,9 @@ class ViviendaRepository {
           Calle = ?, Numero = ?, TipoInmueble = ?, TipoVivienda = ?, Estado = ?,
           Planta = ?, TipoAnuncio = ?, EstadoVenta = ?, Caracteristicas = ?,
           Published = ?, FechaPublicacion = ?, ComisionGanada = ?, CaptadoPor = ?,
-          PorcentajeCaptacion = ?, FechaCaptacion = ?, IsDraft = ?, UpdatedAt = CURRENT_TIMESTAMP
+          PorcentajeCaptacion = ?, FechaCaptacion = ?, IsDraft = ?,
+          TelefonoContacto = ?, NombreContacto = ?, UrlReferencia = ?,
+          UpdatedAt = CURRENT_TIMESTAMP
         WHERE Id = ?
       `, [
         viviendaData.name, viviendaData.shortDescription, viviendaData.description,
@@ -383,7 +391,10 @@ class ViviendaRepository {
         caracteristicasJson, shouldPublish ? 1 : 0, fechaPublicacion,
         Number(viviendaData.comisionGanada) || 0.0, viviendaData.captadoPor || null,
         Number(viviendaData.porcentajeCaptacion) || 0.0, viviendaData.fechaCaptacion || null,
-        isDraft ? 1 : 0, id
+        isDraft ? 1 : 0,
+        viviendaData.telefonoContacto || null, viviendaData.nombreContacto || null,
+        viviendaData.urlReferencia || null,
+        id
       ]);
       
       return await this.findById(id);
@@ -424,6 +435,62 @@ class ViviendaRepository {
       return await this.findById(id);
     } catch (error) {
       logger.error('Error en ViviendaRepository.updatePublishStatus:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza solo los datos de captación de una vivienda
+   */
+  async updateCaptacionData(id, captacionData) {
+    try {
+      // Construir la consulta dinámicamente solo con los campos proporcionados
+      const fields = [];
+      const values = [];
+
+      if (captacionData.estadoVenta !== undefined) {
+        fields.push('EstadoVenta = ?');
+        values.push(captacionData.estadoVenta);
+      }
+
+      if (captacionData.fechaCaptacion !== undefined) {
+        fields.push('FechaCaptacion = ?');
+        values.push(captacionData.fechaCaptacion);
+      }
+
+      if (captacionData.porcentajeCaptacion !== undefined) {
+        fields.push('PorcentajeCaptacion = ?');
+        values.push(captacionData.porcentajeCaptacion);
+      }
+
+      if (captacionData.captadoPor !== undefined) {
+        fields.push('CaptadoPor = ?');
+        values.push(captacionData.captadoPor);
+      }
+
+      if (captacionData.comisionGanada !== undefined) {
+        fields.push('ComisionGanada = ?');
+        values.push(captacionData.comisionGanada);
+      }
+
+      // Siempre actualizar UpdatedAt
+      fields.push('UpdatedAt = CURRENT_TIMESTAMP');
+
+      if (fields.length === 1) {
+        // Solo UpdatedAt, no hay nada que actualizar
+        return await this.findById(id);
+      }
+
+      // Agregar el ID al final de los valores
+      values.push(id);
+
+      const sql = `UPDATE Vivienda SET ${fields.join(', ')} WHERE Id = ?`;
+      
+      await executeQuery(sql, values);
+      
+      return await this.findById(id);
+    } catch (error) {
+      logger.error('Error en ViviendaRepository.updateCaptacionData:', error);
       throw error;
     }
   }
@@ -484,6 +551,9 @@ class ViviendaRepository {
       captadoPor: row.CaptadoPor,
       porcentajeCaptacion: row.PorcentajeCaptacion || 0.0,
       fechaCaptacion: row.FechaCaptacion,
+      telefonoContacto: row.TelefonoContacto,
+      nombreContacto: row.NombreContacto,
+      urlReferencia: row.UrlReferencia,
       createdAt: row.CreatedAt,
       updatedAt: row.UpdatedAt
     };

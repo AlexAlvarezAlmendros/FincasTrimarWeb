@@ -216,9 +216,10 @@ class PropertyService {
    * Actualiza una propiedad existente
    * @param {string} id - ID de la propiedad
    * @param {Object} propertyData - Datos actualizados
+   * @param {Function} getAccessToken - Función para obtener el token de Auth0
    * @returns {Promise<Object>} Propiedad actualizada
    */
-  async updateProperty(id, propertyData) {
+  async updateProperty(id, propertyData, getAccessToken = null) {
     try {
       if (!id) {
         throw new Error('ID de propiedad requerido');
@@ -228,11 +229,25 @@ class PropertyService {
         throw new Error('Datos de propiedad requeridos');
       }
 
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      // Agregar token si está disponible
+      if (getAccessToken) {
+        try {
+          const token = await getAccessToken();
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('🔑 Token agregado al header de updateProperty');
+        } catch (error) {
+          console.error('❌ Error obteniendo token:', error);
+          throw new Error('Error de autenticación');
+        }
+      }
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(propertyData)
       });
       
@@ -256,17 +271,27 @@ class PropertyService {
    * @param {string} id - ID de la propiedad
    * @returns {Promise<Object>} Resultado de la eliminación
    */
-  async deleteProperty(id) {
+  async deleteProperty(id, getAccessToken = null) {
     try {
       if (!id) {
         throw new Error('ID de propiedad requerido');
       }
 
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      // Agregar token si está disponible
+      if (getAccessToken) {
+        const token = await getAccessToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('🗑️ Eliminando propiedad:', id);
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       });
       
       if (!response.ok) {
@@ -274,12 +299,20 @@ class PropertyService {
         if (response.status === 404) {
           throw new Error('Propiedad no encontrada');
         }
+        if (response.status === 401) {
+          throw new Error('No autorizado. Inicia sesión primero.');
+        }
+        if (response.status === 403) {
+          throw new Error('No tienes permisos para eliminar esta propiedad');
+        }
         throw new Error(errorData.error?.message || 'Error al eliminar la propiedad');
       }
       
-      return await response.json();
+      const result = await response.json();
+      console.log('✅ Propiedad eliminada correctamente');
+      return result;
     } catch (error) {
-      console.error('PropertyService.deleteProperty error:', error);
+      console.error('❌ PropertyService.deleteProperty error:', error);
       throw error;
     }
   }
@@ -530,6 +563,105 @@ class PropertyService {
       return result;
     } catch (error) {
       console.error('PropertyService.reorderPropertyImages error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sube archivos de imagen a ImgBB y los asocia a una vivienda
+   * Este método combina la subida y la asociación en un solo flujo
+   * @param {string} propertyId - ID de la propiedad
+   * @param {Array<File>} files - Archivos de imagen a subir
+   * @param {Function} getAccessToken - Función para obtener token de Auth0
+   * @param {Function} onProgress - Callback opcional para progreso
+   * @returns {Promise<Object>} Respuesta con las imágenes creadas
+   */
+  async uploadPropertyImages(propertyId, files, getAccessToken, onProgress = null) {
+    try {
+      if (!propertyId) {
+        throw new Error('ID de propiedad requerido');
+      }
+
+      if (!files || files.length === 0) {
+        throw new Error('Archivos de imagen requeridos');
+      }
+
+      if (!getAccessToken) {
+        throw new Error('Función de autenticación requerida');
+      }
+
+      console.log(`📤 Subiendo ${files.length} imágenes para vivienda ${propertyId}`);
+
+      // Obtener token de autenticación
+      const token = await getAccessToken();
+
+      // PASO 1: Subir imágenes a ImgBB
+      if (onProgress) onProgress(10);
+      
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('images', file);
+      });
+
+      console.log('🔄 Subiendo archivos a ImgBB...');
+      
+      const uploadResponse = await fetch(`${this.apiUrl}/api/v1/images`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al subir imágenes a ImgBB');
+      }
+
+      const uploadResult = await uploadResponse.json();
+      console.log('✅ Imágenes subidas a ImgBB:', uploadResult);
+
+      if (!uploadResult.success || !uploadResult.data.images || uploadResult.data.images.length === 0) {
+        throw new Error('No se pudieron subir las imágenes a ImgBB');
+      }
+
+      if (onProgress) onProgress(60);
+
+      // PASO 2: Asociar URLs de ImgBB a la vivienda
+      console.log('🔗 Asociando imágenes a la vivienda...');
+      
+      const imagesToAssociate = uploadResult.data.images.map((img, index) => ({
+        url: img.url,
+        orden: index + 1
+      }));
+
+      const associateResponse = await fetch(`${this.apiUrl}${this.baseEndpoint}/${propertyId}/imagenes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ images: imagesToAssociate })
+      });
+
+      if (!associateResponse.ok) {
+        const errorData = await associateResponse.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al asociar imágenes a la vivienda');
+      }
+
+      const associateResult = await associateResponse.json();
+      console.log('✅ Imágenes asociadas correctamente:', associateResult);
+
+      if (onProgress) onProgress(100);
+
+      // Retornar las imágenes asociadas
+      return {
+        success: true,
+        data: associateResult.data.images || []
+      };
+
+    } catch (error) {
+      console.error('❌ PropertyService.uploadPropertyImages error:', error);
       throw error;
     }
   }

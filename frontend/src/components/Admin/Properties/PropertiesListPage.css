@@ -353,6 +353,15 @@
   color: #DC2626;
 }
 
+.action-btn--delete {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.action-btn--delete:hover {
+  background: #FCA5A5;
+}
+
 .action-confirm {
   display: flex;
   gap: 0.25rem;
@@ -366,6 +375,15 @@
 .action-btn--confirm-unpublish {
   background: #DC2626;
   color: white;
+}
+
+.action-btn--confirm-delete {
+  background: #DC2626;
+  color: white;
+}
+
+.action-btn--confirm-delete:hover {
+  background: #B91C1C;
 }
 
 .action-btn--cancel {

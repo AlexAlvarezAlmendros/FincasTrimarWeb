@@ -80,6 +80,7 @@ const DraggablePendingGrid = ({
     // Insertarlo en la nueva posición
     newFiles.splice(dropIndex, 0, draggedFile);
     
+    // Llamar a onReorder con el array completo reordenado
     onReorder(newFiles);
     setDraggedIndex(null);
   };
