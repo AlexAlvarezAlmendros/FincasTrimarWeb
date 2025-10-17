@@ -56,7 +56,7 @@ export default function Contacto() {
           <div className="content-grid">
             
             {/* Contact Information */}
-            <div className="contact-info">
+            <div className="contact-info-contact">
               <div className="info-card">
                 <div className="info-header">
                   <h3>¿Cómo podemos ayudarte?</h3>

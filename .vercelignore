@@ -1,0 +1,30 @@
+# Backend (no se despliega en este proyecto de Vercel)
+backend
+
+# Archivos de desarrollo
+*.log
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Node modules (se reinstalan)
+node_modules
+
+# Archivos temporales
+temp
+*.temp
+*.tmp
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentación
+Documentacion
+*.md
+!README.md

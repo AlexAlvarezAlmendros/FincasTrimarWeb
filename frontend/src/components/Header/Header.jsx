@@ -63,7 +63,7 @@ const Header = () => {
           <Link to="/" className="brand-link" onClick={closeMobileMenu}>
             <div className="brand-icon">
               <img 
-                  src="./img/logo.svg" 
+                  src="/img/logo.svg" 
                   alt="Fincas Trimar Logo" 
                   className="header-logo-image"
                 />
@@ -114,14 +114,6 @@ const Header = () => {
               
               {/* Menú de usuario */}
               <div className="user-menu">
-                <div className="user-info">
-                  <img 
-                    src={user?.picture || '/default-avatar.png'} 
-                    alt={user?.name || 'Usuario'} 
-                    className="user-avatar"
-                  />
-                  <span className="user-name">{user?.name}</span>
-                </div>
                 <button 
                   onClick={handleLogout}
                   className="btn btn--secondary btn--logout"

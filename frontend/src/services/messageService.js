@@ -6,7 +6,37 @@
 class MessageService {
   constructor(apiUrl = import.meta.env.VITE_API_BASE_URL) {
     this.apiUrl = apiUrl;
-    this.baseEndpoint = '/api/v1/mensajes';
+    this.baseEndpoint = '/api/v1/messages';
+  }
+
+  /**
+   * Obtener token de Auth0
+   */
+  async getAuthToken() {
+    try {
+      // Intentar obtener token desde localStorage o Auth0
+      const token = localStorage.getItem('auth_token');
+      return token;
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Crear headers con autenticación
+   */
+  async createAuthHeaders() {
+    const token = await this.getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return headers;
   }
 
   /**
@@ -66,7 +96,6 @@ class MessageService {
    * Obtener todos los mensajes con filtros opcionales
    * @param {Object} params - Parámetros de filtrado
    * @param {string} params.estado - Estado del mensaje (Nuevo, EnCurso, Cerrado)
-   * @param {boolean} params.pinned - Solo mensajes fijados
    * @param {string} params.q - Búsqueda por nombre, email o contenido
    * @param {number} params.page - Página actual
    * @param {number} params.pageSize - Tamaño de página
@@ -77,9 +106,8 @@ class MessageService {
     try {
       const queryParams = new URLSearchParams();
       
-      // Parámetros de filtrado
+      // Parámetros de filtrado - Solo agregar si tienen valor válido
       if (params.estado) queryParams.append('estado', params.estado);
-      if (params.pinned !== undefined) queryParams.append('pinned', params.pinned);
       if (params.q) queryParams.append('q', params.q);
       
       // Parámetros de paginación
@@ -91,11 +119,11 @@ class MessageService {
         ? `${this.apiUrl}${this.baseEndpoint}?${queryParams.toString()}`
         : `${this.apiUrl}${this.baseEndpoint}`;
 
+      const headers = await this.createAuthHeaders();
+
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (!response.ok) {
@@ -130,11 +158,11 @@ class MessageService {
    */
   async getMessageById(messageId) {
     try {
+      const headers = await this.createAuthHeaders();
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${messageId}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (!response.ok) {
@@ -161,16 +189,15 @@ class MessageService {
    * @param {string} messageId - ID del mensaje
    * @param {Object} updateData - Datos a actualizar
    * @param {string} updateData.estado - Nuevo estado (Nuevo, EnCurso, Cerrado)
-   * @param {boolean} updateData.pinned - Si está fijado
    * @returns {Promise<Object>} Mensaje actualizado
    */
   async updateMessage(messageId, updateData) {
     try {
+      const headers = await this.createAuthHeaders();
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${messageId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(updateData)
       });
 
@@ -212,27 +239,17 @@ class MessageService {
   }
 
   /**
-   * Alternar el estado de fijado de un mensaje
-   * @param {string} messageId - ID del mensaje
-   * @param {boolean} pinned - Nuevo estado de fijado
-   * @returns {Promise<Object>} Mensaje actualizado
-   */
-  async togglePin(messageId, pinned) {
-    return this.updateMessage(messageId, { pinned });
-  }
-
-  /**
    * Eliminar un mensaje
    * @param {string} messageId - ID del mensaje
    * @returns {Promise<Object>} Confirmación de eliminación
    */
   async deleteMessage(messageId) {
     try {
+      const headers = await this.createAuthHeaders();
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${messageId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (!response.ok) {
@@ -258,11 +275,11 @@ class MessageService {
    */
   async getMessageStats() {
     try {
+      const headers = await this.createAuthHeaders();
+
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/stats`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (!response.ok) {
@@ -294,11 +311,11 @@ class MessageService {
       const queryParams = new URLSearchParams(filters);
       const url = `${this.apiUrl}${this.baseEndpoint}/export?${queryParams.toString()}`;
       
+      const headers = await this.createAuthHeaders();
+
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (!response.ok) {

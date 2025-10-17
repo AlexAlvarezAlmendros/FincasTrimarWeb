@@ -129,6 +129,10 @@
   grid-column: 1 / -1;
 }
 
+.form-group--full {
+  grid-column: 1 / -1;
+}
+
 .form-label {
   font-size: 14px;
   font-weight: 600;
@@ -136,29 +140,39 @@
 }
 
 .form-input,
-.form-select {
+.form-select,
+.form-textarea {
   padding: 12px 16px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 14px;
   background: white;
   transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 .form-input:focus,
-.form-select:focus {
+.form-select:focus,
+.form-textarea:focus {
   outline: none;
   border-color: #3A8DFF;
   box-shadow: 0 0 0 3px rgba(58, 141, 255, 0.1);
 }
 
 .form-input.error,
-.form-select.error {
+.form-select.error,
+.form-textarea.error {
   border-color: #EF4444;
 }
 
 .form-input:disabled,
-.form-select:disabled {
+.form-select:disabled,
+.form-textarea:disabled {
   background: #f5f5f5;
   color: #999;
   cursor: not-allowed;

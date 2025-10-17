@@ -323,7 +323,8 @@ class ViviendaRepository {
         isDraft ? 1 : 0,                             // 27: IsDraft
         viviendaData.telefonoContacto || null,       // 28: TelefonoContacto
         viviendaData.nombreContacto || null,         // 29: NombreContacto
-        viviendaData.urlReferencia || null           // 30: UrlReferencia
+        viviendaData.urlReferencia || null,          // 30: UrlReferencia
+        viviendaData.observaciones || null           // 31: Observaciones
       ];
 
       // Log detallado de parámetros para debugging
@@ -342,8 +343,8 @@ class ViviendaRepository {
           TipoInmueble, TipoVivienda, Estado, Planta, TipoAnuncio,
           EstadoVenta, Caracteristicas, Published, FechaPublicacion,
           ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion, IsDraft,
-          TelefonoContacto, NombreContacto, UrlReferencia
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          TelefonoContacto, NombreContacto, UrlReferencia, Observaciones
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, params);
       
       return await this.findById(id);
@@ -378,7 +379,7 @@ class ViviendaRepository {
           Planta = ?, TipoAnuncio = ?, EstadoVenta = ?, Caracteristicas = ?,
           Published = ?, FechaPublicacion = ?, ComisionGanada = ?, CaptadoPor = ?,
           PorcentajeCaptacion = ?, FechaCaptacion = ?, IsDraft = ?,
-          TelefonoContacto = ?, NombreContacto = ?, UrlReferencia = ?,
+          TelefonoContacto = ?, NombreContacto = ?, UrlReferencia = ?, Observaciones = ?,
           UpdatedAt = CURRENT_TIMESTAMP
         WHERE Id = ?
       `, [
@@ -393,7 +394,7 @@ class ViviendaRepository {
         Number(viviendaData.porcentajeCaptacion) || 0.0, viviendaData.fechaCaptacion || null,
         isDraft ? 1 : 0,
         viviendaData.telefonoContacto || null, viviendaData.nombreContacto || null,
-        viviendaData.urlReferencia || null,
+        viviendaData.urlReferencia || null, viviendaData.observaciones || null,
         id
       ]);
       
@@ -471,6 +472,11 @@ class ViviendaRepository {
       if (captacionData.comisionGanada !== undefined) {
         fields.push('ComisionGanada = ?');
         values.push(captacionData.comisionGanada);
+      }
+
+      if (captacionData.observaciones !== undefined) {
+        fields.push('Observaciones = ?');
+        values.push(captacionData.observaciones);
       }
 
       // Siempre actualizar UpdatedAt
@@ -551,6 +557,7 @@ class ViviendaRepository {
       captadoPor: row.CaptadoPor,
       porcentajeCaptacion: row.PorcentajeCaptacion || 0.0,
       fechaCaptacion: row.FechaCaptacion,
+      observaciones: row.Observaciones,
       telefonoContacto: row.TelefonoContacto,
       nombreContacto: row.NombreContacto,
       urlReferencia: row.UrlReferencia,

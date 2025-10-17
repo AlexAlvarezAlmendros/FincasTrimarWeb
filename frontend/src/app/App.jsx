@@ -6,10 +6,15 @@ import Listado from '../pages/Listado';
 import Detalle from '../pages/Detalle';
 import Vender from '../pages/Vender';
 import Contacto from '../pages/Contacto';
+import PoliticaPrivacidad from '../pages/PoliticaPrivacidad';
+import Cookies from '../pages/Cookies';
+import TerminosUso from '../pages/TerminosUso';
 import Admin from '../pages/Admin';
 import NotFound from '../pages/NotFound';
 import RequireAuth from '../components/RequireAuth';
 import AuthWrapper from '../components/Auth/AuthWrapper';
+import ScrollToTop from '../components/ScrollToTop/ScrollToTop';
+import CookieBanner from '../components/CookieBanner/CookieBanner';
 
 export default function App() {
   return (
@@ -28,6 +33,8 @@ export default function App() {
     >
       <AuthWrapper>
         <BrowserRouter>
+          <ScrollToTop />
+          <CookieBanner />
           <Routes>
           {/* Todas las rutas principales usan el Layout */}
           {/* Rutas públicas con Layout principal */}
@@ -37,6 +44,9 @@ export default function App() {
             <Route path="viviendas/:id" element={<Detalle />} />
             <Route path="vender" element={<Vender />} />
             <Route path="contacto" element={<Contacto />} />
+            <Route path="politica-privacidad" element={<PoliticaPrivacidad />} />
+            <Route path="cookies" element={<Cookies />} />
+            <Route path="terminos-uso" element={<TerminosUso />} />
           </Route>
 
           {/* Rutas de administración con su propio Layout */}
