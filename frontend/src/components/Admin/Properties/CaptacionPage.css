@@ -450,6 +450,24 @@
   color: #000000;
 }
 
+.action-btn--publish {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #1a1a1a;
+  border: 1px solid #667eea;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn--publish:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #6a4190 100%);
+  color: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
 .action-btn--delete {
   background: #fee;
   color: #dc2626;

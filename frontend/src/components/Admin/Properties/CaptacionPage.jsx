@@ -489,6 +489,14 @@ const CaptacionPropertyCard = ({
           ✏️ Editar
         </button>
 
+        <Link
+          to={`/admin/viviendas/${property.id}/edit`}
+          className="action-btn action-btn--publish"
+          title="Modificar vivienda (añadir más imágenes y completar datos)"
+        >
+          ✏️ Modificar
+        </Link>
+
         <button
           onClick={handleDeleteClick}
           className="action-btn action-btn--delete"
