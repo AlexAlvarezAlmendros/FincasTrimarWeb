@@ -104,8 +104,8 @@ const Footer = () => {
               </div>
               <div className="contact-item">
                 <span className="contact-icon"><FontAwesomeIcon icon="fa-solid fa-envelope" /></span>
-                <a href="mailto:info@fincastrimar.com" className="contact-text">
-                  info@fincastrimar.com
+                <a href="mailto:finquestrimar@gmail.com" className="contact-text">
+                  finquestrimar@gmail.com
                 </a>
               </div>
             </div>
@@ -124,13 +124,13 @@ const Footer = () => {
           </div>
           
           <div className="footer-legal">
-            <Link to="/privacidad" className="legal-link">
+            <Link to="/politica-privacidad" className="legal-link">
               Política de Privacidad
             </Link>
             <Link to="/cookies" className="legal-link">
               Cookies
             </Link>
-            <Link to="/terminos" className="legal-link">
+            <Link to="/terminos-uso" className="legal-link">
               Términos de Uso
             </Link>
           </div>
