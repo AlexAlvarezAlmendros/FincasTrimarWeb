@@ -49,10 +49,10 @@ const useCaptacion = () => {
     fetchGlobalStats();
   }, []);
 
-  // Cargar propiedades cuando cambie la página o el estado
+  // Cargar propiedades cuando cambien los filtros (página, estado, búsqueda u ordenación)
   useEffect(() => {
     fetchCaptacionProperties();
-  }, [filters.page, filters.estadoVenta]);
+  }, [filters.page, filters.estadoVenta, filters.search, filters.sortBy]);
 
   const fetchGlobalStats = async () => {
     try {
@@ -212,10 +212,24 @@ const useCaptacion = () => {
     }
   };
 
+  // Función para cambiar filtros y resetear página
+  const updateFilters = (newFilters) => {
+    setFilters(prev => {
+      const updated = { ...prev, ...newFilters };
+      // Si cambian búsqueda o estado, resetear a página 1
+      if (newFilters.search !== undefined || newFilters.estadoVenta !== undefined || newFilters.sortBy !== undefined) {
+        if (newFilters.page === undefined) {
+          updated.page = 1;
+        }
+      }
+      return updated;
+    });
+  };
+
   return {
     ...data,
     filters,
-    setFilters,
+    setFilters: updateFilters,
     updateCaptacionData,
     deleteProperty,
     refetch: fetchCaptacionProperties,
@@ -229,11 +243,38 @@ const useCaptacion = () => {
 
 // Componente de filtros
 const CaptacionFilters = ({ filters, onFiltersChange }) => {
+  const [searchInput, setSearchInput] = useState(filters.search);
+
+  // Debounce para el campo de búsqueda
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        onFiltersChange({
+          ...filters,
+          search: searchInput
+        });
+      }
+    }, 500); // Esperar 500ms después de que el usuario deje de escribir
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
+
+  // Sincronizar con el filtro externo cuando se limpie
+  useEffect(() => {
+    if (filters.search === '' && searchInput !== '') {
+      setSearchInput('');
+    }
+  }, [filters.search]);
+
   const handleFilterChange = (key, value) => {
-    onFiltersChange({
-      ...filters,
-      [key]: value
-    });
+    if (key === 'search') {
+      setSearchInput(value);
+    } else {
+      onFiltersChange({
+        ...filters,
+        [key]: value
+      });
+    }
   };
 
   return (
@@ -243,7 +284,7 @@ const CaptacionFilters = ({ filters, onFiltersChange }) => {
           <input
             type="text"
             placeholder="Buscar por nombre, ubicación o captador..."
-            value={filters.search}
+            value={searchInput}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             className="search-input"
           />
@@ -713,7 +754,7 @@ const CaptacionPage = () => {
             <div className="no-results-actions">
               {(filters.search || filters.estadoVenta) && (
                 <button 
-                  onClick={() => setFilters({ search: '', estadoVenta: '', sortBy: 'fechaCaptacion_desc' })}
+                  onClick={() => setFilters({ search: '', estadoVenta: '', sortBy: 'fechaCaptacion_desc', page: 1 })}
                   className="btn btn--secondary"
                 >
                   🔄 Limpiar filtros
@@ -739,7 +780,7 @@ const CaptacionPage = () => {
 
             {/* Paginación */}
             <Pagination
-              currentPage={pagination.currentPage}
+              currentPage={filters.page}
               totalPages={pagination.totalPages}
               totalItems={pagination.totalItems}
               onPageChange={changePage}
