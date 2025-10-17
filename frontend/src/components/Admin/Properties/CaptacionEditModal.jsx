@@ -15,7 +15,8 @@ const CaptacionEditModal = ({ property, onSave, onClose }) => {
     fechaCaptacion: '',
     porcentajeCaptacion: '',
     captadoPor: '',
-    comisionGanada: ''
+    comisionGanada: '',
+    observaciones: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -31,7 +32,8 @@ const CaptacionEditModal = ({ property, onSave, onClose }) => {
           : new Date().toISOString().split('T')[0],
         porcentajeCaptacion: property.porcentajeCaptacion || '',
         captadoPor: property.captadoPor || '',
-        comisionGanada: property.comisionGanada || ''
+        comisionGanada: property.comisionGanada || '',
+        observaciones: property.observaciones || ''
       });
     }
   }, [property]);
@@ -105,7 +107,8 @@ const CaptacionEditModal = ({ property, onSave, onClose }) => {
         fechaCaptacion: formData.fechaCaptacion,
         porcentajeCaptacion: formData.porcentajeCaptacion ? parseFloat(formData.porcentajeCaptacion) : null,
         captadoPor: formData.captadoPor || null,
-        comisionGanada: formData.comisionGanada ? parseFloat(formData.comisionGanada) : null
+        comisionGanada: formData.comisionGanada ? parseFloat(formData.comisionGanada) : null,
+        observaciones: formData.observaciones || null
       };
 
       await onSave(captacionData);
@@ -260,6 +263,30 @@ const CaptacionEditModal = ({ property, onSave, onClose }) => {
                 )}
                 <small className="form-help">
                   Porcentaje total de comisión por la venta
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3 className="section-title">Observaciones</h3>
+            
+            <div className="form-row">
+              <div className="form-group form-group--full">
+                <label htmlFor="observaciones" className="form-label">
+                  Notas y Comentarios
+                </label>
+                <textarea
+                  id="observaciones"
+                  value={formData.observaciones}
+                  onChange={(e) => handleInputChange('observaciones', e.target.value)}
+                  placeholder="Añade notas, comentarios o cualquier información relevante sobre esta vivienda..."
+                  className="form-textarea"
+                  rows="4"
+                  disabled={saving}
+                />
+                <small className="form-help">
+                  Información adicional sobre el estado, negociación o seguimiento
                 </small>
               </div>
             </div>

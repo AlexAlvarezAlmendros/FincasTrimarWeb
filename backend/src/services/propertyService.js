@@ -662,6 +662,10 @@ class PropertyService {
         }
       }
 
+      if (captacionData.observaciones !== undefined) {
+        updateData.observaciones = captacionData.observaciones || null;
+      }
+
       // Realizar la actualización usando el método específico para datos de captación
       const updatedProperty = await viviendaRepository.updateCaptacionData(propertyId, updateData);
       
