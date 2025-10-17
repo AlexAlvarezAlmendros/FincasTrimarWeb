@@ -184,11 +184,42 @@ const useCaptacion = () => {
     }
   };
 
+  const deleteProperty = async (propertyId) => {
+    try {
+      const token = await getAccessTokenSilently();
+      
+      const response = await propertyService.deleteProperty(propertyId, token);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al eliminar la propiedad');
+      }
+      
+      // Eliminar la propiedad de la lista local
+      setData(prev => ({
+        ...prev,
+        properties: prev.properties.filter(property => property.id !== propertyId),
+        pagination: {
+          ...prev.pagination,
+          totalItems: prev.pagination.totalItems - 1
+        }
+      }));
+      
+      // Recargar estadísticas
+      await fetchGlobalStats();
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      throw error;
+    }
+  };
+
   return {
     ...data,
     filters,
     setFilters,
     updateCaptacionData,
+    deleteProperty,
     refetch: fetchCaptacionProperties,
     refetchAll: async () => {
       await fetchGlobalStats();
@@ -254,8 +285,32 @@ const CaptacionFilters = ({ filters, onFiltersChange }) => {
 // Componente de tarjeta de propiedad en captación
 const CaptacionPropertyCard = ({ 
   property, 
-  onEdit
+  onEdit,
+  onDelete
 }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(property.id);
+    } catch (error) {
+      console.error('Error al eliminar propiedad:', error);
+      alert('Error al eliminar la propiedad. Por favor, intenta de nuevo.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+  };
   const formatDate = (dateString) => {
     if (!dateString) return 'Sin fecha';
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -367,13 +422,25 @@ const CaptacionPropertyCard = ({
       </div>
 
       <div className="captacion-actions">
-        <Link 
-          to={`/admin/viviendas/${property.id}/edit`}
-          className="action-btn action-btn--view"
-          title="Ver propiedad"
-        >
-          👁️ Ver
-        </Link>
+        {property.urlReferencia ? (
+          <a 
+            href={property.urlReferencia}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="action-btn action-btn--view"
+            title="Ver propiedad en portal externo"
+          >
+            👁️ Ver
+          </a>
+        ) : (
+          <button
+            disabled
+            className="action-btn action-btn--view action-btn--disabled"
+            title="No hay URL disponible"
+          >
+            👁️ Ver
+          </button>
+        )}
         
         <button
           onClick={() => onEdit(property)}
@@ -382,7 +449,49 @@ const CaptacionPropertyCard = ({
         >
           ✏️ Editar
         </button>
+
+        <button
+          onClick={handleDeleteClick}
+          className="action-btn action-btn--delete"
+          title="Eliminar propiedad"
+          disabled={isDeleting}
+        >
+          {isDeleting ? '⏳' : '🗑️'} Eliminar
+        </button>
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteConfirm && (
+        <div className="delete-confirm-overlay" onClick={handleCancelDelete}>
+          <div className="delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-confirm-header">
+              <span className="delete-confirm-icon">⚠️</span>
+              <h3>¿Eliminar propiedad?</h3>
+            </div>
+            <div className="delete-confirm-content">
+              <p>¿Estás seguro de que deseas eliminar esta propiedad?</p>
+              <p className="delete-confirm-property-name">{property.name}</p>
+              <p className="delete-confirm-warning">Esta acción no se puede deshacer.</p>
+            </div>
+            <div className="delete-confirm-actions">
+              <button 
+                onClick={handleCancelDelete}
+                className="delete-confirm-btn delete-confirm-btn--cancel"
+                disabled={isDeleting}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleConfirmDelete}
+                className="delete-confirm-btn delete-confirm-btn--delete"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -475,6 +584,7 @@ const CaptacionPage = () => {
     filters,
     setFilters,
     updateCaptacionData,
+    deleteProperty,
     refetch,
     refetchAll,
     changePage
@@ -500,6 +610,15 @@ const CaptacionPage = () => {
     } catch (error) {
       console.error('Error saving captacion data:', error);
       // Aquí podrías mostrar un mensaje de error al usuario
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId) => {
+    try {
+      await deleteProperty(propertyId);
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      throw error;
     }
   };
 
@@ -615,6 +734,7 @@ const CaptacionPage = () => {
                   key={property.id}
                   property={property}
                   onEdit={handleEditProperty}
+                  onDelete={handleDeleteProperty}
                 />
               ))}
             </div>
