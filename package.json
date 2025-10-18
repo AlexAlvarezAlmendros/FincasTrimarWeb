@@ -1,6 +1,7 @@
 {
   "name": "fincas-trimar-root",
   "private": true,
+  "type": "module",
   "scripts": {
     "install:all": "npm run install:frontend && npm run install:backend",
     "install:frontend": "cd frontend && npm install",
