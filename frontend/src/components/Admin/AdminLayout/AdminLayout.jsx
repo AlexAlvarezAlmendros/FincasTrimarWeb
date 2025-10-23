@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { useUserRoles } from '../../../hooks/useUserRoles';
 import AdminSidebar from '../AdminSidebar/AdminSidebar';
 import AdminHeader from '../AdminHeader/AdminHeader';
 import './AdminLayout.css';
@@ -9,6 +10,21 @@ const AdminLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth0();
   const location = useLocation();
+  const { isAdmin, isSeller, roles } = useUserRoles();
+
+  // Log para debugging
+  console.log('🔐 AdminLayout - Verificación de roles:', { 
+    isAdmin, 
+    isSeller, 
+    roles,
+    user 
+  });
+
+  // Si no es Admin ni Seller, redirigir
+  if (!isAdmin && !isSeller) {
+    console.warn('❌ Acceso denegado al panel de administración');
+    return <Navigate to="/" replace />;
+  }
 
   const handleSidebarToggle = () => {
     setSidebarCollapsed(prev => !prev);

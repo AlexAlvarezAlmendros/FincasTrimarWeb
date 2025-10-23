@@ -19,6 +19,7 @@ export {
 // Hooks de utilidades
 export { default as useApi } from './useApi.js';
 export { default as usePropertySearch } from './usePropertySearch.js';
+export { default as useUserRoles } from './useUserRoles.js';
 
 // Re-exportar tipos y constantes útiles
 export { FormStates, ViviendaFormModel, ValidationUtils } from '../types/viviendaForm.types.js';
