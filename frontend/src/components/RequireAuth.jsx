@@ -28,6 +28,7 @@ export default function RequireAuth({ children, roles = [] }) {
       // Obtener roles del usuario desde Auth0 claims
       // Probar múltiples ubicaciones donde Auth0 puede poner los roles
       const userRoles = 
+        user['https://otp-records.com/roles'] ||
         user[`${import.meta.env.VITE_AUTH0_AUDIENCE}/roles`] ||
         user['https://fincas-trimar.com/roles'] ||
         user.roles ||
@@ -38,7 +39,7 @@ export default function RequireAuth({ children, roles = [] }) {
         requiredRoles: roles,
         userRoles,
         user,
-        audienceClaim: `${import.meta.env.VITE_AUTH0_AUDIENCE}/roles`
+        namespace: 'https://otp-records.com/roles'
       });
 
       // Verificar si el usuario tiene alguno de los roles requeridos

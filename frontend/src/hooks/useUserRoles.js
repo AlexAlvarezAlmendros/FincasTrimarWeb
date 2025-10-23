@@ -13,6 +13,7 @@ export const useUserRoles = () => {
     
     // Intentar obtener roles de diferentes ubicaciones
     return (
+      user['https://otp-records.com/roles'] || // Namespace actual de Auth0
       user[`${import.meta.env.VITE_AUTH0_AUDIENCE}/roles`] ||
       user['https://fincas-trimar.com/roles'] ||
       user.roles ||
@@ -44,11 +45,11 @@ export const useUserRoles = () => {
   const hasAllRoles = (requiredRoles) =>
     requiredRoles.every(role => roles.includes(role));
 
-  // Shortcuts para roles comunes
-  const isAdmin = hasRole('Admin');
-  const isSeller = hasRole('Seller') || isAdmin;
-  const isCaptador = hasRole('Captador') || isSeller;
-  const isUser = hasRole('User') || isCaptador;
+  // Shortcuts para roles comunes con los nombres correctos de Auth0
+  const isAdmin = hasRole('AdminTrimar');
+  const isSeller = hasRole('SellerTrimar') || isAdmin;
+  const isCaptador = hasRole('CaptadorTrimar') || isSeller;
+  const isUser = hasRole('UserTrimar') || isCaptador;
 
   return {
     roles,

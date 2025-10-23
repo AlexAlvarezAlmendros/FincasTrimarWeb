@@ -15,6 +15,7 @@ import RequireAuth from '../components/RequireAuth';
 import AuthWrapper from '../components/Auth/AuthWrapper';
 import ScrollToTop from '../components/ScrollToTop/ScrollToTop';
 import CookieBanner from '../components/CookieBanner/CookieBanner';
+import DebugAuth from '../components/DebugAuth';
 
 export default function App() {
   return (
@@ -49,11 +50,14 @@ export default function App() {
             <Route path="terminos-uso" element={<TerminosUso />} />
           </Route>
 
+          {/* Ruta temporal de debugging - ELIMINAR EN PRODUCCIÓN */}
+          <Route path="/debug-auth" element={<DebugAuth />} />
+
           {/* Rutas de administración con su propio Layout */}
           <Route 
             path="/admin/*" 
             element={
-              <RequireAuth roles={["Admin", "Seller"]}>
+              <RequireAuth roles={["AdminTrimar", "SellerTrimar"]}>
                 <Admin />
               </RequireAuth>
             } 

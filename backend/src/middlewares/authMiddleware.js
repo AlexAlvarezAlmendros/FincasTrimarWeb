@@ -97,10 +97,11 @@ export const requireRoles = (allowedRoles = []) => {
       logger.info('🔍 Debugging roles:', {
         permissions: req.auth.permissions,
         audienceClaim: req.auth[`${process.env.AUTH0_AUDIENCE}/roles`],
+        otpRecordsClaim: req.auth['https://otp-records.com/roles'],
         authObject: req.auth
       });
       
-      const userRoles = req.auth.permissions || req.auth[`${process.env.AUTH0_AUDIENCE}/roles`] || [];
+      const userRoles = req.auth['https://otp-records.com/roles'] || req.auth.permissions || req.auth[`${process.env.AUTH0_AUDIENCE}/roles`] || [];
       logger.info('📋 Role verification:', {
         userRoles,
         allowedRoles,
@@ -122,8 +123,8 @@ export const requireRoles = (allowedRoles = []) => {
           logger.warn('⚠️ DEVELOPMENT MODE: Permitiendo acceso sin roles para testing');
           req.user = {
             id: req.auth.sub,
-            roles: ['Admin'], // Asignar Admin por defecto en desarrollo
-            email: req.auth.email || req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
+            roles: ['AdminTrimar'], // Asignar AdminTrimar por defecto en desarrollo
+            email: req.auth['https://otp-records.com/email'] || req.auth.email || req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
           };
           return next();
         }
@@ -152,7 +153,7 @@ export const requireRoles = (allowedRoles = []) => {
       req.user = {
         id: req.auth.sub,
         roles: userRoles,
-        email: req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
+        email: req.auth['https://otp-records.com/email'] || req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
       };
       
       next();
@@ -172,17 +173,17 @@ export const requireRoles = (allowedRoles = []) => {
 /**
  * Middleware específico para rutas de Admin
  */
-export const requireAdmin = requireRoles(['Admin']);
+export const requireAdmin = requireRoles(['AdminTrimar']);
 
 /**
  * Middleware específico para rutas de Seller (Seller o Admin)
  */
-export const requireSeller = requireRoles(['Seller', 'Admin']);
+export const requireSeller = requireRoles(['SellerTrimar', 'AdminTrimar']);
 
 /**
  * Middleware específico para rutas de Captador
  */
-export const requireCaptador = requireRoles(['Captador', 'Seller', 'Admin']);
+export const requireCaptador = requireRoles(['CaptadorTrimar', 'SellerTrimar', 'AdminTrimar']);
 
 /**
  * Middleware para verificar si el usuario puede modificar una propiedad
@@ -195,14 +196,14 @@ export const canModifyProperty = async (req, res, next) => {
     const userRoles = req.user?.roles || [];
     
     // Los Admin pueden modificar cualquier propiedad
-    if (userRoles.includes('Admin')) {
+    if (userRoles.includes('AdminTrimar')) {
       return next();
     }
     
     // TODO: Implementar verificación de propiedad del recurso
     // Aquí deberíamos verificar si el userId es el propietario de la propiedad
     // Por ahora, permitir a Sellers modificar sus propias propiedades
-    if (userRoles.includes('Seller')) {
+    if (userRoles.includes('SellerTrimar')) {
       // En una implementación completa, verificaríamos:
       // const property = await propertyService.getPropertyById(propertyId);
       // if (property.ownerId === userId) return next();
@@ -244,8 +245,8 @@ export const optionalAuth = (req, res, next) => {
     if (req.auth) {
       req.user = {
         id: req.auth.sub,
-        roles: req.auth.permissions || req.auth[`${process.env.AUTH0_AUDIENCE}/roles`] || [],
-        email: req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
+        roles: req.auth['https://otp-records.com/roles'] || req.auth.permissions || req.auth[`${process.env.AUTH0_AUDIENCE}/roles`] || [],
+        email: req.auth['https://otp-records.com/email'] || req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
       };
     }
     
