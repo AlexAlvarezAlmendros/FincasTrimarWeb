@@ -94,16 +94,17 @@ export const requireRoles = (allowedRoles = []) => {
       }
       
       // Obtener roles del token (Auth0 claim personalizado)
+      // IMPORTANTE: express-oauth2-jwt-bearer pone los datos en req.auth.payload
+      const authData = req.auth.payload || req.auth;
+      
       console.log('🔍 Debugging roles en Vercel:', {
-        sub: req.auth.sub,
-        permissions: req.auth.permissions,
-        audienceClaim: req.auth[`${process.env.AUTH0_AUDIENCE}/roles`],
-        otpRecordsClaim: req.auth['https://otp-records.com/roles'],
-        allClaims: Object.keys(req.auth),
-        fullAuth: JSON.stringify(req.auth, null, 2)
+        hasPayload: !!req.auth.payload,
+        sub: authData.sub,
+        permissions: authData.permissions,
+        otpRecordsClaim: authData['https://otp-records.com/roles']
       });
       
-      const userRoles = req.auth['https://otp-records.com/roles'] || req.auth.permissions || req.auth[`${process.env.AUTH0_AUDIENCE}/roles`] || [];
+      const userRoles = authData['https://otp-records.com/roles'] || authData.permissions || authData[`${process.env.AUTH0_AUDIENCE}/roles`] || [];
       console.log('📋 Role verification:', {
         userRoles,
         allowedRoles,
@@ -122,12 +123,11 @@ export const requireRoles = (allowedRoles = []) => {
       
       if (!hasRequiredRole) {
         console.error('❌ Acceso denegado - Roles insuficientes:', {
-          userId: req.auth.sub,
+          userId: authData.sub,
           userRoles,
           requiredRoles: allowedRoles,
           endpoint: req.originalUrl,
-          environment: process.env.NODE_ENV,
-          allAuthKeys: Object.keys(req.auth)
+          environment: process.env.NODE_ENV
         });
         
         return res.status(403).json({
@@ -138,7 +138,7 @@ export const requireRoles = (allowedRoles = []) => {
             debug: {
               userRoles,
               requiredRoles: allowedRoles,
-              userId: req.auth.sub,
+              userId: authData.sub,
               checkedNamespaces: [
                 'https://otp-records.com/roles',
                 'permissions',
@@ -152,9 +152,9 @@ export const requireRoles = (allowedRoles = []) => {
       
       // Agregar información del usuario al request
       req.user = {
-        id: req.auth.sub,
+        id: authData.sub,
         roles: userRoles,
-        email: req.auth['https://otp-records.com/email'] || req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
+        email: authData['https://otp-records.com/email'] || authData[`${process.env.AUTH0_AUDIENCE}/email`] || null
       };
       
       next();
@@ -244,10 +244,11 @@ export const optionalAuth = (req, res, next) => {
     
     // Si el token es válido, agregar información del usuario
     if (req.auth) {
+      const authData = req.auth.payload || req.auth;
       req.user = {
-        id: req.auth.sub,
-        roles: req.auth['https://otp-records.com/roles'] || req.auth.permissions || req.auth[`${process.env.AUTH0_AUDIENCE}/roles`] || [],
-        email: req.auth['https://otp-records.com/email'] || req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
+        id: authData.sub,
+        roles: authData['https://otp-records.com/roles'] || authData.permissions || authData[`${process.env.AUTH0_AUDIENCE}/roles`] || [],
+        email: authData['https://otp-records.com/email'] || authData[`${process.env.AUTH0_AUDIENCE}/email`] || null
       };
     }
     
