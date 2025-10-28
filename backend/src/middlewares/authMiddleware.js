@@ -94,18 +94,21 @@ export const requireRoles = (allowedRoles = []) => {
       }
       
       // Obtener roles del token (Auth0 claim personalizado)
-      logger.info('🔍 Debugging roles:', {
+      console.log('🔍 Debugging roles en Vercel:', {
+        sub: req.auth.sub,
         permissions: req.auth.permissions,
         audienceClaim: req.auth[`${process.env.AUTH0_AUDIENCE}/roles`],
         otpRecordsClaim: req.auth['https://otp-records.com/roles'],
-        authObject: req.auth
+        allClaims: Object.keys(req.auth),
+        fullAuth: JSON.stringify(req.auth, null, 2)
       });
       
       const userRoles = req.auth['https://otp-records.com/roles'] || req.auth.permissions || req.auth[`${process.env.AUTH0_AUDIENCE}/roles`] || [];
-      logger.info('📋 Role verification:', {
+      console.log('📋 Role verification:', {
         userRoles,
         allowedRoles,
-        endpoint: req.originalUrl
+        endpoint: req.originalUrl,
+        hasRoles: userRoles.length > 0
       });
       
       // Si no se especifican roles, permitir acceso con token válido
@@ -115,24 +118,16 @@ export const requireRoles = (allowedRoles = []) => {
       
       // Verificar si el usuario tiene al menos uno de los roles requeridos
       const hasRequiredRole = allowedRoles.some(role => userRoles.includes(role));
-      logger.info('✅ Role check result:', { hasRequiredRole });
+      console.log('✅ Role check result:', { hasRequiredRole, userRoles, allowedRoles });
       
       if (!hasRequiredRole) {
-        // En desarrollo, si no hay roles configurados, permitir acceso para testing
-        if (process.env.NODE_ENV === 'development' && userRoles.length === 0) {
-          logger.warn('⚠️ DEVELOPMENT MODE: Permitiendo acceso sin roles para testing');
-          req.user = {
-            id: req.auth.sub,
-            roles: ['AdminTrimar'], // Asignar AdminTrimar por defecto en desarrollo
-            email: req.auth['https://otp-records.com/email'] || req.auth.email || req.auth[`${process.env.AUTH0_AUDIENCE}/email`] || null
-          };
-          return next();
-        }
-        
-        logger.warn('Acceso denegado - Roles insuficientes:', {
+        console.error('❌ Acceso denegado - Roles insuficientes:', {
           userId: req.auth.sub,
           userRoles,
-          requiredRoles: allowedRoles
+          requiredRoles: allowedRoles,
+          endpoint: req.originalUrl,
+          environment: process.env.NODE_ENV,
+          allAuthKeys: Object.keys(req.auth)
         });
         
         return res.status(403).json({
@@ -140,11 +135,17 @@ export const requireRoles = (allowedRoles = []) => {
           error: {
             code: 'FORBIDDEN',
             message: 'No tienes permisos suficientes para acceder a este recurso',
-            debug: process.env.NODE_ENV === 'development' ? {
+            debug: {
               userRoles,
               requiredRoles: allowedRoles,
-              suggestion: 'Configura roles en Auth0 o usa modo desarrollo'
-            } : undefined
+              userId: req.auth.sub,
+              checkedNamespaces: [
+                'https://otp-records.com/roles',
+                'permissions',
+                `${process.env.AUTH0_AUDIENCE}/roles`
+              ],
+              hint: 'Verifica que tu Auth0 Action agregue roles al Access Token (api.accessToken.setCustomClaim)'
+            }
           }
         });
       }
