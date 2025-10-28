@@ -154,7 +154,7 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath }) => {
         <div className="sidebar-footer">
           <div className="sidebar-version">
             <span className="version-label">Panel Admin</span>
-            <span className="version-number">v1.0.0</span>
+            <span className="version-number">v1.1.0</span>
           </div>
         </div>
       )}
