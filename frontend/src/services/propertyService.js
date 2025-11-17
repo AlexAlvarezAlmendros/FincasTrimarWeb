@@ -611,13 +611,6 @@ class PropertyService {
         const formData = new FormData();
         formData.append('images', file);
         
-        // Debug: verificar que el FormData tiene el archivo correcto
-        console.log(`🔍 FormData creado para ${file.name}:`, {
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type
-        });
-        
         try {
           const uploadResponse = await fetch(`${this.apiUrl}/api/v1/images`, {
             method: 'POST',
