@@ -606,10 +606,17 @@ class PropertyService {
       
       for (let i = 0; i < filesArray.length; i++) {
         const file = filesArray[i];
-        console.log(`� Subiendo archivo ${i + 1}/${totalFiles}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+        console.log(`📁 Subiendo archivo ${i + 1}/${totalFiles}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
         
         const formData = new FormData();
         formData.append('images', file);
+        
+        // Debug: verificar que el FormData tiene el archivo correcto
+        console.log(`🔍 FormData creado para ${file.name}:`, {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type
+        });
         
         try {
           const uploadResponse = await fetch(`${this.apiUrl}/api/v1/images`, {
