@@ -3,6 +3,7 @@ import multer from 'multer';
 import imageController from '../controllers/imageController.js';
 import { requireRoles } from '../middlewares/authMiddleware.js';
 import { validateImageUpload, validatePropertyImages, validateImageReorder } from '../schemas/imageSchemas.js';
+import { logger } from '../utils/logger.js';
 
 // Configurar multer para manejo de archivos
 const upload = multer({
@@ -15,9 +16,12 @@ const upload = multer({
     // Validar tipos de archivo
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     
+    logger.info(`📁 Recibiendo archivo: ${file.originalname}, tipo: ${file.mimetype}`);
+    
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
+      logger.error(`❌ Tipo de archivo rechazado: ${file.mimetype}`);
       cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}. Permitidos: ${allowedTypes.join(', ')}`), false);
     }
   }
@@ -70,6 +74,9 @@ export const imagePublicRoutes = Router();
 
 // GET /api/v1/images/status - Estado del servicio
 imagePublicRoutes.get('/images/status', imageController.getServiceStatus);
+
+// GET /api/v1/images/debug - Debug info (solo desarrollo/staging)
+imagePublicRoutes.get('/images/debug', imageController.getDebugInfo);
 
 // GET /api/v1/viviendas/:id/imagenes - Obtener imágenes de una vivienda
 imagePublicRoutes.get('/viviendas/:id/imagenes', imageController.getPropertyImages);

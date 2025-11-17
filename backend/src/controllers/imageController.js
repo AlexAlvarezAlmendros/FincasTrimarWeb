@@ -318,6 +318,47 @@ const imageController = {
       logger.error('❌ Error en getServiceStatus:', error);
       next(error);
     }
+  },
+
+  /**
+   * Debug endpoint - Información de configuración
+   * GET /api/v1/images/debug
+   */
+  async getDebugInfo(req, res, next) {
+    try {
+      const debugInfo = {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        imgbbConfigured: imageService.isConfigured(),
+        corsOrigins: process.env.CORS_ORIGINS || 'Not configured',
+        apiUrl: process.env.VITE_API_BASE_URL || 'Not set',
+        headers: {
+          contentType: req.get('content-type'),
+          authorization: req.get('authorization') ? 'Present (token hidden)' : 'Missing',
+          origin: req.get('origin') || 'Not present',
+          userAgent: req.get('user-agent') || 'Not present'
+        },
+        bodyParserLimits: {
+          json: '50mb (configured in app.js)',
+          urlencoded: '50mb (configured in app.js)',
+          multer: '10MB per file, max 10 files'
+        },
+        vercel: {
+          region: process.env.VERCEL_REGION || 'Not on Vercel',
+          env: process.env.VERCEL_ENV || 'Not on Vercel'
+        }
+      };
+
+      logger.info('🔍 Debug info requested');
+
+      res.json({
+        success: true,
+        data: debugInfo
+      });
+    } catch (error) {
+      logger.error('❌ Error en getDebugInfo:', error);
+      next(error);
+    }
   }
 
 };
