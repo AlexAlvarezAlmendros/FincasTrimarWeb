@@ -13,8 +13,16 @@ const imageController = {
    */
   async uploadImages(req, res, next) {
     try {
+      logger.info('📥 [CONTROLLER] Petición de subida recibida');
+      logger.info(`📥 [CONTROLLER] Headers: ${JSON.stringify({
+        contentType: req.get('content-type'),
+        contentLength: req.get('content-length'),
+        origin: req.get('origin')
+      })}`);
+
       // Verificar que se enviaron archivos
       if (!req.files || req.files.length === 0) {
+        logger.warn('⚠️ [CONTROLLER] No se enviaron archivos');
         return res.status(400).json({
           success: false,
           error: {
@@ -24,10 +32,15 @@ const imageController = {
         });
       }
 
-      logger.info(`📤 Subiendo ${req.files.length} imágenes...`);
+      logger.info(`📤 [CONTROLLER] Subiendo ${req.files.length} imágenes...`);
+      req.files.forEach((file, index) => {
+        logger.info(`📄 [CONTROLLER] Archivo ${index + 1}: ${file.originalname} (${file.size} bytes, ${file.mimetype})`);
+      });
 
       // Subir imágenes a ImgBB
       const uploadResult = await imageService.uploadMultiple(req.files);
+      
+      logger.info(`📊 [CONTROLLER] Resultado: ${uploadResult.successful}/${uploadResult.total} exitosos`);
       
       // Preparar respuesta
       const response = {
@@ -56,13 +69,19 @@ const imageController = {
 
       // Incluir errores si los hay
       if (uploadResult.errors && uploadResult.errors.length > 0) {
+        logger.warn(`⚠️ [CONTROLLER] Errores en subida: ${JSON.stringify(uploadResult.errors)}`);
         response.warnings = uploadResult.errors;
       }
 
       res.status(200).json(response);
 
     } catch (error) {
-      logger.error('❌ Error en uploadImages:', error);
+      logger.error('❌ [CONTROLLER] Error en uploadImages:', {
+        message: error.message,
+        stack: error.stack,
+        hasFiles: !!req.files,
+        filesCount: req.files ? req.files.length : 0
+      });
       next(error);
     }
   },

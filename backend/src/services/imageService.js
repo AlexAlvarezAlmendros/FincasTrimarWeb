@@ -43,12 +43,24 @@ class ImageService {
    */
   async uploadSingle(file) {
     try {
+      logger.info(`🔍 [UPLOAD] Iniciando subida - Archivo: ${file.originalname}, Tamaño: ${file.size} bytes, Tipo: ${file.mimetype}`);
+      
       if (!this.isConfigured()) {
+        logger.error('❌ [UPLOAD] ImgBB API key no configurada');
         throw new Error('Servicio de imágenes no configurado');
       }
 
       // Validar archivo
       this.validateImage(file);
+      logger.info('✅ [UPLOAD] Validación de archivo exitosa');
+
+      // Verificar buffer
+      if (!file.buffer || file.buffer.length === 0) {
+        logger.error('❌ [UPLOAD] Buffer del archivo está vacío');
+        throw new Error('Archivo sin contenido');
+      }
+      
+      logger.info(`📦 [UPLOAD] Buffer size: ${file.buffer.length} bytes`);
 
       // Preparar FormData
       const formData = new FormData();
@@ -60,47 +72,81 @@ class ImageService {
           .replace(/[^a-zA-Z0-9.-]/g, '_')
           .substring(0, 50);
         formData.append('name', cleanName);
+        logger.info(`📝 [UPLOAD] Nombre de archivo: ${cleanName}`);
       }
 
-      // Hacer petición a ImgBB
-      const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'User-Agent': 'Inmobiliaria-API/1.0'
+      logger.info('🌐 [UPLOAD] Enviando petición a ImgBB...');
+
+      // Hacer petición a ImgBB con timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      try {
+        const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Inmobiliaria-API/1.0'
+          }
+        });
+
+        clearTimeout(timeout);
+
+        logger.info(`📡 [UPLOAD] Respuesta de ImgBB: Status ${response.status}`);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          logger.error(`❌ [UPLOAD] Error ImgBB: ${response.status} - ${errorText}`);
+          throw new Error(`Error ImgBB ${response.status}: ${errorText}`);
         }
-      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ImgBB ${response.status}: ${errorText}`);
+        const result = await response.json();
+
+        if (!result.success) {
+          logger.error(`❌ [UPLOAD] ImgBB falló: ${JSON.stringify(result.error)}`);
+          throw new Error(`ImgBB falló: ${result.error?.message || 'Error desconocido'}`);
+        }
+
+        // Extraer URLs útiles
+        const imageData = {
+          id: result.data.id,
+          url: result.data.url,
+          displayUrl: result.data.display_url,
+          thumbUrl: result.data.thumb?.url || result.data.url,
+          mediumUrl: result.data.medium?.url || result.data.url,
+          deleteUrl: result.data.delete_url,
+          size: result.data.size,
+          width: result.data.width,
+          height: result.data.height,
+          uploadedAt: new Date().toISOString()
+        };
+
+        logger.info(`✅ [UPLOAD] Imagen subida exitosamente: ${imageData.id}`);
+        return imageData;
+
+      } catch (fetchError) {
+        clearTimeout(timeout);
+        
+        if (fetchError.name === 'AbortError') {
+          logger.error('❌ [UPLOAD] Timeout subiendo a ImgBB (30s)');
+          throw new Error('Timeout al subir imagen a ImgBB');
+        }
+        
+        throw fetchError;
       }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(`ImgBB falló: ${result.error?.message || 'Error desconocido'}`);
-      }
-
-      // Extraer URLs útiles
-      const imageData = {
-        id: result.data.id,
-        url: result.data.url,
-        displayUrl: result.data.display_url,
-        thumbUrl: result.data.thumb?.url || result.data.url,
-        mediumUrl: result.data.medium?.url || result.data.url,
-        deleteUrl: result.data.delete_url,
-        size: result.data.size,
-        width: result.data.width,
-        height: result.data.height,
-        uploadedAt: new Date().toISOString()
-      };
-
-      logger.info(`✅ Imagen subida exitosamente: ${imageData.id}`);
-      return imageData;
 
     } catch (error) {
-      logger.error('❌ Error subiendo imagen:', error);
+      logger.error('❌ [UPLOAD] Error en uploadSingle:', {
+        message: error.message,
+        stack: error.stack,
+        file: file ? {
+          name: file.originalname,
+          size: file.size,
+          mimetype: file.mimetype,
+          hasBuffer: !!file.buffer
+        } : 'no file'
+      });
       throw error;
     }
   }
