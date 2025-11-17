@@ -592,6 +592,32 @@ class PropertyService {
 
       console.log(`📤 Subiendo ${files.length} imágenes para vivienda ${propertyId}`);
 
+      // PASO 0: Comprimir imágenes antes de subir
+      const { compressImages, validateImageSizes } = await import('../utils/imageCompression.js');
+      
+      // Validar tamaños
+      const validation = validateImageSizes(files, 4); // Máximo 4MB total (dejando margen para el límite de 4.5MB)
+      
+      let filesToUpload = Array.from(files);
+      
+      if (validation.needsCompression) {
+        console.log('🗜️ Las imágenes necesitan compresión...');
+        console.log(`   Tamaño total: ${validation.totalSizeMB}MB (máx: ${validation.maxSizeMB}MB)`);
+        
+        if (onProgress) onProgress(5);
+        
+        // Comprimir imágenes
+        filesToUpload = await compressImages(files, {
+          maxSizeMB: 1.3, // Máximo por imagen (3 x 1.3MB = 3.9MB < 4MB límite)
+          maxWidthOrHeight: 1920,
+          quality: 0.85
+        });
+        
+        console.log('✅ Imágenes comprimidas correctamente');
+      } else {
+        console.log(`✅ Tamaño total OK: ${validation.totalSizeMB}MB (no requiere compresión)`);
+      }
+
       // Obtener token de autenticación
       const token = await getAccessToken();
 
@@ -599,7 +625,7 @@ class PropertyService {
       if (onProgress) onProgress(10);
       
       const formData = new FormData();
-      Array.from(files).forEach(file => {
+      filesToUpload.forEach(file => {
         formData.append('images', file);
       });
 
