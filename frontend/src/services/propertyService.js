@@ -592,62 +592,65 @@ class PropertyService {
 
       console.log(`📤 Subiendo ${files.length} imágenes para vivienda ${propertyId}`);
 
-      // PASO 0: Comprimir imágenes antes de subir
-      const { compressImages, validateImageSizes } = await import('../utils/imageCompression.js');
-      
-      // Validar tamaños
-      const validation = validateImageSizes(files, 4); // Máximo 4MB total (dejando margen para el límite de 4.5MB)
-      
-      let filesToUpload = Array.from(files);
-      
-      if (validation.needsCompression) {
-        console.log('🗜️ Las imágenes necesitan compresión...');
-        console.log(`   Tamaño total: ${validation.totalSizeMB}MB (máx: ${validation.maxSizeMB}MB)`);
-        
-        if (onProgress) onProgress(5);
-        
-        // Comprimir imágenes
-        filesToUpload = await compressImages(files, {
-          maxSizeMB: 1.3, // Máximo por imagen (3 x 1.3MB = 3.9MB < 4MB límite)
-          maxWidthOrHeight: 1920,
-          quality: 0.85
-        });
-        
-        console.log('✅ Imágenes comprimidas correctamente');
-      } else {
-        console.log(`✅ Tamaño total OK: ${validation.totalSizeMB}MB (no requiere compresión)`);
-      }
-
       // Obtener token de autenticación
       const token = await getAccessToken();
 
-      // PASO 1: Subir imágenes a ImgBB
+      // PASO 1: Subir imágenes a ImgBB UNA POR UNA para evitar error 413
       if (onProgress) onProgress(10);
       
-      const formData = new FormData();
-      filesToUpload.forEach(file => {
-        formData.append('images', file);
-      });
-
-      console.log('🔄 Subiendo archivos a ImgBB...');
+      const uploadedImages = [];
+      const filesArray = Array.from(files);
+      const totalFiles = filesArray.length;
       
-      const uploadResponse = await fetch(`${this.apiUrl}/api/v1/images`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
+      console.log('🔄 Subiendo archivos a ImgBB uno por uno...');
+      
+      for (let i = 0; i < filesArray.length; i++) {
+        const file = filesArray[i];
+        console.log(`� Subiendo archivo ${i + 1}/${totalFiles}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+        
+        const formData = new FormData();
+        formData.append('images', file);
+        
+        try {
+          const uploadResponse = await fetch(`${this.apiUrl}/api/v1/images`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          });
 
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || 'Error al subir imágenes a ImgBB');
+          if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json().catch(() => ({}));
+            console.error(`❌ Error subiendo ${file.name}:`, errorData);
+            throw new Error(errorData.error?.message || `Error al subir imagen ${file.name}`);
+          }
+
+          const uploadResult = await uploadResponse.json();
+          
+          if (uploadResult.success && uploadResult.data.images && uploadResult.data.images.length > 0) {
+            uploadedImages.push(uploadResult.data.images[0]);
+            console.log(`✅ Imagen ${i + 1}/${totalFiles} subida: ${file.name}`);
+          }
+          
+          // Actualizar progreso (10% inicial + 50% para subidas)
+          const uploadProgress = 10 + Math.floor((i + 1) / totalFiles * 50);
+          if (onProgress) onProgress(uploadProgress);
+          
+          // Pequeña pausa entre uploads para no saturar
+          if (i < filesArray.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+          
+        } catch (error) {
+          console.error(`❌ Error al subir archivo ${file.name}:`, error);
+          throw new Error(`Error al subir ${file.name}: ${error.message}`);
+        }
       }
 
-      const uploadResult = await uploadResponse.json();
-      console.log('✅ Imágenes subidas a ImgBB:', uploadResult);
+      console.log(`✅ Todas las imágenes subidas a ImgBB: ${uploadedImages.length}/${totalFiles}`);
 
-      if (!uploadResult.success || !uploadResult.data.images || uploadResult.data.images.length === 0) {
+      if (uploadedImages.length === 0) {
         throw new Error('No se pudieron subir las imágenes a ImgBB');
       }
 
@@ -656,7 +659,7 @@ class PropertyService {
       // PASO 2: Asociar URLs de ImgBB a la vivienda
       console.log('🔗 Asociando imágenes a la vivienda...');
       
-      const imagesToAssociate = uploadResult.data.images.map((img, index) => ({
+      const imagesToAssociate = uploadedImages.map((img, index) => ({
         url: img.url,
         orden: index + 1
       }));
