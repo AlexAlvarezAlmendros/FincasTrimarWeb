@@ -141,6 +141,41 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Badge de imagen principal (primera imagen) */
+.main-image-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #FFFFFF;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  z-index: 3;
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+  animation: starPulse 2s ease-in-out infinite;
+}
+
+.main-image-badge i {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+/* Animación de pulso para la estrella */
+@keyframes starPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(255, 215, 0, 0.6);
+  }
+}
+
 .image-info {
   padding: var(--spacing-md, 12px);
   text-align: center;
@@ -205,6 +240,14 @@
     font-size: 10px;
     top: 6px;
     left: 6px;
+  }
+  
+  .main-image-badge {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    top: 6px;
+    right: 6px;
   }
   
   .drag-hint {

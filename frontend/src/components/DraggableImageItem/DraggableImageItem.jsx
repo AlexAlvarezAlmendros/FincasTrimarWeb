@@ -86,6 +86,13 @@ const DraggableImageItem = ({
           )}
         </div>
         
+        {/* Indicador de imagen principal (primera imagen) */}
+        {index === 0 && (
+          <div className="main-image-badge" title="Imagen principal">
+            <i className="fas fa-star"></i>
+          </div>
+        )}
+        
         {/* Indicador de orden */}
         <div className="image-order-badge">
           {index + 1}

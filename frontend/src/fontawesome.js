@@ -20,7 +20,8 @@ import {
   faAngleLeft,
   faAngleRight,
   faAnglesLeft,
-  faAnglesRight
+  faAnglesRight,
+  faStar
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -44,5 +45,6 @@ library.add(
   faAngleLeft,
   faAngleRight,
   faAnglesLeft,
-  faAnglesRight
+  faAnglesRight,
+  faStar
 )

@@ -5,7 +5,7 @@ import AdminDashboard from '../components/Admin/Dashboard';
 
 // Importar las nuevas pantallas de viviendas
 import PropertiesListPage from '../components/Admin/Properties/PropertiesListPage';
-import PropertyCreatePage from '../components/Admin/Properties/PropertyCreatePageNew';
+import PropertyCreatePage from '../components/Admin/Properties/PropertyCreatePage';
 import DraftsPage from '../components/Admin/Properties/DraftsPage';
 import CaptacionPage from '../components/Admin/Properties/CaptacionPage';
 

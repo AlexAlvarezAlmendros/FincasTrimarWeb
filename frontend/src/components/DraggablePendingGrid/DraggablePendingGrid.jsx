@@ -17,7 +17,7 @@ const DraggablePendingItem = ({ file, index, onRemove, onDragStart, onDragEnd, o
       <div className="pending-image-container">
         <img 
           src={file.preview} 
-          alt={file.name}
+          alt={file.file?.name || file.name || 'Vista previa'}
           className="pending-image" 
         />
         <div className="pending-overlay">
@@ -30,10 +30,18 @@ const DraggablePendingItem = ({ file, index, onRemove, onDragStart, onDragEnd, o
             <i className="fas fa-trash"></i>
           </button>
         </div>
+        
+        {/* Indicador de imagen principal (primera imagen) */}
+        {index === 0 && (
+          <div className="main-image-badge" title="Imagen principal">
+            <i className="fas fa-star"></i>
+          </div>
+        )}
+        
         <div className="pending-info">
-          <span className="pending-name">{file.name}</span>
+          <span className="pending-name">{file.file?.name || file.name || 'Archivo sin nombre'}</span>
           <span className="pending-size">
-            {(file.size / 1024 / 1024).toFixed(2)} MB
+            {file.file?.size ? (file.file.size / 1024 / 1024).toFixed(2) : '0.00'} MB
           </span>
         </div>
       </div>

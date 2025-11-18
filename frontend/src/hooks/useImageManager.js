@@ -14,7 +14,7 @@ export const ImageStates = {
 export const useImageManager = (propertyId = null, options = {}) => {
   const { getAccessTokenSilently } = useAuth0();
   const {
-    maxImages = 20,
+    maxImages = Infinity, // Sin límite de imágenes
     autoUpload = false,
     onUploadStart,
     onUploadProgress,
@@ -123,12 +123,8 @@ export const useImageManager = (propertyId = null, options = {}) => {
       return;
     }
 
-    const remainingSlots = maxImages - (images.length + pendingFiles.length);
-    const filesToAdd = validFiles.slice(0, remainingSlots);
-
-    if (filesToAdd.length < validFiles.length) {
-      setError(`Solo se pudieron añadir ${filesToAdd.length} de ${validFiles.length} archivos (límite de ${maxImages} imágenes)`);
-    }
+    // Sin límite de imágenes - añadir todos los archivos válidos
+    const filesToAdd = validFiles;
 
     const newPendingFiles = filesToAdd.map(file => ({
       id: Math.random().toString(36).substr(2, 9),
@@ -143,7 +139,7 @@ export const useImageManager = (propertyId = null, options = {}) => {
     if (autoUpload) {
       uploadPendingFiles();
     }
-  }, [images.length, pendingFiles.length, maxImages, autoUpload]);
+  }, [autoUpload]);
 
   const removePendingFile = useCallback((fileId) => {
     setPendingFiles(prev => {
@@ -289,8 +285,8 @@ export const useImageManager = (propertyId = null, options = {}) => {
 
   // Valores calculados
   const totalImages = images.length + pendingFiles.length;
-  const canAddMore = totalImages < maxImages;
-  const remainingSlots = maxImages - totalImages;
+  const canAddMore = true; // Siempre se pueden añadir más imágenes
+  const remainingSlots = Infinity; // Sin límite
   const isProcessing = uploadState === ImageStates.UPLOADING || uploadState === ImageStates.PROCESSING || isReordering;
 
   return {
