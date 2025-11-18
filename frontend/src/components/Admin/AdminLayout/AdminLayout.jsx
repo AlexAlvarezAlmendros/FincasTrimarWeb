@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUserRoles } from '../../../hooks/useUserRoles';
+import { useAdminStats } from '../../../hooks/useAdminStats';
 import AdminSidebar from '../AdminSidebar/AdminSidebar';
 import AdminHeader from '../AdminHeader/AdminHeader';
 import './AdminLayout.css';
@@ -11,6 +12,7 @@ const AdminLayout = () => {
   const { user, logout } = useAuth0();
   const location = useLocation();
   const { isAdmin, isSeller, roles } = useUserRoles();
+  const { draftsCount, messagesCount } = useAdminStats();
 
   // Log para debugging
   console.log('🔐 AdminLayout - Verificación de roles:', { 
@@ -45,6 +47,8 @@ const AdminLayout = () => {
         collapsed={sidebarCollapsed}
         onToggle={handleSidebarToggle}
         currentPath={location.pathname}
+        draftsCount={draftsCount}
+        messagesCount={messagesCount}
       />
       
       {/* Main Content Area */}

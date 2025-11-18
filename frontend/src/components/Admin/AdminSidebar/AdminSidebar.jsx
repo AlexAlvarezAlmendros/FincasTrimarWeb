@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './AdminSidebar.css';
 
-const AdminSidebar = ({ collapsed, onToggle, currentPath }) => {
+const AdminSidebar = ({ collapsed, onToggle, currentPath, draftsCount = 0, messagesCount = 0 }) => {
   const menuItems = [
     {
       id: 'dashboard',
@@ -20,7 +20,7 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath }) => {
       submenu: [
         { path: '/admin/viviendas', label: 'Todas las viviendas', icon: '📋' },
         { path: '/admin/viviendas/crear', label: 'Crear nueva', icon: '➕' },
-        { path: '/admin/viviendas/borradores', label: 'Borradores', icon: '📝', badge: '2' },
+        { path: '/admin/viviendas/borradores', label: 'Borradores', icon: '📝', badge: draftsCount > 0 ? draftsCount.toString() : null },
         { path: '/admin/viviendas/captacion', label: 'Captación', icon: '🎯' }
       ]
     },
@@ -29,7 +29,7 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath }) => {
       path: '/admin/mensajes',
       icon: '💬',
       label: 'Mensajes',
-      badge: '5'
+      badge: messagesCount > 0 ? messagesCount.toString() : null
     },
     {
       id: 'users',
