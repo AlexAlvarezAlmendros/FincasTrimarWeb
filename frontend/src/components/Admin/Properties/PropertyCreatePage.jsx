@@ -352,18 +352,6 @@ const PropertyCreatePage = () => {
         />
       )}
 
-      {error && (
-        <div className="alert alert-error">
-          <strong>Error:</strong> {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="alert alert-success">
-          <strong>¡Éxito!</strong> La vivienda ha sido creada correctamente.
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="property-form">
         <div className="form-section">
           <h2 className="section-title">📋 Información Básica</h2>
@@ -709,6 +697,19 @@ const PropertyCreatePage = () => {
         </div>
 
         {/* Sección de publicación eliminada - ahora se auto-publica según estado */}
+
+        {/* Mensajes de error y éxito */}
+        {error && (
+          <div className="alert alert-error">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="alert alert-success">
+            <strong>¡Éxito!</strong> La vivienda ha sido creada correctamente.
+          </div>
+        )}
 
         <div className="form-actions">
           <button 

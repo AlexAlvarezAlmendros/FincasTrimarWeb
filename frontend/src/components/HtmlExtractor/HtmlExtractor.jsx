@@ -9,6 +9,8 @@ const HtmlExtractor = ({ onDataExtracted, resetTrigger }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mode, setMode] = useState('file'); // 'file' o 'text'
+  const [portal, setPortal] = useState('idealista'); // 'idealista', 'fotocasa', 'habitaclia'
+  const [isExpanded, setIsExpanded] = useState(false); // Colapsado por defecto
   const api = useApi();
 
   // Efecto para resetear el componente cuando se requiera
@@ -20,6 +22,7 @@ const HtmlExtractor = ({ onDataExtracted, resetTrigger }) => {
       setLoading(false);
       setError(null);
       setMode('file');
+      setPortal('idealista');
       
       // Limpiar input de archivo si existe
       const fileInput = document.querySelector('input[type="file"][accept=".html"]');
@@ -59,7 +62,7 @@ const HtmlExtractor = ({ onDataExtracted, resetTrigger }) => {
       const formData = new FormData();
       formData.append('htmlFile', file);
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/parse/idealista/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/parse/${portal}/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -92,7 +95,7 @@ const HtmlExtractor = ({ onDataExtracted, resetTrigger }) => {
     setError(null);
 
     try {
-      const response = await api('/api/v1/parse/idealista/text', {
+      const response = await api(`/api/v1/parse/${portal}/text`, {
         method: 'POST',
         body: JSON.stringify({ htmlContent: htmlText }),
       });
@@ -120,11 +123,55 @@ const HtmlExtractor = ({ onDataExtracted, resetTrigger }) => {
     setError(null);
   };
 
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   return (
-    <div className="html-extractor">
-      <div className="html-extractor__header">
-        <h3>Extraer datos de Idealista</h3>
-        <p>Sube un archivo HTML descargado de Idealista para auto-rellenar el formulario</p>
+    <div className={`html-extractor ${isExpanded ? 'expanded' : 'collapsed'}`}>
+      <button 
+        type="button"
+        className="html-extractor__toggle"
+        onClick={toggleExpanded}
+      >
+        <div className="toggle-content">
+          <div className="toggle-icon">
+            <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
+          </div>
+          <div className="toggle-text">
+            <h3>🔍 Extraer datos de portales inmobiliarios</h3>
+            <p>Sube un archivo HTML descargado de Idealista, Fotocasa o Habitaclia para auto-rellenar el formulario</p>
+          </div>
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="html-extractor__content">{/* Selector de portal */}
+      <div className="html-extractor__portal-selector">
+        <button 
+          type="button"
+          className={`portal-btn ${portal === 'idealista' ? 'active' : ''}`}
+          onClick={() => setPortal('idealista')}
+        >
+          <span className="portal-icon">🏠</span>
+          Idealista
+        </button>
+        <button 
+          type="button"
+          className={`portal-btn ${portal === 'fotocasa' ? 'active' : ''}`}
+          onClick={() => setPortal('fotocasa')}
+        >
+          <span className="portal-icon">📸</span>
+          Fotocasa
+        </button>
+        <button 
+          type="button"
+          className={`portal-btn ${portal === 'habitaclia' ? 'active' : ''}`}
+          onClick={() => setPortal('habitaclia')}
+        >
+          <span className="portal-icon">🔑</span>
+          Habitaclia
+        </button>
       </div>
 
       {/* Selector de modo */}
@@ -175,7 +222,7 @@ const HtmlExtractor = ({ onDataExtracted, resetTrigger }) => {
           <textarea
             value={htmlText}
             onChange={handleTextChange}
-            placeholder="Pega aquí el código HTML de la página de Idealista..."
+            placeholder={`Pega aquí el código HTML de la página de ${portal.charAt(0).toUpperCase() + portal.slice(1)}...`}
             rows={6}
             className="html-textarea"
           />
@@ -246,6 +293,8 @@ const HtmlExtractor = ({ onDataExtracted, resetTrigger }) => {
           <div className="results-actions">
             <p>Los datos han sido aplicados al formulario automáticamente.</p>
           </div>
+        </div>
+      )}
         </div>
       )}
     </div>

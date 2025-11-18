@@ -591,6 +591,24 @@
   border-radius: 8px;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Alertas antes de los botones de acción */
+.form-actions + .alert,
+.alert + .form-actions {
+  margin-top: 2rem;
 }
 
 .alert-error {
