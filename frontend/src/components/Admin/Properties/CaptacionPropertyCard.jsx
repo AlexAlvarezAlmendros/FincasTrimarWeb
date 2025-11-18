@@ -88,116 +88,127 @@ const CaptacionPropertyCard = ({
 
   return (
     <div className="captacion-card">
-      <div className="captacion-header">
-        <div className="captacion-image">
-          {property.mainImage ? (
-            <img 
-              src={property.mainImage} 
-              alt={property.name}
-              onError={(e) => {
-                e.target.src = '/img/placeholder-house.jpg';
-              }}
-            />
-          ) : (
-            <div className="no-image">🏠</div>
-          )}
+      {/* Header con estado y precio */}
+      <div className="captacion-header-compact">
+        <div className={`status-badge-compact status-${getStateColor(property.estadoVenta)}`}>
+          {property.estadoVenta || CAPTACION_STATES.PENDIENTE}
         </div>
-        
-        <div className="captacion-info">
-          <h3 className="captacion-title">{property.name}</h3>
-          {property.shortDescription && (
-            <p className="captacion-description">{property.shortDescription}</p>
-          )}
-          
-          <div className="captacion-meta">
-            <span className="captacion-type">{property.tipoVivienda}</span>
-            <span className="captacion-location">{property.poblacion}, {property.provincia}</span>
-            <span className="captacion-price">{formatPrice(property.price)}</span>
-          </div>
-
-          <div className="captacion-specs">
-            {property.rooms > 0 && <span className="spec">🛏️ {property.rooms}</span>}
-            {property.bathRooms > 0 && <span className="spec">🚿 {property.bathRooms}</span>}
-            {property.garage > 0 && <span className="spec">🚗 {property.garage}</span>}
-            {property.squaredMeters > 0 && <span className="spec">📐 {property.squaredMeters}m²</span>}
-          </div>
+        <div className="price-badge-compact">
+          {formatPrice(property.price)}
         </div>
       </div>
 
-      <div className="captacion-status">
-        <div className="status-row">
-          <span className="status-label">Estado:</span>
-          <span className={`status-badge status-${getStateColor(property.estadoVenta)}`}>
-            {property.estadoVenta || CAPTACION_STATES.PENDIENTE}
-          </span>
+      {/* Contenido principal */}
+      <div className="captacion-content-compact">
+        {/* Título y ubicación */}
+        <div className="captacion-main-info-compact">
+          <h3 className="captacion-title-compact" title={property.name}>
+            {property.name}
+          </h3>
+          <div className="captacion-location-compact">
+            <span className="location-icon">📍</span>
+            <span>{property.poblacion}, {property.provincia}</span>
+          </div>
         </div>
-        
-        <div className="captacion-details">
-          <div className="detail-item">
-            <span className="detail-label">Fecha captación:</span>
-            <span className="detail-value">{formatDate(property.fechaCaptacion)}</span>
+
+        {/* Tipo y Características en una fila */}
+        <div className="captacion-info-row">
+          <div className="captacion-type-badge-compact">
+            {property.tipoVivienda}
+          </div>
+          
+          <div className="captacion-features-compact">
+            {property.rooms > 0 && (
+              <span className="feature-compact" title="Habitaciones">
+                🛏️ {property.rooms}
+              </span>
+            )}
+            {property.bathRooms > 0 && (
+              <span className="feature-compact" title="Baños">
+                🚿 {property.bathRooms}
+              </span>
+            )}
+            {property.squaredMeters > 0 && (
+              <span className="feature-compact" title="Metros cuadrados">
+                📐 {property.squaredMeters}m²
+              </span>
+            )}
+            {property.garage > 0 && (
+              <span className="feature-compact" title="Garaje">
+                🚗 {property.garage}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Información de captación en grid */}
+        <div className="captacion-metadata-compact">
+          <div className="metadata-compact">
+            <span className="metadata-icon-compact">📅</span>
+            <span className="metadata-value-compact">{formatDate(property.fechaCaptacion)}</span>
           </div>
           
           {property.captadoPor && (
-            <div className="detail-item">
-              <span className="detail-label">Captado por:</span>
-              <span className="detail-value">{property.captadoPor}</span>
+            <div className="metadata-compact">
+              <span className="metadata-icon-compact">👤</span>
+              <span className="metadata-value-compact">{property.captadoPor}</span>
             </div>
           )}
           
-          <div className="detail-item">
-            <span className="detail-label">Comisión:</span>
-            <span className="detail-value">
+          <div className="metadata-compact">
+            <span className="metadata-icon-compact">💰</span>
+            <span className="metadata-value-compact">
               {getCommissionDisplay(property.comisionGanada, property.porcentajeCaptacion)}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="captacion-actions">
+      {/* Acciones compactas */}
+      <div className="captacion-actions-compact">
         {property.urlReferencia ? (
           <a 
             href={property.urlReferencia}
             target="_blank"
             rel="noopener noreferrer"
-            className="action-btn action-btn--view"
+            className="action-btn-compact action-btn-compact--view"
             title="Ver propiedad en portal externo"
           >
-            👁️ Ver
+            👁️
           </a>
         ) : (
           <button
             disabled
-            className="action-btn action-btn--view action-btn--disabled"
+            className="action-btn-compact action-btn-compact--view action-btn-compact--disabled"
             title="No hay URL disponible"
           >
-            👁️ Ver
+            👁️
           </button>
         )}
         
         <button
           onClick={() => onEdit(property)}
-          className="action-btn action-btn--edit"
+          className="action-btn-compact action-btn-compact--edit"
           title="Editar datos de captación"
         >
-          ✏️ Editar
+          ✏️
         </button>
 
         <Link
           to={`/admin/viviendas/${property.id}/edit`}
-          className="action-btn action-btn--publish"
-          title="Modificar vivienda (añadir más imágenes y completar datos)"
+          className="action-btn-compact action-btn-compact--publish"
+          title="Modificar vivienda"
         >
-          ✏️ Modificar
+          🏗️
         </Link>
 
         <button
           onClick={handleDeleteClick}
-          className="action-btn action-btn--delete"
+          className="action-btn-compact action-btn-compact--delete"
           title="Eliminar propiedad"
           disabled={isDeleting}
         >
-          {isDeleting ? '⏳' : '🗑️'} Eliminar
+          {isDeleting ? '⏳' : '🗑️'}
         </button>
       </div>
 
