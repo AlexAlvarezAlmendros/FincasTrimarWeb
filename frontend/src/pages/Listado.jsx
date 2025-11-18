@@ -287,9 +287,6 @@ export default function Listado() {
                 >
                   <FontAwesomeIcon icon="fa-solid fa-filter" />
                 </button>
-                <Link to="/admin" className="icon-button" title="Añadir vivienda">
-                  <FontAwesomeIcon icon="fa-solid fa-plus" />
-                </Link>
               </div>
             </div>
 
