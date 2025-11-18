@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { isTokenExpiredError } from '../../utils/authHelpers';
+import { isTokenExpiredError } from '../utils/authHelpers';
 
 /**
  * Hook personalizado para manejar errores de autenticación
