@@ -32,4 +32,11 @@ privateRoutes.get('/dashboard/property-types', dashboardController.getPropertyTy
  */
 privateRoutes.get('/dashboard/locations', dashboardController.getLocationStats);
 
+/**
+ * @route GET /api/v1/dashboard/recent-properties
+ * @desc Obtener las propiedades más recientes
+ * @access Private (Admin)
+ */
+privateRoutes.get('/dashboard/recent-properties', dashboardController.getRecentProperties);
+
 export { privateRoutes };

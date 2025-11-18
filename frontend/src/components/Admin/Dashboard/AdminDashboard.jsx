@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useDashboardStats } from '../../../hooks/useDashboard';
+import { useDashboardStats, useRecentProperties } from '../../../hooks/useDashboard';
 import MetricCard from './MetricCard';
 import RecentPropertiesTable from './RecentPropertiesTable';
 import RecentMessagesList from './RecentMessagesList';
@@ -16,6 +16,7 @@ import './AdminDashboard.css';
 const AdminDashboard = () => {
   const { user } = useAuth0();
   const { stats, loading, error, refetch } = useDashboardStats();
+  const { properties: recentProperties, loading: loadingProperties } = useRecentProperties(4);
 
   if (loading) {
     return (
@@ -115,21 +116,21 @@ const AdminDashboard = () => {
           title="Publicadas"
           value={propertyStats.published}
           subtitle="Visibles al público"
-          icon="�️"
+          icon="👁️"
           color="teal"
         />
         <MetricCard
           title="Cerradas"
           value={propertyStats.closed}
           subtitle="Operaciones finalizadas"
-          icon="�"
+          icon="🔐"
           color="red"
         />
         <MetricCard
           title="Ingresos Totales"
           value={`${(summary.totalRevenue / 1000).toFixed(0)}K€`}
           subtitle="Todos los meses"
-          icon="�"
+          icon="💵"
           color="indigo"
         />
       </div>
@@ -147,7 +148,11 @@ const AdminDashboard = () => {
             </Link>
           </div>
           <div className="section-content">
-            <RecentPropertiesTable properties={[]} />
+            {loadingProperties ? (
+              <LoadingSpinner />
+            ) : (
+              <RecentPropertiesTable properties={recentProperties} />
+            )}
           </div>
         </div>
 

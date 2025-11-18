@@ -147,6 +147,21 @@ class DashboardService {
     
     return ((lastMonth.revenue - previousMonth.revenue) / previousMonth.revenue) * 100;
   }
+
+  /**
+   * Obtiene las propiedades más recientes
+   * @param {number} limit - Número máximo de propiedades a retornar (por defecto 4)
+   */
+  async getRecentProperties(limit = 4) {
+    try {
+      logger.info(`Obteniendo las últimas ${limit} propiedades`);
+      const properties = await viviendaRepository.getRecentProperties(limit);
+      return properties;
+    } catch (error) {
+      logger.error('Error obteniendo propiedades recientes:', error);
+      throw error;
+    }
+  }
 }
 
 export default new DashboardService();

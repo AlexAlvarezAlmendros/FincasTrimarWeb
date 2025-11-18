@@ -1,93 +1,79 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { formatPrice } from '../../../../utils/formatters';
 import './RecentPropertiesTable.css';
 
 /**
- * Componente de tabla para mostrar propiedades recientes en el dashboard
- * @param {Array} properties - Array de propiedades a mostrar
+ * Componente de tabla para mostrar propiedades recientes
  */
-const RecentPropertiesTable = ({ properties }) => {
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      published: { label: 'Disponible', class: 'status-published' },
-      draft: { label: 'Borrador', class: 'status-draft' },
-      pending: { label: 'Pendiente', class: 'status-pending' },
-      sold: { label: 'Vendida', class: 'status-sold' },
-      reserved: { label: 'Reservada', class: 'status-reserved' },
-      pending_capture: { label: 'Pdte. Captar', class: 'status-capture' }
-    };
-    
-    const config = statusConfig[status] || { label: status, class: 'status-default' };
-    
-    return <span className={`status-badge ${config.class}`}>{config.label}</span>;
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0
-    }).format(price);
-  };
-
+const RecentPropertiesTable = ({ properties = [] }) => {
   if (!properties || properties.length === 0) {
     return (
-      <div className="empty-state">
+      <div className="empty-properties">
         <p>No hay propiedades recientes para mostrar</p>
       </div>
     );
   }
 
   return (
-    <div className="data-table-container">
-      <table className="data-table">
+    <div className="recent-properties-table">
+      <table className="properties-table">
         <thead>
           <tr>
-            <th>Propiedad</th>
+            <th>Imagen</th>
+            <th>Nombre</th>
+            <th>Ubicación</th>
             <th>Precio</th>
             <th>Estado</th>
-            <th>Visitas</th>
-            <th>Fecha</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {properties.map(property => (
-            <tr key={property.id}>
-              <td>
-                <div className="property-info">
-                  <h4 className="property-name">{property.name}</h4>
-                  {property.location && (
-                    <p className="property-location">{property.location}</p>
-                  )}
-                </div>
+          {properties.map((property) => (
+            <tr key={property.Id}>
+              <td className="property-image-cell">
+                {property.IMGURL && property.IMGURL.length > 0 ? (
+                  <img 
+                    src={property.IMGURL[0]} 
+                    alt={property.Name}
+                    className="property-thumbnail"
+                  />
+                ) : (
+                  <div className="property-thumbnail-placeholder">
+                    🏠
+                  </div>
+                )}
               </td>
-              <td className="property-price">{formatPrice(property.price)}</td>
-              <td>{getStatusBadge(property.status)}</td>
-              <td className="property-views">{property.views}</td>
-              <td className="property-date">{formatDate(property.createdAt)}</td>
-              <td>
-                <div className="table-actions">
+              <td className="property-name-cell">
+                <Link to={`/admin/viviendas/${property.Id}`} className="property-name-link">
+                  {property.Name}
+                </Link>
+              </td>
+              <td className="property-location-cell">
+                {property.Poblacion || 'N/A'}
+              </td>
+              <td className="property-price-cell">
+                <strong>{formatPrice(property.Price)}</strong>
+              </td>
+              <td className="property-status-cell">
+                <span className={`status-badge status-${property.EstadoVenta?.toLowerCase()}`}>
+                  {property.EstadoVenta || 'N/A'}
+                </span>
+              </td>
+              <td className="property-actions-cell">
+                <div className="action-buttons">
                   <Link 
-                    to={`/admin/viviendas/${property.id}`}
-                    className="action-btn action-btn--sm"
-                    title="Ver detalles"
+                    to={`/viviendas/${property.Id}`} 
+                    className="btn-icon"
+                    title="Ver en página pública"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     👁️
                   </Link>
                   <Link 
-                    to={`/admin/viviendas/${property.id}/edit`}
-                    className="action-btn action-btn--sm"
+                    to={`/admin/viviendas/${property.Id}/editar`} 
+                    className="btn-icon"
                     title="Editar"
                   >
                     ✏️

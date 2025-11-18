@@ -691,6 +691,38 @@ class ViviendaRepository {
       throw error;
     }
   }
+
+  /**
+   * Obtiene las propiedades más recientes
+   * @param {number} limit - Número máximo de propiedades a retornar
+   */
+  async getRecentProperties(limit = 4) {
+    try {
+      const query = `
+        SELECT 
+          v.*,
+          GROUP_CONCAT(iv.URL, '|||') as imageUrls
+        FROM Vivienda v
+        LEFT JOIN ImagenesVivienda iv ON v.Id = iv.ViviendaId
+        WHERE v.Published = 1
+        GROUP BY v.Id
+        ORDER BY v.FechaPublicacion DESC
+        LIMIT ?
+      `;
+      
+      const result = await executeQuery(query, [limit]);
+      
+      // Procesar las imágenes
+      return result.rows.map(row => ({
+        ...row,
+        Caracteristicas: row.Caracteristicas ? JSON.parse(row.Caracteristicas) : [],
+        IMGURL: row.imageUrls ? row.imageUrls.split('|||').filter(url => url) : []
+      }));
+    } catch (error) {
+      logger.error('Error getting recent properties:', error);
+      throw error;
+    }
+  }
 }
 
 export default new ViviendaRepository();

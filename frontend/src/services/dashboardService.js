@@ -142,6 +142,41 @@ class DashboardService {
       throw error;
     }
   }
+
+  /**
+   * Obtiene las propiedades más recientes
+   * @param {Function} getAccessToken - Función para obtener el token de acceso de Auth0
+   * @param {number} limit - Número máximo de propiedades a obtener (por defecto 4)
+   */
+  async getRecentProperties(getAccessToken, limit = 4) {
+    try {
+      if (!getAccessToken) {
+        throw new Error('Función de autenticación requerida');
+      }
+
+      // Obtener token de autenticación
+      const token = await getAccessToken();
+
+      const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/recent-properties?limit=${limit}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al obtener propiedades recientes');
+      }
+      
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error('Error fetching recent properties:', error);
+      throw error;
+    }
+  }
 }
 
 // Crear instancia única del servicio

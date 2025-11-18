@@ -149,3 +149,39 @@ export const useLocationStats = () => {
     refetch: fetchLocationStats
   };
 };
+
+/**
+ * Hook para obtener las propiedades más recientes
+ */
+export const useRecentProperties = (limit = 4) => {
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { getAccessTokenSilently } = useAuth0();
+
+  const fetchRecentProperties = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const data = await dashboardService.getRecentProperties(getAccessTokenSilently, limit);
+      setProperties(data);
+    } catch (err) {
+      console.error('Error fetching recent properties:', err);
+      setError(err.message || 'Error al cargar propiedades recientes');
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessTokenSilently, limit]);
+
+  useEffect(() => {
+    fetchRecentProperties();
+  }, [fetchRecentProperties]);
+
+  return {
+    properties,
+    loading,
+    error,
+    refetch: fetchRecentProperties
+  };
+};

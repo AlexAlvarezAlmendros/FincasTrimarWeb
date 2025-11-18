@@ -85,6 +85,27 @@ const dashboardController = {
       logger.error('❌ Error getting location stats:', error);
       next(error);
     }
+  },
+
+  /**
+   * GET /api/v1/dashboard/recent-properties
+   * Obtiene las propiedades más recientes
+   */
+  async getRecentProperties(req, res, next) {
+    try {
+      const limit = parseInt(req.query.limit) || 4;
+      logger.info(`🏠 Obteniendo las últimas ${limit} propiedades`);
+      
+      const properties = await dashboardService.getRecentProperties(limit);
+      
+      res.json({
+        success: true,
+        data: properties
+      });
+    } catch (error) {
+      logger.error('❌ Error getting recent properties:', error);
+      next(error);
+    }
   }
 };
 
