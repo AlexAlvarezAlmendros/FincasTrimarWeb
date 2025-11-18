@@ -38,9 +38,9 @@ export default function Contacto() {
   return (
     <div className="contacto">
       {/* Header */}
-      <section className="contact-header">
-        <div className="container">
-          <div className="header-content">
+      <section className="contacto-contact-header">
+        <div className="contacto-container">
+          <div className="contacto-header-content">
             <h1 className="page-title-contacto">Contacta con nosotros</h1>
             <p className="page-subtitle-contacto">
               Estamos aquí para ayudarte con todas tus necesidades inmobiliarias. 
@@ -51,75 +51,75 @@ export default function Contacto() {
       </section>
 
       {/* Main Content */}
-      <section className="contact-content">
-        <div className="container">
-          <div className="content-grid">
+      <section className="contacto-contact-content">
+        <div className="contacto-container">
+          <div className="contacto-content-grid">
             
             {/* Contact Information */}
-            <div className="contact-info-contact">
-              <div className="info-card">
-                <div className="info-header">
+            <div className="contacto-contact-info-contact">
+              <div className="contacto-info-card">
+                <div className="contacto-info-header">
                   <h3>¿Cómo podemos ayudarte?</h3>
-                  <p className="info-subtitle">
+                  <p className="contacto-info-subtitle">
                     Múltiples formas de contactar con nosotros
                   </p>
                 </div>
                 
-                <div className="contact-methods">
-                  <div className="contact-method featured-method">
-                    <div className="method-icon phone-icon">
+                <div className="contacto-contact-methods">
+                  <div className="contacto-contact-method contacto-featured-method">
+                    <div className="contacto-method-icon contacto-phone-icon">
                       <span><FontAwesomeIcon icon="phone" /></span>
                     </div>
-                    <div className="method-content">
-                      <div className="method-header">
+                    <div className="contacto-method-content">
+                      <div className="contacto-method-header">
                         <h4>Llámanos directamente</h4>
-                        <span className="method-badge">Inmediato</span>
+                        <span className="contacto-method-badge">Inmediato</span>
                       </div>
-                      <div className="method-details">
-                        <a href="tel:+34615840273" className="primary-contact">
+                      <div className="contacto-method-details">
+                        <a href="tel:+34615840273" className="contacto-primary-contact">
                           615 84 02 73
                         </a>
-                        <div className="contact-hours">
-                          <span className="hour-item"><FontAwesomeIcon icon="calendar-alt" /> Lun - Vie: 9:00 - 18:00</span>
+                        <div className="contacto-contact-hours">
+                          <span className="contacto-hour-item"><FontAwesomeIcon icon="calendar-alt" /> Lun - Vie: 9:00 - 18:00</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="contact-method">
-                    <div className="method-icon email-icon">
+                  <div className="contacto-contact-method">
+                    <div className="contacto-method-icon contacto-email-icon">
                       <span><FontAwesomeIcon icon="envelope" /></span>
                     </div>
-                    <div className="method-content">
-                      <div className="method-header">
+                    <div className="contacto-method-content">
+                      <div className="contacto-method-header">
                         <h4>Escríbenos un email</h4>
-                        <span className="method-badge response-badge">24h respuesta</span>
+                        <span className="contacto-method-badge contacto-response-badge">24h respuesta</span>
                       </div>
-                      <div className="method-details">
-                        <a href="mailto:info@fincastrimar.com" className="primary-contact">
+                      <div className="contacto-method-details">
+                        <a href="mailto:info@fincastrimar.com" className="contacto-primary-contact">
                           info@fincastrimar.com
                         </a>
-                        <p className="method-description">
+                        <p className="contacto-method-description">
                           Para consultas detalladas, envío de documentos y solicitudes específicas
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="contact-method">
-                    <div className="method-icon whatsapp-icon">
+                  <div className="contacto-contact-method">
+                    <div className="contacto-method-icon contacto-whatsapp-icon">
                       <span>💬</span>
                     </div>
-                    <div className="method-content">
-                      <div className="method-header">
+                    <div className="contacto-method-content">
+                      <div className="contacto-method-header">
                         <h4>WhatsApp Business</h4>
-                        <span className="method-badge whatsapp-badge">Rápido</span>
+                        <span className="contacto-method-badge contacto-whatsapp-badge">Rápido</span>
                       </div>
-                      <div className="method-details">
-                        <a href="https://wa.me/34615840273" className="primary-contact" target="_blank" rel="noopener noreferrer">
+                      <div className="contacto-method-details">
+                        <a href="https://wa.me/34615840273" className="contacto-primary-contact" target="_blank" rel="noopener noreferrer">
                           Iniciar chat
                         </a>
-                        <p className="method-description">
+                        <p className="contacto-method-description">
                           Consultas rápidas, fotos de propiedades y respuestas inmediatas
                         </p>
                       </div>
@@ -127,8 +127,8 @@ export default function Contacto() {
                   </div>
                 </div>
 
-                <div className="contact-footer">
-                  <div className="emergency-contact">
+                <div className="contacto-contact-footer">
+                  <div className="contacto-emergency-contact">
                     <h4>🚨 Urgencias fuera de horario</h4>
                     <p>
                       Para emergencias relacionadas con propiedades en gestión, 
@@ -140,10 +140,10 @@ export default function Contacto() {
             </div>
 
             {/* Contact Form */}
-            <div className="contact-form-section">
-              <div className="form-card">
+            <div className="contacto-contact-form-section">
+              <div className="contacto-form-card">
                 <h3>Envíanos un mensaje</h3>
-                <p className="form-description">
+                <p className="contacto-form-description">
                   Completa el formulario y nos pondremos en contacto contigo lo antes posible.
                 </p>
 
@@ -162,7 +162,7 @@ export default function Contacto() {
                         className={errors.nombre ? 'error' : ''}
                       />
                       {errors.nombre && (
-                        <span className="field-error">{errors.nombre}</span>
+                        <span className="contacto-field-error">{errors.nombre}</span>
                       )}
                     </div>
 
@@ -179,7 +179,7 @@ export default function Contacto() {
                         className={errors.email ? 'error' : ''}
                       />
                       {errors.email && (
-                        <span className="field-error">{errors.email}</span>
+                        <span className="contacto-field-error">{errors.email}</span>
                       )}
                     </div>
                   </div>
@@ -197,7 +197,7 @@ export default function Contacto() {
                         className={errors.telefono ? 'error' : ''}
                       />
                       {errors.telefono && (
-                        <span className="field-error">{errors.telefono}</span>
+                        <span className="contacto-field-error">{errors.telefono}</span>
                       )}
                     </div>
 
@@ -220,7 +220,7 @@ export default function Contacto() {
                         <option value="otro">Otro</option>
                       </select>
                       {errors.asunto && (
-                        <span className="field-error">{errors.asunto}</span>
+                        <span className="contacto-field-error">{errors.asunto}</span>
                       )}
                     </div>
                   </div>
@@ -238,7 +238,7 @@ export default function Contacto() {
                       className={errors.descripcion ? 'error' : ''}
                     />
                     {errors.descripcion && (
-                      <span className="field-error">{errors.descripcion}</span>
+                      <span className="contacto-field-error">{errors.descripcion}</span>
                     )}
                   </div>
 
@@ -255,14 +255,14 @@ export default function Contacto() {
 
                   <button 
                     type="submit" 
-                    className="submit-button"
+                    className={`contacto-submit-button ${isSubmitting ? 'contacto-submitting' : ''}`}
                     disabled={isSubmitting || !canSubmit}
                   >
                     {isSubmitting ? 'Enviando...' : 'ENVIAR MENSAJE'}
                   </button>
 
                   {submitMessage && (
-                    <div className={`submit-message ${showError ? 'submit-message--error' : 'submit-message--success'}`}>
+                    <div className={`contacto-submit-message ${showError ? 'contacto-submit-message--error' : 'contacto-submit-message--success'}`}>
                       {submitMessage}
                     </div>
                   )}
@@ -274,12 +274,12 @@ export default function Contacto() {
       </section>
 
       {/* FAQ Section */}
-      <section className="faq-section">
-        <div className="container">
+      <section className="contacto-faq-section">
+        <div className="contacto-container">
           <h3>Preguntas frecuentes</h3>
           
-          <div className="faq-grid">
-            <div className="faq-item">
+          <div className="contacto-faq-grid">
+            <div className="contacto-faq-item">
               <h4>¿Cuánto cuesta vender mi inmueble?</h4>
               <p>
                 Nuestros honorarios son transparentes y competitivos. 
@@ -287,7 +287,7 @@ export default function Contacto() {
               </p>
             </div>
 
-            <div className="faq-item">
+            <div className="contacto-faq-item">
               <h4>¿Cuánto tiempo tarda en venderse una vivienda?</h4>
               <p>
                 El tiempo de venta depende de varios factores como ubicación, precio y estado. 
@@ -295,7 +295,7 @@ export default function Contacto() {
               </p>
             </div>
 
-            <div className="faq-item">
+            <div className="contacto-faq-item">
               <h4>¿Ofrecen servicio de valoración gratuita?</h4>
               <p>
                 Sí, ofrecemos valoraciones gratuitas y sin compromiso. 
@@ -303,7 +303,7 @@ export default function Contacto() {
               </p>
             </div>
 
-            <div className="faq-item">
+            <div className="contacto-faq-item">
               <h4>¿Trabajan con hipotecas?</h4>
               <p>
                 Colaboramos con las mejores entidades financieras para ayudar a nuestros clientes 
@@ -311,7 +311,7 @@ export default function Contacto() {
               </p>
             </div>
 
-            <div className="faq-item">
+            <div className="contacto-faq-item">
               <h4>¿Qué documentos necesito para vender?</h4>
               <p>
                 Te ayudamos con toda la documentación necesaria: escrituras, certificados energéticos, 
@@ -319,7 +319,7 @@ export default function Contacto() {
               </p>
             </div>
 
-            <div className="faq-item">
+            <div className="contacto-faq-item">
               <h4>¿Atienden fines de semana?</h4>
               <p>
                 Sí, atendemos los sábados por la mañana con cita previa. 

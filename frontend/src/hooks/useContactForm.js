@@ -263,6 +263,15 @@ const useContactForm = ({
     return Object.keys(validationErrors).length === 0;
   }, [formData, validateForm]);
 
+  /**
+   * Verificar si hay campos mínimos completados para habilitar el botón
+   */
+  const hasMinimumData = useCallback(() => {
+    return formData.nombre.trim().length > 0 || 
+           formData.email.trim().length > 0 || 
+           formData.descripcion.trim().length > 0;
+  }, [formData]);
+
   return {
     // Estados del formulario
     formData,
@@ -285,7 +294,7 @@ const useContactForm = ({
     // Computed properties para la UI
     showSuccess: submitType === 'success' && submitMessage,
     showError: submitType === 'error' && submitMessage,
-    canSubmit: !isSubmitting && isValid()
+    canSubmit: !isSubmitting // Solo deshabilitar durante el envío
   };
 };
 
