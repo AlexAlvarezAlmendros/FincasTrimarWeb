@@ -14,6 +14,7 @@ import { imagePublicRoutes, imagePrivateRoutes } from './routes/imageRoutes.js';
 import htmlParserRoutes from './routes/htmlParserRoutes.js';
 import { privateRoutes as dashboardPrivateRoutes } from './routes/dashboardRoutes.js';
 import csvImportRoutes from './routes/csvImportRoutes.js';
+import jsonImportRoutes from './routes/jsonImportRoutes.js';
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.use('/api/v1', messagePrivateRoutes);
 app.use('/api/v1', imagePrivateRoutes);
 app.use('/api/v1', dashboardPrivateRoutes);
 app.use('/api/v1/csv', csvImportRoutes);
+app.use('/api/v1/json', jsonImportRoutes);
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {

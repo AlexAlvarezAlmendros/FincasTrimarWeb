@@ -258,3 +258,28 @@ export const csvPropertySchema = z.object({
   Estado: z.any().optional(),
   Notas: z.any().optional()
 });
+
+// Esquema para importación JSON de viviendas
+export const jsonViviendaSchema = z.object({
+  // Campos principales (mapeados desde el JSON)
+  titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
+  precio_mostrar: z.string().optional(),
+  ubicacion: z.string().optional(),
+  habitaciones: z.number().int().min(0).max(20).nullable().optional(),
+  metros_cuadrados: z.number().int().min(0).max(2000).nullable().optional(),
+  descripcion: z.string().max(3000).optional(),
+  url_scrapping: z.string().url('URL no válida').optional(),
+  
+  // Campos derivados
+  anunciante: z.enum(['particular', 'inmobiliaria']).optional(),
+  fecha_scraping: z.date().optional(),
+  tipo_vivienda: z.string().optional(),
+  precio_negociable: z.boolean().optional(),
+  estado_conservacion: z.string().optional(),
+  
+  // Campos de captación
+  estado_venta: z.enum(['Pendiente', 'Contactada', 'Captada', 'Rechazada']).optional(),
+  fecha_captacion: z.date().optional(),
+  created_by: z.string().optional(),
+  origen_captacion: z.string().optional()
+});

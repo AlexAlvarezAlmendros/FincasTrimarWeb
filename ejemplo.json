@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-11-14T18:09:42.140496",
+  "url": "https://www.idealista.com/areas/venta-viviendas/?shape=%28%28gdh%7DFywmFs_NqcLa_Bwsi%40sxIkgUmEqvdA%7CkN%7BbH%60t%5CceIltPxpNdfDh%7DLvrB%60og%40re%40n%7Be%40cnNbdf%40ch%5Bl%60R%29%29",
+  "total": 110,
+  "particulares": 110,
+  "inmobiliarias": 0,
+  "viviendas": {
+    "todas": [
+      {
+        "titulo": "Ático en venta en Calle Ignasi Puig, 4",
+        "precio": "90.000€",
+        "ubicacion": "Poble Nou, Manresa",
+        "habitaciones": "3 hab.",
+        "metros": "70 m²",
+        "url": "https://www.idealista.com/inmueble/1603411/",
+        "descripcion": "Piso en manresa de 65 m2, 3 habitaciones, comedor 16 m2, cocina, baño completo y pequeño balcón. El piso dispone de aire acondicionado y gas natural. El precio sería negociable. Cualquier otra consulta a realizar será contestadadistribución:2 vecinos en el edificio.",
+        "anunciante": "Particular",
+        "fecha_scraping": "2025-11-14T16:29:32.742107"
+      },
+      {
+        "titulo": "Piso en venta en Calle Jacint Verdaguer, 17",
+        "precio": "190.000€",
+        "ubicacion": "Callús",
+        "habitaciones": "3 hab.",
+        "metros": "100 m²",
+        "url": "https://www.idealista.com/inmueble/1652277/",
+        "descripcion": "Piso obra nueva 98 m2 construidos, 3 habitaciones dobles, 2 baños completos (bañera hidromasaje, plato de ducha, muebles, espejos, iluminación), armarios empotrados, carpintería exterior aluminio, carpintería interior haya, suelo de gres porcelánico, 2 máquinas a/c (frío/calor), radiadores en todas las estancias, caldera gas natural, cocina completa equipada con horno de 90 cm. , campana inox 90 cm. , encimera modular (gas, vitro-grill, gas gigante), 2 terrazas, vídeo porterodistribución:terraza descubierta de 18 m25 vecinos en el edificio.",
+        "anunciante": "Particular",
+        "fecha_scraping": "2025-11-14T16:29:39.604084"
+      },
+      {
+        "titulo": "Piso en venta en Calle Xiprer, 6",
+        "precio": "135.000€",
+        "ubicacion": "Ctra. Vic - Remei, Manresa",
+        "habitaciones": "2 hab.",
+        "metros": "60 m²",
+        "url": "https://www.idealista.com/inmueble/1684924/",
+        "descripcion": "Piso de 2 habitaciones, con cocina, comedor, baño de 4 servicios (Lavabo, váter, bidet i dutxa) y trastero. El piso se vende con muebles incluidos y electrodomésticos (Encimera, campana decorativa, Horno, Microondas, Nevera combi, Lavavajillas y Lavadora-secadordistribución:4 vecinos en el edificio.",
+        "anunciante": "Particular",
+        "fecha_scraping": "2025-11-14T16:29:46.289645"
+      }
+    ]
+  }
+}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import propertyService from '../../../services/propertyService.js';
 import CaptacionEditModal from './CaptacionEditModal.jsx';
-import CsvImportButton from './CsvImportButton.jsx';
+import JsonImportButton from './JsonImportButton.jsx';
 import './CaptacionPage.css';
 
 // Estados de captación válidos según el modelo de datos
@@ -690,16 +690,10 @@ const CaptacionPage = () => {
           </p>
         </div>
         <div className="header-actions">
-          <Link to="/admin/viviendas" className="btn btn--secondary">
-            📋 Ver todas
-          </Link>
-          <CsvImportButton onImportComplete={() => {
+          <JsonImportButton onImportComplete={() => {
             // Recargar las propiedades y estadísticas después de importar
             refetchAll();
           }} />
-          <Link to="/admin/viviendas/crear" className="btn btn--primary">
-            ➕ Nueva vivienda
-          </Link>
         </div>
       </div>
 
