@@ -186,8 +186,8 @@ ${infoVivienda}`;
   // Estados de carga y error
   if (loadingProperty) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
+      <div className="detalle-loading-container">
+        <div className="detalle-loading-spinner"></div>
         <p>Cargando vivienda...</p>
       </div>
     );
@@ -195,12 +195,12 @@ ${infoVivienda}`;
 
   if (errorProperty || !property) {
     return (
-      <div className="error-container">
+      <div className="detalle-error-container">
         <h1>Vivienda no encontrada</h1>
         <p>
           {propertyError || 'La vivienda que buscas no existe o ha sido eliminada.'}
         </p>
-        <Link to="/viviendas" className="back-link">Volver al listado</Link>
+        <Link to="/viviendas" className="detalle-back-link">Volver al listado</Link>
       </div>
     );
   }
@@ -209,7 +209,7 @@ ${infoVivienda}`;
     <div className="detalle">
       <div className="container">
         {/* Breadcrumb */}
-        <nav className="breadcrumb">
+        <nav className="detalle-breadcrumb">
           <Link to="/">Inicio</Link>
           <span>›</span>
           <Link to="/viviendas">Viviendas</Link>
@@ -218,15 +218,15 @@ ${infoVivienda}`;
         </nav>
 
         {/* Hero Gallery */}
-        <section className="hero-gallery">
-          <div className="main-image" onClick={() => openLightbox(0)}>
+        <section className="detalle-hero-gallery">
+          <div className="detalle-main-image" onClick={() => openLightbox(0)}>
             <img 
               src={property.imagenes && property.imagenes.length > 0 
                 ? property.imagenes[0].URL 
                 : '/api/placeholder/800/600'} 
               alt={property.name} 
             />
-            <div className="view-all-images">
+            <div className="detalle-view-all-images">
               {property.imagenes && property.imagenes.length > 1 
                 ? `Ver todas las imágenes (${property.imagenes.length})` 
                 : 'Ver imagen'}
@@ -235,62 +235,62 @@ ${infoVivienda}`;
         </section>
 
         {/* Property Header */}
-        <section className="property-header">
-          <div className="property-main-info">
-            <h1 className="property-title">{property.name}</h1>
-            <p className="property-lead">{property.shortDescription}</p>
+        <section className="detalle-property-header">
+          <div className="detalle-property-main-info">
+            <h1 className="detalle-property-title">{property.name}</h1>
+            <p className="detalle-property-lead">{property.shortDescription}</p>
             
-            <div className="property-tags">
-              <span className="chip chip-green">{property.tipoInmueble}</span>
-              <span className="chip chip-yellow">{property.tipoVivienda}</span>
-              <span className="chip chip-purple">{property.tipoAnuncio}</span>
+            <div className="detalle-property-tags">
+              <span className="detalle-chip detalle-chip-green">{property.tipoInmueble}</span>
+              <span className="detalle-chip detalle-chip-yellow">{property.tipoVivienda}</span>
+              <span className="detalle-chip detalle-chip-purple">{property.tipoAnuncio}</span>
             </div>
             
-            <div className="property-price-specs">
-              <div className="price-section">
-                <span className="price-detalle" aria-label={`Precio: ${property.price.toLocaleString('es-ES')} euros`}>
+            <div className="detalle-property-price-specs">
+              <div className="detalle-price-section">
+                <span className="detalle-price-detalle" aria-label={`Precio: ${property.price.toLocaleString('es-ES')} euros`}>
                   {property.price.toLocaleString('es-ES')}
                 </span>
               </div>
               
-              <div className="specs-grid-detalle">
+              <div className="detalle-specs-grid-detalle">
                 {property.rooms > 0 && (
-                  <div className="spec">
-                    <span className="spec-value">{property.rooms}</span>
-                    <span className="spec-label">Habitaciones</span>
+                  <div className="detalle-spec">
+                    <span className="detalle-spec-value">{property.rooms}</span>
+                    <span className="detalle-spec-label">Habitaciones</span>
                   </div>
                 )}
                 {property.bathRooms > 0 && (
-                  <div className="spec">
-                    <span className="spec-value">{property.bathRooms}</span>
-                    <span className="spec-label">Baños</span>
+                  <div className="detalle-spec">
+                    <span className="detalle-spec-value">{property.bathRooms}</span>
+                    <span className="detalle-spec-label">Baños</span>
                   </div>
                 )}
-                <div className="spec">
-                  <span className="spec-value">{property.squaredMeters}</span>
-                  <span className="spec-label">M²</span>
+                <div className="detalle-spec">
+                  <span className="detalle-spec-value">{property.squaredMeters}</span>
+                  <span className="detalle-spec-label">M²</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <div className="content-grid">
-          <main className="main-content-detalle">
+        <div className="detalle-content-grid">
+          <main className="detalle-main-content-detalle">
             {/* Description */}
-            <section className="description-section">
+            <section className="detalle-description-section">
               <h2>Descripción</h2>
               <SafeHtmlRenderer 
                 content={property.description}
-                className="description-content html-content"
+                className="detalle-description-content detalle-html-content"
               />
             </section>
 
             {/* Características */}
             {property.caracteristicas && property.caracteristicas.length > 0 && (
-              <section className="features-section">
+              <section className="detalle-features-section">
                 <h3>Características principales</h3>
-                <ul className="features-list">
+                <ul className="detalle-features-list">
                   {property.caracteristicas.map((feature, index) => (
                     <li key={index}>
                       {typeof feature === 'object' ? feature.name || feature.caracteristica : feature}
@@ -302,11 +302,11 @@ ${infoVivienda}`;
 
             {/* Distribución - Solo mostrar si existe */}
             {property.distribucion && (
-              <section className="distribution-section">
+              <section className="detalle-distribution-section">
                 <h3>Distribución</h3>
                 <SafeHtmlRenderer 
                   content={property.distribucion}
-                  className="html-content"
+                  className="detalle-html-content"
                   tag="div"
                 />
               </section>
@@ -314,38 +314,38 @@ ${infoVivienda}`;
 
             {/* Destacado - Solo mostrar si existe */}
             {property.destacado && (
-              <section className="highlight-section">
+              <section className="detalle-highlight-section">
                 <h3>Extra destacado</h3>
                 <SafeHtmlRenderer 
                   content={property.destacado}
-                  className="highlight-text html-content"
+                  className="detalle-highlight-text detalle-html-content"
                   tag="div"
                 />
               </section>
             )}
 
             {/* Ubicación */}
-            <section className="location-section">
+            <section className="detalle-location-section">
               <h3>Ubicación</h3>
-              <div className="location-map">
+              <div className="detalle-location-map">
                 <GoogleMapEmbed
                   calle={property.calle}
                   numero={property.numero}
                   poblacion={property.poblacion}
                   provincia={property.provincia}
                   height="400px"
-                  className="property-map"
+                  className="detalle-property-map"
                 />
               </div>
             </section>
 
             {/* Gallery - Solo mostrar si hay imágenes */}
             {property.imagenes && property.imagenes.length > 0 && (
-              <section className="gallery-section">
+              <section className="detalle-gallery-section">
                 <h3>Imágenes</h3>
-                <div className="image-grid">
+                <div className="detalle-image-grid-detalle">
                   {property.imagenes.map((imagen, index) => (
-                    <div key={imagen.Id || index} className="gallery-item" onClick={() => openLightbox(index)}>
+                    <div key={imagen.Id || index} className="detalle-gallery-item" onClick={() => openLightbox(index)}>
                       <img 
                         src={imagen.URL} 
                         alt={`${property.name} - Imagen ${index + 1}`} 
@@ -359,9 +359,9 @@ ${infoVivienda}`;
 
             {/* Plano - Solo mostrar si existe */}
             {property.planoUrl && (
-              <section className="floorplan-section">
+              <section className="detalle-floorplan-section">
                 <h3>Plano de la vivienda</h3>
-                <div className="floorplan">
+                <div className="detalle-floorplan">
                   <img 
                     src={property.planoUrl} 
                     alt="Plano con distribución y medidas aproximadas" 
@@ -371,14 +371,14 @@ ${infoVivienda}`;
             )}
           </main>
 
-          <aside className="sidebar">
+          <aside className="detalle-sidebar">
             {/* Contact Form */}
-            <div className="contact-form-container">
+            <div className="detalle-contact-form-container">
               <h3>Agenda una visita</h3>
               
               {/* Mensajes de estado */}
               {showSuccess && (
-                <div className="success-message" style={{
+                <div className="detalle-success-message" style={{
                   background: '#d4edda',
                   color: '#155724',
                   padding: '12px',
@@ -391,7 +391,7 @@ ${infoVivienda}`;
               )}
               
               {showError && (
-                <div className="error-message" style={{
+                <div className="detalle-error-message" style={{
                   background: '#f8d7da',
                   color: '#721c24',
                   padding: '12px',
@@ -403,8 +403,8 @@ ${infoVivienda}`;
                 </div>
               )}
               
-              <form onSubmit={handleContactFormSubmit} className="contact-form">
-                <div className="form-group">
+              <form onSubmit={handleContactFormSubmit} className="detalle-contact-form">
+                <div className="detalle-form-group">
                   <textarea
                     placeholder="¿Estás interesado en agendar una visita para este inmueble?"
                     value={formData.descripcion}
@@ -414,10 +414,10 @@ ${infoVivienda}`;
                     disabled={isSubmitting}
                     className={errors.descripcion ? 'error' : ''}
                   />
-                  {errors.descripcion && <div className="field-error">{errors.descripcion}</div>}
+                  {errors.descripcion && <div className="detalle-field-error">{errors.descripcion}</div>}
                 </div>
                 
-                <div className="form-group">
+                <div className="detalle-form-group">
                   <input
                     type="text"
                     placeholder="Tu nombre *"
@@ -427,10 +427,10 @@ ${infoVivienda}`;
                     disabled={isSubmitting}
                     className={errors.nombre ? 'error' : ''}
                   />
-                  {errors.nombre && <div className="field-error">{errors.nombre}</div>}
+                  {errors.nombre && <div className="detalle-field-error">{errors.nombre}</div>}
                 </div>
                 
-                <div className="form-group">
+                <div className="detalle-form-group">
                   <input
                     type="email"
                     placeholder="Tu Email *"
@@ -440,10 +440,10 @@ ${infoVivienda}`;
                     disabled={isSubmitting}
                     className={errors.email ? 'error' : ''}
                   />
-                  {errors.email && <div className="field-error">{errors.email}</div>}
+                  {errors.email && <div className="detalle-field-error">{errors.email}</div>}
                 </div>
                 
-                <div className="form-group">
+                <div className="detalle-form-group">
                   <input
                     type="tel"
                     placeholder="Tu Teléfono"
@@ -452,12 +452,12 @@ ${infoVivienda}`;
                     disabled={isSubmitting}
                     className={errors.telefono ? 'error' : ''}
                   />
-                  {errors.telefono && <div className="field-error">{errors.telefono}</div>}
+                  {errors.telefono && <div className="detalle-field-error">{errors.telefono}</div>}
                 </div>
                 
                 <button 
                   type="submit" 
-                  className="submit-button"
+                  className="detalle-submit-button"
                   disabled={isSubmitting}
                   style={isSubmitting ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
                 >
@@ -466,7 +466,7 @@ ${infoVivienda}`;
 
                 {/* Mensaje de error al final del formulario */}
                 {showError && (
-                  <div className="form-error-message" style={{
+                  <div className="detalle-form-error-message" style={{
                     background: '#f8d7da',
                     color: '#721c24',
                     padding: '16px',
@@ -484,9 +484,9 @@ ${infoVivienda}`;
               </form>
               
               {/* Botón y número de teléfono */}
-              <div className="phone-section">
+              <div className="detalle-phone-section">
                 <button 
-                  className="phone-toggle-button"
+                  className="detalle-phone-toggle-button"
                   onClick={() => setShowPhoneNumber(!showPhoneNumber)}
                   type="button"
                 >
@@ -494,9 +494,9 @@ ${infoVivienda}`;
                 </button>
                 
                 {showPhoneNumber && (
-                  <div className="phone-display">
-                    <p className="phone-text">O si prefieres, llámanos directamente al:</p>
-                    <a href="tel:+34615840273" className="phone-number">
+                  <div className="detalle-phone-display">
+                    <p className="detalle-phone-text">O si prefieres, llámanos directamente al:</p>
+                    <a href="tel:+34615840273" className="detalle-phone-number">
                       615 84 02 73
                     </a>
                   </div>
@@ -508,17 +508,17 @@ ${infoVivienda}`;
 
         {/* Similar Properties */}
         {!loadingSimilar && similarProperties && similarProperties.length > 0 && (
-          <section className="similar-properties">
-            <div className="section-header">
+          <section className="detalle-similar-properties">
+            <div className="detalle-section-header">
               <h3>Inmuebles similares</h3>
-              <Link to="/viviendas" className="view-more-link">VER MÁS</Link>
+              <Link to="/viviendas" className="detalle-view-more-link">VER MÁS</Link>
             </div>
             
-            <div className="similar-grid">
+            <div className="detalle-similar-grid">
               {similarProperties.map((similar) => (
-                <article key={similar.id} className="similar-card">
+                <article key={similar.id} className="detalle-similar-card">
                   <Link to={`/viviendas/${similar.id}`}>
-                    <div className="similar-image">
+                    <div className="detalle-similar-image">
                       <img 
                         src={similar.imagenes && similar.imagenes.length > 0 
                           ? similar.imagenes[0].URL 
@@ -528,15 +528,15 @@ ${infoVivienda}`;
                       />
                     </div>
                     
-                    <div className="similar-info">
-                      <h4 className="similar-title">{similar.name}</h4>
-                      <div className="similar-specs">
+                    <div className="detalle-similar-info">
+                      <h4 className="detalle-similar-title">{similar.name}</h4>
+                      <div className="detalle-similar-specs">
                         {similar.rooms > 0 && <span>{similar.rooms} hab</span>}
                         <span>{similar.squaredMeters} m²</span>
                         {similar.bathRooms > 0 && <span>{similar.bathRooms} baños</span>}
                         {similar.garage > 0 && <span>{similar.garage} garajes</span>}
                       </div>
-                      <div className="similar-price">
+                      <div className="detalle-similar-price">
                         {similar.price.toLocaleString('es-ES')} €
                       </div>
                     </div>
@@ -548,11 +548,11 @@ ${infoVivienda}`;
         )}
         
         {loadingSimilar && (
-          <section className="similar-properties">
-            <div className="section-header">
+          <section className="detalle-similar-properties">
+            <div className="detalle-section-header">
               <h3>Inmuebles similares</h3>
             </div>
-            <div className="loading-similar">
+            <div className="detalle-loading-similar">
               <p>Cargando propiedades similares...</p>
             </div>
           </section>
@@ -561,20 +561,20 @@ ${infoVivienda}`;
 
       {/* Lightbox */}
       {showLightbox && property?.imagenes && property.imagenes.length > 0 && (
-        <div className="lightbox" onClick={closeLightbox}>
-          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
-            <button className="lightbox-close" onClick={closeLightbox}>×</button>
+        <div className="detalle-lightbox" onClick={closeLightbox}>
+          <div className="detalle-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <button className="detalle-lightbox-close" onClick={closeLightbox}>×</button>
             {property.imagenes.length > 1 && (
               <>
-                <button className="lightbox-prev" onClick={prevImage}>‹</button>
-                <button className="lightbox-next" onClick={nextImage}>›</button>
+                <button className="detalle-lightbox-prev" onClick={prevImage}>‹</button>
+                <button className="detalle-lightbox-next" onClick={nextImage}>›</button>
               </>
             )}
             <img 
               src={property.imagenes[currentImageIndex]?.URL || '/api/placeholder/800/600'} 
               alt={`${property.name} - Imagen ${currentImageIndex + 1}`} 
             />
-            <div className="lightbox-counter">
+            <div className="detalle-lightbox-counter">
               {currentImageIndex + 1} / {property.imagenes.length}
             </div>
           </div>
