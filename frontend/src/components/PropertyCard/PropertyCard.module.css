@@ -1,6 +1,7 @@
 /* 
 PropertyCard Component Styles - CSS MODULE
 Sigue el sistema de diseño definido en las instrucciones
+Nomenclatura: BEM - .propertyCard-elemento
 */
 
 .propertyCard {
@@ -34,14 +35,14 @@ Sigue el sistema de diseño definido en las instrucciones
   transform: translateY(0);
 }
 
-.imageContainer {
+.propertyCard-imageContainer {
   position: relative;
   flex-shrink: 0;
   width: 30%;
-  height: 100%;
+  aspect-ratio: 1;
 }
 
-.statusBadge {
+.propertyCard-statusBadge {
   position: absolute;
   top: var(--spacing-sm);
   left: var(--spacing-sm);
@@ -58,13 +59,13 @@ Sigue el sistema de diseño definido en las instrucciones
   animation: fadeInScale 0.3s ease-out;
 }
 
-.statusBadge[data-status="reserved"] {
+.propertyCard-statusBadge[data-status="reserved"] {
   background: rgba(245, 158, 11, 0.95);
   color: white;
   border: 2px solid rgba(245, 158, 11, 1);
 }
 
-.statusBadge[data-status="sold"] {
+.propertyCard-statusBadge[data-status="sold"] {
   background: rgba(16, 185, 129, 0.95);
   color: white;
   border: 2px solid rgba(16, 185, 129, 1);
@@ -81,7 +82,7 @@ Sigue el sistema de diseño definido en las instrucciones
   }
 }
 
-.image {
+.propertyCard-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -89,7 +90,7 @@ Sigue el sistema de diseño definido en las instrucciones
   cursor: pointer;
 }
 
-.imageCount {
+.propertyCard-imageCount {
   position: absolute;
   bottom: var(--spacing-xs);
   right: var(--spacing-xs);
@@ -101,7 +102,7 @@ Sigue el sistema de diseño definido en las instrucciones
   pointer-events: none;
 }
 
-.content {
+.propertyCard-content {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -110,7 +111,7 @@ Sigue el sistema de diseño definido en las instrucciones
   overflow: hidden; /* Previene desbordamiento horizontal */
 }
 
-.title {
+.propertyCard-title {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   color: var(--color-neutral-800);
@@ -128,7 +129,7 @@ Sigue el sistema de diseño definido en las instrucciones
   hyphens: auto;
 }
 
-.description {
+.propertyCard-description {
   font-size: var(--font-size-sm);
   color: var(--color-neutral-600);
   margin: 0;
@@ -144,7 +145,7 @@ Sigue el sistema de diseño definido en las instrucciones
   word-break: break-word;
 }
 
-.specsGrid {
+.propertyCard-specsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   gap: var(--spacing-xs);
@@ -152,26 +153,26 @@ Sigue el sistema de diseño definido en las instrucciones
   color: var(--color-neutral-600);
 }
 
-.specsGrid span {
+.propertyCard-specsGrid span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.tags {
+.propertyCard-tags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
   align-items: center;
 }
 
-.footer {
+.propertyCard-footer {
   margin-top: auto;
   display: flex;
   justify-content: flex-end;
 }
 
-.priceBtn {
+.propertyCard-priceBtn {
   background: var(--color-neutral-50);
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-pill);
@@ -180,22 +181,22 @@ Sigue el sistema de diseño definido en las instrucciones
   transition: all 0.2s ease;
 }
 
-.priceBtn:hover {
+.propertyCard-priceBtn:hover {
   background: var(--color-neutral-100);
 }
 
-.priceBtn:focus {
+.propertyCard-priceBtn:focus {
   outline: 2px solid var(--color-brand-primary);
   outline-offset: 2px;
 }
 
-.price {
+.propertyCard-price {
   font-weight: var(--font-weight-medium);
   color: var(--color-neutral-800);
 }
 
 /* Chips para etiquetas */
-.chip {
+.propertyCard-chip {
   display: inline-block;
   padding: 4px 8px;
   border-radius: var(--radius-pill);
@@ -208,17 +209,17 @@ Sigue el sistema de diseño definido en las instrucciones
   max-width: 120px; /* Limita el ancho máximo de los chips */
 }
 
-.chipGreen {
+.propertyCard-chipGreen {
   background: var(--color-success);
   color: white;
 }
 
-.chipYellow {
+.propertyCard-chipYellow {
   background: var(--color-warning);
   color: white;
 }
 
-.chipPurple {
+.propertyCard-chipPurple {
   background: var(--color-info);
   color: white;
 }
@@ -231,61 +232,61 @@ Sigue el sistema de diseño definido en las instrucciones
     gap: 0;
   }
 
-  .imageContainer {
+  .propertyCard-imageContainer {
     width: 100%;
-    height: 200px;
+    aspect-ratio: 1;
     margin-bottom: var(--spacing-md);
   }
 
-  .statusBadge {
+  .propertyCard-statusBadge {
     top: var(--spacing-xs);
     left: var(--spacing-xs);
     font-size: var(--font-size-xs);
     padding: 4px var(--spacing-sm);
   }
 
-  .image {
+  .propertyCard-image {
     width: 100%;
     height: 100%;
     border-radius: var(--radius-md);
   }
 
-  .imageCount {
+  .propertyCard-imageCount {
     position: absolute;
     bottom: var(--spacing-sm);
     right: var(--spacing-sm);
   }
 
-  .content {
+  .propertyCard-content {
     gap: var(--spacing-sm);
   }
 
-  .title {
+  .propertyCard-title {
     font-size: var(--font-size-lg);
     margin-bottom: var(--spacing-xs);
   }
 
-  .description {
+  .propertyCard-description {
     margin-bottom: var(--spacing-sm);
   }
 
-  .specsGrid {
+  .propertyCard-specsGrid {
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
   }
 
-  .tags {
+  .propertyCard-tags {
     justify-content: flex-start;
     margin-bottom: var(--spacing-sm);
   }
 
-  .footer {
+  .propertyCard-footer {
     justify-content: stretch;
     margin-top: 0;
   }
 
-  .priceBtn {
+  .propertyCard-priceBtn {
     width: 100%;
     display: flex;
     justify-content: center;
@@ -298,20 +299,20 @@ Sigue el sistema de diseño definido en las instrucciones
     padding: var(--spacing-sm);
   }
 
-  .imageContainer {
-    height: 180px;
+  .propertyCard-imageContainer {
+    aspect-ratio: 1;
     margin-bottom: var(--spacing-sm);
   }
 
-  .content {
+  .propertyCard-content {
     gap: var(--spacing-xs);
   }
 
-  .title {
+  .propertyCard-title {
     font-size: var(--font-size-md);
   }
 
-  .specsGrid {
+  .propertyCard-specsGrid {
     gap: var(--spacing-xs);
   }
 }

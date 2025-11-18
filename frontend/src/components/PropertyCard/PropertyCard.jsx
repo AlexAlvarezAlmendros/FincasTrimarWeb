@@ -39,15 +39,14 @@ const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
   // Función para obtener el badge de estado
   const getStatusBadge = () => {
     if (property.estadoVenta === 'Reservada') {
-      return (
-        <div className={styles.statusBadge} data-status="reserved">
+      return (        <div className={styles['propertyCard-statusBadge']} data-status="reserved">
           🔒 Reservada
         </div>
       );
     }
     if (property.estadoVenta === 'Vendida') {
       return (
-        <div className={styles.statusBadge} data-status="sold">
+        <div className={styles['propertyCard-statusBadge']} data-status="sold">
           ✅ Vendida
         </div>
       );
@@ -64,48 +63,48 @@ const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
       role="button"
       aria-label={`Ver detalles de ${property.name}`}
     >
-      <div className={styles.imageContainer}>
+      <div className={styles['propertyCard-imageContainer']}>
         {getStatusBadge()}
         <img 
           src={property.mainImage || '/placeholder-house.jpg'} 
           alt={property.name}
-          className={styles.image}
+          className={styles['propertyCard-image']}
           onClick={handleImageClick}
           loading="lazy"
         />
         {property.images?.length > 1 && (
-          <span className={styles.imageCount}>
+          <span className={styles['propertyCard-imageCount']}>
             Ver todas las imágenes
           </span>
         )}
       </div>
       
-      <div className={styles.content}>
+      <div className={styles['propertyCard-content']}>
         <header>
-          <h3 className={styles.title}>{property.name}</h3>
-          <p className={styles.description}>{property.shortDescription}</p>
+          <h3 className={styles['propertyCard-title']}>{property.name}</h3>
+          <p className={styles['propertyCard-description']}>{property.shortDescription}</p>
         </header>
         
-        <div className={styles.specsGrid}>
+        <div className={styles['propertyCard-specsGrid']}>
           {property.rooms > 0 && <span>{property.rooms} Habitaciones</span>}
           {property.garage > 0 && <span>{property.garage} Garajes</span>}
           <span>{property.squaredMeters} M²</span>
           {property.bathRooms > 0 && <span>{property.bathRooms} Baños</span>}
         </div>
         
-        <div className={styles.tags}>
-          <span className={`${styles.chip} ${styles.chipGreen}`}>{property.tipoInmueble}</span>
-          <span className={`${styles.chip} ${styles.chipYellow}`}>{property.tipoVivienda}</span>
-          <span className={`${styles.chip} ${styles.chipPurple}`}>{property.tipoAnuncio}</span>
+        <div className={styles['propertyCard-tags']}>
+          <span className={`${styles['propertyCard-chip']} ${styles['propertyCard-chipGreen']}`}>{property.tipoInmueble}</span>
+          <span className={`${styles['propertyCard-chip']} ${styles['propertyCard-chipYellow']}`}>{property.tipoVivienda}</span>
+          <span className={`${styles['propertyCard-chip']} ${styles['propertyCard-chipPurple']}`}>{property.tipoAnuncio}</span>
         </div>
         
-        <footer className={styles.footer}>
+        <footer className={styles['propertyCard-footer']}>
           <button 
-            className={styles.priceBtn}
+            className={styles['propertyCard-priceBtn']}
             onClick={handleDetailsClick}
             aria-label={`Ver detalles de ${property.name}`}
           >
-            <span className={styles.price}>
+            <span className={styles['propertyCard-price']}>
               {formatPrice(property.price)}
             </span>
           </button>
