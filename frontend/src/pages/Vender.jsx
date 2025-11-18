@@ -25,10 +25,76 @@ export default function Vender() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     updateField(name, value);
+    
+    // Limpiar error de este campo cuando el usuario empiece a escribir
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    
+    // Validar solo el campo que perdió el foco
+    const fieldErrors = {};
+    
+    if (name === 'nombre') {
+      if (!formData.nombre || formData.nombre.trim().length < 3) {
+        fieldErrors.nombre = 'El nombre debe tener al menos 3 caracteres';
+      }
+    }
+    
+    if (name === 'telefono') {
+      if (!formData.telefono || formData.telefono.trim().length === 0) {
+        fieldErrors.telefono = 'El teléfono es obligatorio';
+      } else {
+        const phoneRegex = /^[+]?[\d\s\-()]{9,}$/;
+        const digitsOnly = formData.telefono.replace(/[^\d]/g, '');
+        
+        if (digitsOnly.length < 9 || !phoneRegex.test(formData.telefono.trim())) {
+          fieldErrors.telefono = 'Introduce un número de teléfono válido (mínimo 9 dígitos)';
+        }
+      }
+    }
+    
+    if (Object.keys(fieldErrors).length > 0) {
+      setValidationErrors(prev => ({
+        ...prev,
+        ...fieldErrors
+      }));
+    }
+  };
+
+  const validateVenderForm = () => {
+    const newErrors = {};
+
+    // Validar nombre (mínimo 3 caracteres)
+    if (!formData.nombre || formData.nombre.trim().length < 3) {
+      newErrors.nombre = 'El nombre debe tener al menos 3 caracteres';
+    }
+
+    // Validar teléfono (requerido y formato válido)
+    if (!formData.telefono || formData.telefono.trim().length === 0) {
+      newErrors.telefono = 'El teléfono es obligatorio';
+    } else {
+      // Formato: acepta números, espacios, guiones, paréntesis y + (mínimo 9 dígitos)
+      const phoneRegex = /^[+]?[\d\s\-()]{9,}$/;
+      const digitsOnly = formData.telefono.replace(/[^\d]/g, '');
+      
+      if (digitsOnly.length < 9 || !phoneRegex.test(formData.telefono.trim())) {
+        newErrors.telefono = 'Introduce un número de teléfono válido (mínimo 9 dígitos)';
+      }
+    }
+
+    return newErrors;
   };
 
   const handleSubmit = async (e) => {
@@ -40,6 +106,18 @@ export default function Vender() {
     setShowSuccess(false);
     setShowError(false);
     setErrorMessage('');
+    
+    // Validar formulario antes de enviar
+    const newValidationErrors = validateVenderForm();
+    
+    if (Object.keys(newValidationErrors).length > 0) {
+      setValidationErrors(newValidationErrors);
+      setErrorMessage('Por favor, corrige los errores en el formulario');
+      setShowError(true);
+      return;
+    }
+    
+    setValidationErrors({});
     setIsSubmitting(true);
     
     try {
@@ -128,14 +206,14 @@ Este contacto proviene de la página de "Vender" de la web.`;
   return (
     <div className="vender-page">
       {/* Hero Section */}
-      <section className="hero-section" aria-labelledby="hero-title">
+      <section className="vender-heroSection" aria-labelledby="hero-title">
         <div className="container">
-          <div className="hero-content">
-            <div className="hero-text">
-              <h1 id="hero-title" className="hero-title">
+          <div className="vender-heroContent">
+            <div className="vender-heroText">
+              <h1 id="hero-title" className="vender-heroTitle">
                 Vende tu inmueble hoy mismo
               </h1>
-              <p className="hero-subtitle">
+              <p className="vender-heroSubtitle">
                 <strong>Vende tu inmueble de forma rápida y sencilla</strong><br />
                 <strong>con nosotros!</strong>
               </p>
@@ -145,17 +223,17 @@ Este contacto proviene de la página de "Vender" de la web.`;
       </section>
 
       {/* Overlapping Contact Form Section */}
-      <section className="vender-form-section" aria-labelledby="form-title">
+      <section className="vender-formSection" aria-labelledby="form-title">
         <div className="container">
-          <div className="form-container">
-            <div className="form-card">
-              <p className="form-intro">
+          <div className="vender-formContainer">
+            <div className="vender-formCard">
+              <p className="vender-formIntro">
                 <strong>Agenda una llamada y te informaremos de todo. Sin Compromiso</strong>
               </p>
               
-              <form onSubmit={handleSubmit} className="vender-contact-form" noValidate>
-                <div className="vender-form-group">
-                  <label htmlFor="nombre" className="vender-form-label">
+              <form onSubmit={handleSubmit} className="vender-contactForm" noValidate>
+                <div className="vender-formGroup">
+                  <label htmlFor="nombre" className="vender-formLabel">
                     Tu nombre *
                   </label>
                   <input
@@ -164,19 +242,21 @@ Este contacto proviene de la página de "Vender" de la web.`;
                     name="nombre"
                     value={formData.nombre}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     required
                     aria-required="true"
-                    className={`vender-form-input ${errors.nombre ? 'error' : ''}`}
+                    className={`vender-formInput ${validationErrors.nombre ? 'error' : ''}`}
                     placeholder="Introduce tu nombre completo"
                     disabled={isSubmitting}
+                    aria-invalid={validationErrors.nombre ? 'true' : 'false'}
                   />
-                  {errors.nombre && (
-                    <span className="field-error">{errors.nombre}</span>
+                  {validationErrors.nombre && (
+                    <span className="vender-fieldError" role="alert">{validationErrors.nombre}</span>
                   )}
                 </div>
 
-                <div className="vender-form-group">
-                  <label htmlFor="telefono" className="vender-form-label">
+                <div className="vender-formGroup">
+                  <label htmlFor="telefono" className="vender-formLabel">
                     Tu teléfono *
                   </label>
                   <input
@@ -185,20 +265,22 @@ Este contacto proviene de la página de "Vender" de la web.`;
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
                     required
                     aria-required="true"
-                    className={`vender-form-input ${errors.telefono ? 'error' : ''}`}
+                    className={`vender-formInput ${validationErrors.telefono ? 'error' : ''}`}
                     placeholder="Introduce tu número de teléfono"
                     disabled={isSubmitting}
+                    aria-invalid={validationErrors.telefono ? 'true' : 'false'}
                   />
-                  {errors.telefono && (
-                    <span className="field-error">{errors.telefono}</span>
+                  {validationErrors.telefono && (
+                    <span className="vender-fieldError" role="alert">{validationErrors.telefono}</span>
                   )}
                 </div>
 
                 <button 
                   type="submit" 
-                  className="submit-button"
+                  className="vender-submitButton"
                   disabled={isSubmitting}
                   aria-describedby="submit-status"
                 >
@@ -207,7 +289,7 @@ Este contacto proviene de la página de "Vender" de la web.`;
 
                 {/* Mensaje de éxito al final del formulario */}
                 {showSuccess && (
-                  <div className="form-success-message" style={{
+                  <div className="vender-formSuccessMessage" style={{
                     background: '#d4edda',
                     color: '#155724',
                     padding: '16px',
@@ -225,7 +307,7 @@ Este contacto proviene de la página de "Vender" de la web.`;
 
                 {/* Mensaje de error al final del formulario */}
                 {showError && (
-                  <div className="form-error-message" style={{
+                  <div className="vender-formErrorMessage" style={{
                     background: '#f8d7da',
                     color: '#721c24',
                     padding: '16px',
@@ -242,10 +324,10 @@ Este contacto proviene de la página de "Vender" de la web.`;
                 )}
               </form>
 
-              <div className="alternative-contact">
-                <p className="phone-text">
+              <div className="vender-alternativeContact">
+                <p className="vender-phoneText">
                   O si prefieres, llámanos directamente al{' '}
-                  <a href="tel:+34615840273" className="phone-link">
+                  <a href="tel:+34615840273" className="vender-phoneLink">
                     615 84 02 73
                   </a>
                 </p>
@@ -256,37 +338,37 @@ Este contacto proviene de la página de "Vender" de la web.`;
       </section>
 
       {/* Information Section */}
-      <section className="info-section" aria-labelledby="info-title">
+      <section className="vender-infoSection" aria-labelledby="info-title">
         <div className="container">
-          <div className="info-content">
-            <h2 id="info-title" className="info-title">
+          <div className="vender-infoContent">
+            <h2 id="info-title" className="vender-infoTitle">
               Nuestro compromiso contigo
             </h2>
-            <div className="info-cards">
-              <div className="info-card">
-                <div className="info-icon">
+            <div className="vender-infoCards">
+              <div className="vender-infoCard">
+                <div className="vender-infoIcon">
                   <FontAwesomeIcon icon="handshake" />
                 </div>
-                <h3 className="info-card-title">Sin exclusividad</h3>
-                <p className="info-card-description">
+                <h3 className="vender-infoCardTitle">Sin exclusividad</h3>
+                <p className="vender-infoCardDescription">
                   No trabajamos con contratos de exclusividad. Mantienes tu libertad para trabajar con quien desees.
                 </p>
               </div>
-              <div className="info-card">
-                <div className="info-icon">
+              <div className="vender-infoCard">
+                <div className="vender-infoIcon">
                   <FontAwesomeIcon icon="users" />
                 </div>
-                <h3 className="info-card-title">Trato personalizado</h3>
-                <p className="info-card-description">
+                <h3 className="vender-infoCardTitle">Trato personalizado</h3>
+                <p className="vender-infoCardDescription">
                   Cada cliente es único. Ofrecemos un servicio cercano y personalizado adaptado a tus necesidades específicas.
                 </p>
               </div>
-              <div className="info-card">
-                <div className="info-icon">
+              <div className="vender-infoCard">
+                <div className="vender-infoIcon">
                   <FontAwesomeIcon icon="file-lines" />
                 </div>
-                <h3 className="info-card-title">Nos ocupamos de todo</h3>
-                <p className="info-card-description">
+                <h3 className="vender-infoCardTitle">Nos ocupamos de todo</h3>
+                <p className="vender-infoCardDescription">
                   Desde la valoración hasta la firma, gestionamos todos los aspectos de la venta para que no te preocupes por nada.
                 </p>
               </div>
@@ -296,7 +378,7 @@ Este contacto proviene de la página de "Vender" de la web.`;
       </section>
 
       {/* Spacer section to ensure proper spacing */}
-      <section className="spacer-section"></section>
+      <section className="vender-spacerSection"></section>
     </div>
   );
 }

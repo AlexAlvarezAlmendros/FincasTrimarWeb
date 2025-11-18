@@ -11,7 +11,6 @@ import {
   EstadoVenta, 
   Caracteristica 
 } from '../../../types/vivienda.types.js';
-import Auth0Debug from '../../Auth0Debug.jsx';
 import HtmlExtractor from '../../HtmlExtractor/HtmlExtractor.jsx';
 import CharacteristicsSelector from '../../CharacteristicsSelector';
 import DraggableImageGrid from '../../DraggableImageGrid';
