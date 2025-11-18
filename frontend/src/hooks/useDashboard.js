@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { dashboardService } from '../services/dashboardService';
 import messageService from '../services/messageService';
+import { useAuthErrorHandler } from './useAuthErrorHandler';
 
 /**
  * Hook personalizado para gestionar estadísticas del dashboard
@@ -11,6 +12,7 @@ export const useDashboardStats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { getAccessTokenSilently } = useAuth0();
+  const { handleAuthError } = useAuthErrorHandler();
 
   const fetchStats = useCallback(async () => {
     try {
@@ -21,11 +23,17 @@ export const useDashboardStats = () => {
       setStats(data);
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
-      setError(err.message || 'Error al cargar las estadísticas');
+      
+      // Intentar manejar el error de autenticación
+      const wasAuthError = await handleAuthError(err);
+      
+      if (!wasAuthError) {
+        setError(err.message || 'Error al cargar las estadísticas');
+      }
     } finally {
       setLoading(false);
     }
-  }, [getAccessTokenSilently]);
+  }, [getAccessTokenSilently, handleAuthError]);
 
   useEffect(() => {
     fetchStats();

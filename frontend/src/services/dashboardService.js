@@ -1,3 +1,5 @@
+import { getAccessToken } from '../utils/authHelpers';
+
 /**
  * Servicio para interactuar con el API del dashboard
  */
@@ -9,16 +11,16 @@ class DashboardService {
   
   /**
    * Obtiene las estadísticas generales del dashboard
-   * @param {Function} getAccessToken - Función para obtener el token de acceso de Auth0
+   * @param {Function} getAccessTokenSilently - Función para obtener el token de acceso de Auth0
    */
-  async getDashboardStats(getAccessToken) {
+  async getDashboardStats(getAccessTokenSilently) {
     try {
-      if (!getAccessToken) {
+      if (!getAccessTokenSilently) {
         throw new Error('Función de autenticación requerida');
       }
 
       // Obtener token de autenticación
-      const token = await getAccessToken();
+      const token = await getAccessToken(getAccessTokenSilently);
 
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/stats`, {
         method: 'GET',
@@ -43,16 +45,16 @@ class DashboardService {
 
   /**
    * Obtiene las ventas mensuales
-   * @param {Function} getAccessToken - Función para obtener el token de acceso de Auth0
+   * @param {Function} getAccessTokenSilently - Función para obtener el token de acceso de Auth0
    */
-  async getMonthlySales(getAccessToken) {
+  async getMonthlySales(getAccessTokenSilently) {
     try {
-      if (!getAccessToken) {
+      if (!getAccessTokenSilently) {
         throw new Error('Función de autenticación requerida');
       }
 
       // Obtener token de autenticación
-      const token = await getAccessToken();
+      const token = await getAccessToken(getAccessTokenSilently);
 
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/monthly-sales`, {
         method: 'GET',
@@ -77,16 +79,16 @@ class DashboardService {
 
   /**
    * Obtiene estadísticas por tipo de propiedad
-   * @param {Function} getAccessToken - Función para obtener el token de acceso de Auth0
+   * @param {Function} getAccessTokenSilently - Función para obtener el token de acceso de Auth0
    */
-  async getPropertyTypeStats(getAccessToken) {
+  async getPropertyTypeStats(getAccessTokenSilently) {
     try {
-      if (!getAccessToken) {
+      if (!getAccessTokenSilently) {
         throw new Error('Función de autenticación requerida');
       }
 
       // Obtener token de autenticación
-      const token = await getAccessToken();
+      const token = await getAccessToken(getAccessTokenSilently);
 
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/property-types`, {
         method: 'GET',
@@ -111,16 +113,16 @@ class DashboardService {
 
   /**
    * Obtiene estadísticas por ubicación
-   * @param {Function} getAccessToken - Función para obtener el token de acceso de Auth0
+   * @param {Function} getAccessTokenSilently - Función para obtener el token de acceso de Auth0
    */
-  async getLocationStats(getAccessToken) {
+  async getLocationStats(getAccessTokenSilently) {
     try {
-      if (!getAccessToken) {
+      if (!getAccessTokenSilently) {
         throw new Error('Función de autenticación requerida');
       }
 
       // Obtener token de autenticación
-      const token = await getAccessToken();
+      const token = await getAccessToken(getAccessTokenSilently);
 
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/locations`, {
         method: 'GET',
@@ -145,17 +147,17 @@ class DashboardService {
 
   /**
    * Obtiene las propiedades más recientes
-   * @param {Function} getAccessToken - Función para obtener el token de acceso de Auth0
+   * @param {Function} getAccessTokenSilently - Función para obtener el token de acceso de Auth0
    * @param {number} limit - Número máximo de propiedades a obtener (por defecto 4)
    */
-  async getRecentProperties(getAccessToken, limit = 4) {
+  async getRecentProperties(getAccessTokenSilently, limit = 4) {
     try {
-      if (!getAccessToken) {
+      if (!getAccessTokenSilently) {
         throw new Error('Función de autenticación requerida');
       }
 
       // Obtener token de autenticación
-      const token = await getAccessToken();
+      const token = await getAccessToken(getAccessTokenSilently);
 
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/recent-properties?limit=${limit}`, {
         method: 'GET',

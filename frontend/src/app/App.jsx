@@ -15,21 +15,20 @@ import RequireAuth from '../components/RequireAuth';
 import AuthWrapper from '../components/Auth/AuthWrapper';
 import ScrollToTop from '../components/ScrollToTop/ScrollToTop';
 import CookieBanner from '../components/CookieBanner/CookieBanner';
+import { AUTH0_CONFIG } from '../config/auth0.config';
 
 export default function App() {
   return (
     <Auth0Provider
-      domain={import.meta.env.VITE_AUTH0_DOMAIN}
-      clientId={import.meta.env.VITE_AUTH0_CLIENT_ID}
+      domain={AUTH0_CONFIG.provider.domain}
+      clientId={AUTH0_CONFIG.provider.clientId}
       authorizationParams={{
         redirect_uri: window.location.origin,
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "openid profile email offline_access"
+        ...AUTH0_CONFIG.authorizationParams
       }}
-      cacheLocation="localstorage"
-      useRefreshTokens={true}
-      useRefreshTokensFallback={false}
-      sessionCheckExpiryDays={730} // 2 años = 730 días
+      cacheLocation={AUTH0_CONFIG.provider.cacheLocation}
+      useRefreshTokens={AUTH0_CONFIG.provider.useRefreshTokens}
+      useRefreshTokensFallback={AUTH0_CONFIG.provider.useRefreshTokensFallback}
     >
       <AuthWrapper>
         <BrowserRouter>

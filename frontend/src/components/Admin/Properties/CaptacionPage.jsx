@@ -315,27 +315,6 @@ const CaptacionFilters = ({ filters, onFiltersChange }) => {
             <option value="price_asc">💰 Menor</option>
           </select>
         </div>
-
-        {(searchInput || filters.estadoVenta || filters.agente || filters.sortBy !== 'fechaCaptacion_desc') && (
-          <div className="filter-group filter-group--actions">
-            <button
-              onClick={() => {
-                setSearchInput('');
-                onFiltersChange({
-                  search: '',
-                  estadoVenta: '',
-                  agente: '',
-                  sortBy: 'fechaCaptacion_desc',
-                  page: 1
-                });
-              }}
-              className="clear-filters-btn"
-              title="Limpiar todos los filtros"
-            >
-              🔄 Limpiar
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
