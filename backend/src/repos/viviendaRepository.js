@@ -12,10 +12,10 @@ class ViviendaRepository {
    */
   async findAll({ 
     q, minPrice, maxPrice, rooms, bathRooms, tipoInmueble, tipoVivienda,
-    provincia, poblacion, estadoVenta, captadoPor, published = true, page = 1, pageSize = 20, includeDrafts = false 
+    provincia, poblacion, estadoVenta, captadoPor, sortBy, published = true, page = 1, pageSize = 20, includeDrafts = false 
   } = {}) {
     try {
-      logger.info(`🔍 findAll llamado con pageSize=${pageSize}, published=${published}, includeDrafts=${includeDrafts}`);
+      logger.info(`🔍 findAll llamado con pageSize=${pageSize}, published=${published}, includeDrafts=${includeDrafts}, sortBy=${sortBy}`);
       
       const conditions = [];
       const params = [];
@@ -34,9 +34,9 @@ class ViviendaRepository {
       
       // Búsqueda de texto libre
       if (q) {
-        conditions.push('(Name LIKE ? OR Description LIKE ? OR Poblacion LIKE ?)');
+        conditions.push('(Name LIKE ? OR Description LIKE ? OR Poblacion LIKE ? OR CaptadoPor LIKE ?)');
         const searchTerm = `%${q}%`;
-        params.push(searchTerm, searchTerm, searchTerm);
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
       }
       
       // Filtros de precio
@@ -103,12 +103,41 @@ class ViviendaRepository {
       // Construir WHERE clause
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
       
+      // Construir ORDER BY clause según el parámetro sortBy
+      let orderByClause = 'ORDER BY FechaPublicacion DESC'; // Por defecto
+      
+      if (sortBy) {
+        switch (sortBy) {
+          case 'fechaCaptacion_desc':
+            orderByClause = 'ORDER BY COALESCE(FechaCaptacion, CreatedAt) DESC';
+            break;
+          case 'fechaCaptacion_asc':
+            orderByClause = 'ORDER BY COALESCE(FechaCaptacion, CreatedAt) ASC';
+            break;
+          case 'name_asc':
+            orderByClause = 'ORDER BY Name ASC';
+            break;
+          case 'name_desc':
+            orderByClause = 'ORDER BY Name DESC';
+            break;
+          case 'price_desc':
+            orderByClause = 'ORDER BY Price DESC';
+            break;
+          case 'price_asc':
+            orderByClause = 'ORDER BY Price ASC';
+            break;
+          default:
+            // Mantener orden por defecto
+            break;
+        }
+      }
+      
       // Calcular offset para paginación
       const offset = (page - 1) * pageSize;
       
       params.push(pageSize, offset);
       
-      logger.info(`🔍 Ejecutando consulta optimizada con LIMIT ${pageSize}`);
+      logger.info(`🔍 Ejecutando consulta optimizada con LIMIT ${pageSize} y ${orderByClause}`);
       
       // FIX: Turso tiene problemas con LIMIT >= 7 cuando incluye campos grandes (Description, Caracteristicas)
       // Solución: Obtener IDs primero, luego datos individuales
@@ -118,7 +147,7 @@ class ViviendaRepository {
         SELECT Id
         FROM Vivienda 
         ${whereClause}
-        ORDER BY FechaPublicacion DESC 
+        ${orderByClause}
         LIMIT ? OFFSET ?
       `;
       

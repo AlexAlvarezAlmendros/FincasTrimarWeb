@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faCheckCircle, faExclamationTriangle, faUpload, faDownload, faInfoCircle, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
-import JsonImportGuide from './JsonImportGuide.jsx';
 import './JsonImportButton.css';
 
 /**
@@ -335,12 +334,6 @@ const JsonImportButton = ({ onImportComplete }) => {
           </div>
         </>
       )}
-
-      {/* Guía detallada */}
-      <JsonImportGuide 
-        isVisible={showDetailedGuide} 
-        onClose={() => setShowDetailedGuide(false)} 
-      />
     </div>
   );
 };
