@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useDashboardStats, useRecentProperties } from '../../../hooks/useDashboard';
+import { useDashboardStats, useRecentProperties, useRecentMessages } from '../../../hooks/useDashboard';
 import MetricCard from './MetricCard';
 import RecentPropertiesTable from './RecentPropertiesTable';
 import RecentMessagesList from './RecentMessagesList';
@@ -17,6 +17,7 @@ const AdminDashboard = () => {
   const { user } = useAuth0();
   const { stats, loading, error, refetch } = useDashboardStats();
   const { properties: recentProperties, loading: loadingProperties } = useRecentProperties(4);
+  const { messages: recentMessages, loading: loadingMessages } = useRecentMessages(2);
 
   if (loading) {
     return (
@@ -165,7 +166,11 @@ const AdminDashboard = () => {
             </Link>
           </div>
           <div className="section-content">
-            <RecentMessagesList messages={[]} />
+            {loadingMessages ? (
+              <LoadingSpinner />
+            ) : (
+              <RecentMessagesList messages={recentMessages} />
+            )}
           </div>
         </div>
       </div>

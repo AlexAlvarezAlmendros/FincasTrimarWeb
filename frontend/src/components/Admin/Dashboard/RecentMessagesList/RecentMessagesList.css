@@ -52,6 +52,18 @@
   color: var(--neutral-700);
   font-size: 0.875rem;
   font-weight: 500;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.message-preview {
+  color: var(--neutral-600);
+  font-size: 0.8125rem;
   margin: 0 0 0.75rem 0;
   line-height: 1.4;
   display: -webkit-box;
@@ -97,17 +109,22 @@
   flex-shrink: 0;
 }
 
-.status-pending {
+.status-nuevo {
   background-color: rgba(239, 68, 68, 0.1);
   color: var(--semantic-danger);
 }
 
-.status-responded {
+.status-encurso {
   background-color: rgba(58, 141, 255, 0.1);
   color: var(--brand-primary);
 }
 
-.status-closed {
+.status-cerrado {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: var(--neutral-600);
+}
+
+.status-default {
   background-color: rgba(107, 114, 128, 0.1);
   color: var(--neutral-600);
 }

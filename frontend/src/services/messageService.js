@@ -302,6 +302,42 @@ class MessageService {
   }
 
   /**
+   * Obtener mensajes recientes
+   * @param {Function} getAccessToken - Función para obtener el token de acceso de Auth0
+   * @param {number} limit - Número máximo de mensajes a obtener (por defecto 4)
+   * @returns {Promise<Array>} Lista de mensajes recientes
+   */
+  async getRecentMessages(getAccessToken, limit = 4) {
+    try {
+      if (!getAccessToken) {
+        throw new Error('Función de autenticación requerida');
+      }
+
+      // Obtener token de autenticación
+      const token = await getAccessToken();
+
+      const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/recent?limit=${limit}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Error al obtener mensajes recientes');
+      }
+      
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.error('Error fetching recent messages:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Exportar mensajes a CSV
    * @param {Object} filters - Filtros para la exportación
    * @returns {Promise<Blob>} Archivo CSV

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { dashboardService } from '../services/dashboardService';
+import messageService from '../services/messageService';
 
 /**
  * Hook personalizado para gestionar estadísticas del dashboard
@@ -183,5 +184,41 @@ export const useRecentProperties = (limit = 4) => {
     loading,
     error,
     refetch: fetchRecentProperties
+  };
+};
+
+/**
+ * Hook para obtener los mensajes más recientes
+ */
+export const useRecentMessages = (limit = 4) => {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { getAccessTokenSilently } = useAuth0();
+
+  const fetchRecentMessages = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const data = await messageService.getRecentMessages(getAccessTokenSilently, limit);
+      setMessages(data);
+    } catch (err) {
+      console.error('Error fetching recent messages:', err);
+      setError(err.message || 'Error al cargar mensajes recientes');
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessTokenSilently, limit]);
+
+  useEffect(() => {
+    fetchRecentMessages();
+  }, [fetchRecentMessages]);
+
+  return {
+    messages,
+    loading,
+    error,
+    refetch: fetchRecentMessages
   };
 };
