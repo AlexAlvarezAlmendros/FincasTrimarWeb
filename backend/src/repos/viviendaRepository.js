@@ -12,10 +12,10 @@ class ViviendaRepository {
    */
   async findAll({ 
     q, minPrice, maxPrice, rooms, bathRooms, tipoInmueble, tipoVivienda,
-    provincia, poblacion, estadoVenta, captadoPor, sortBy, published = true, page = 1, pageSize = 20, includeDrafts = false 
+    provincia, poblacion, estadoVenta, captadoPor, sinCaptador, sortBy, published = true, page = 1, pageSize = 20, includeDrafts = false 
   } = {}) {
     try {
-      logger.info(`🔍 findAll llamado con pageSize=${pageSize}, published=${published}, includeDrafts=${includeDrafts}, sortBy=${sortBy}`);
+      logger.info(`🔍 findAll llamado con pageSize=${pageSize}, published=${published}, includeDrafts=${includeDrafts}, sortBy=${sortBy}, sinCaptador=${sinCaptador}, q="${q}"`);
       
       const conditions = [];
       const params = [];
@@ -33,10 +33,11 @@ class ViviendaRepository {
       }
       
       // Búsqueda de texto libre
-      if (q) {
-        conditions.push('(Name LIKE ? OR Description LIKE ? OR Poblacion LIKE ? OR CaptadoPor LIKE ?)');
+      if (q && q.trim() !== '') {
+        logger.info(`🔎 Aplicando búsqueda de texto: "${q}"`);
+        conditions.push('(Name LIKE ? OR Description LIKE ? OR Poblacion LIKE ? OR Calle LIKE ? OR Provincia LIKE ?)');
         const searchTerm = `%${q}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
       }
       
       // Filtros de precio
@@ -95,7 +96,12 @@ class ViviendaRepository {
         }
       }
       
-      if (captadoPor) {
+      // Filtro de captador: puede ser un nombre específico o buscar sin captador
+      if (sinCaptador) {
+        // Buscar propiedades sin captador asignado (NULL o vacío)
+        conditions.push('(CaptadoPor IS NULL OR CaptadoPor = "")');
+      } else if (captadoPor) {
+        // Buscar por captador específico
         conditions.push('CaptadoPor = ?');
         params.push(captadoPor);
       }

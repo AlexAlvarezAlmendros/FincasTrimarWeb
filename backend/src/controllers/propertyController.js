@@ -336,6 +336,7 @@ const propertyController = {
         provincia: req.query.provincia,
         poblacion: req.query.poblacion,
         captadoPor: req.query.captadoPor,
+        sinCaptador: req.query.sinCaptador === 'true', // Flag para viviendas sin captador asignado
         sortBy: req.query.sortBy, // Parámetro de ordenación
         page: req.query.page ? parseInt(req.query.page) : 1,
         pageSize: req.query.pageSize ? parseInt(req.query.pageSize) : 20

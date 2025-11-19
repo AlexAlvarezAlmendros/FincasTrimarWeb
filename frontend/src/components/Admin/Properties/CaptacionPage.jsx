@@ -90,17 +90,28 @@ const useCaptacion = () => {
       // Obtener token de autenticación
       const token = await getAccessTokenSilently();
       
-      // Llamar al servicio para obtener propiedades en estados de captación
-      // Enviamos TODOS los filtros al backend para que ordene y filtre correctamente
-      const response = await propertyService.getCaptacionProperties({ 
+      // Preparar parámetros de búsqueda
+      const searchParams = {
         token,
         estadoVenta: filters.estadoVenta,
-        captadoPor: filters.agente, // Filtro por agente
         q: filters.search, // Búsqueda por texto
         sortBy: filters.sortBy, // Ordenación
         page: filters.page,
         pageSize: 20
-      });
+      };
+
+      // Manejar el filtro de agente:
+      // - Si es "NoAsignado", enviamos un valor especial o flag
+      // - Si es un agente específico, enviamos el nombre
+      // - Si está vacío, no enviamos el parámetro (todos los agentes)
+      if (filters.agente === 'NoAsignado') {
+        searchParams.sinCaptador = true; // Flag especial para el backend
+      } else if (filters.agente) {
+        searchParams.captadoPor = filters.agente;
+      }
+      
+      // Llamar al servicio para obtener propiedades en estados de captación
+      const response = await propertyService.getCaptacionProperties(searchParams);
       
       if (!response.success) {
         throw new Error(response.error?.message || 'Error al cargar propiedades de captación');
@@ -221,20 +232,6 @@ const useCaptacion = () => {
 const CaptacionFilters = ({ filters, onFiltersChange }) => {
   const [searchInput, setSearchInput] = useState(filters.search);
 
-  // Debounce para el campo de búsqueda
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchInput !== filters.search) {
-        onFiltersChange({
-          ...filters,
-          search: searchInput
-        });
-      }
-    }, 500); // Esperar 500ms después de que el usuario deje de escribir
-
-    return () => clearTimeout(timeoutId);
-  }, [searchInput]);
-
   // Sincronizar con el filtro externo cuando se limpie
   useEffect(() => {
     if (filters.search === '' && searchInput !== '') {
@@ -244,11 +241,25 @@ const CaptacionFilters = ({ filters, onFiltersChange }) => {
 
   const handleFilterChange = (key, value) => {
     if (key === 'search') {
+      // Solo actualizar el estado local del input, no ejecutar búsqueda aún
       setSearchInput(value);
     } else {
+      // Para otros filtros, aplicar inmediatamente
       onFiltersChange({
         ...filters,
         [key]: value
+      });
+    }
+  };
+
+  // Ejecutar búsqueda al presionar Enter
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      // Ahora sí, ejecutar la búsqueda llamando a onFiltersChange
+      onFiltersChange({
+        ...filters,
+        search: searchInput,
+        page: 1 // Resetear a página 1 cuando se hace una búsqueda
       });
     }
   };
@@ -261,9 +272,10 @@ const CaptacionFilters = ({ filters, onFiltersChange }) => {
           <input
             id="search-input"
             type="text"
-            placeholder="Buscar por nombre, ubicación..."
+            placeholder="Buscar por nombre, ubicación... (Enter para buscar)"
             value={searchInput}
             onChange={(e) => handleFilterChange('search', e.target.value)}
+            onKeyPress={handleSearchKeyPress}
             className="search-input"
           />
         </div>
@@ -277,6 +289,7 @@ const CaptacionFilters = ({ filters, onFiltersChange }) => {
             className="filter-select"
           >
             <option value="">Todos</option>
+            <option value="NoAsignado">No Asignado</option>
             <option value="Aina">Aina</option>
             <option value="Maria">Maria</option>
             <option value="Trini">Trini</option>
@@ -517,7 +530,8 @@ const CaptacionPage = () => {
             {pagination.totalItems} {pagination.totalItems === 1 ? 'propiedad' : 'propiedades'}
             {filters.search && ` para "${filters.search}"`}
             {filters.estadoVenta && ` en estado "${filters.estadoVenta}"`}
-            {filters.agente && ` captadas por ${filters.agente}`}
+            {filters.agente && filters.agente === 'NoAsignado' && ` sin captador asignado`}
+            {filters.agente && filters.agente !== 'NoAsignado' && ` captadas por ${filters.agente}`}
           </div>
           {(filters.search || filters.estadoVenta || filters.agente) && (
             <div className="active-filters-badge">

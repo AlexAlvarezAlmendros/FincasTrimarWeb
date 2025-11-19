@@ -546,6 +546,7 @@ class PropertyService {
         published: false, // Solo viviendas NO publicadas (Published = 0)
         q: filters.q, // Búsqueda por texto
         captadoPor: filters.captadoPor, // Filtro por agente
+        sinCaptador: filters.sinCaptador, // Flag para viviendas sin captador
         sortBy: filters.sortBy || 'fechaCaptacion_desc', // Ordenación
         page: filters.page || 1,
         pageSize: filters.pageSize || 20
