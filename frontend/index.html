@@ -2,15 +2,62 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+    
+    <!-- Favicon y iconos para diferentes dispositivos -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    
+    <!-- Configuración de viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Metadatos básicos (serán sobreescritos por react-helmet) -->
     <title>Fincas Trimar - La mejor forma de encontrar tu vivienda</title>
-    <meta name="description" content="Ofrecemos el servicio completo de venta, compra o alquiler de tu vivienda" />
+    <meta name="description" content="Ofrecemos el servicio completo de venta, compra o alquiler de tu vivienda en Igualada y alrededores. Encuentra tu hogar ideal." />
+    <meta name="keywords" content="inmobiliaria Igualada, venta pisos, alquiler casas, chalets, Barcelona, Anoia" />
+    <meta name="author" content="Fincas Trimar" />
+    
+    <!-- Metadatos Open Graph por defecto -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fincas Trimar - Inmobiliaria en Igualada" />
+    <meta property="og:description" content="Tu inmobiliaria de confianza en Igualada para comprar, vender o alquilar viviendas" />
+    <meta property="og:image" content="/img/og-default.jpg" />
+    <meta property="og:locale" content="es_ES" />
+    
+    <!-- Twitter Card por defecto -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Fincas Trimar - Inmobiliaria en Igualada" />
+    <meta name="twitter:description" content="Tu inmobiliaria de confianza en Igualada" />
+    
+    <!-- Configuración de idioma -->
+    <meta http-equiv="content-language" content="es" />
+    <meta name="language" content="Spanish" />
+    
+    <!-- Preconexiones para optimizar carga -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+    
+    <!-- DNS prefetch para recursos externos -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+    
     <!-- FontAwesome CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Configuración para prevenir rastreo de páginas de desarrollo -->
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Theme color para navegadores móviles -->
+    <meta name="theme-color" content="#3A8DFF" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Preload de recursos críticos -->
+    <noscript>
+      <p>Esta aplicación requiere JavaScript para funcionar correctamente. Por favor, activa JavaScript en tu navegador.</p>
+    </noscript>
   </body>
 </html>

@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import SEO from '../components/SEO';
 import useContactForm from '../hooks/useContactForm';
+import { generateContactPageSchema } from '../utils/structuredData';
 import './Vender.css';
 
 export default function Vender() {
@@ -205,6 +207,14 @@ Este contacto proviene de la página de "Vender" de la web.`;
 
   return (
     <div className="vender-page">
+      <SEO
+        title="Vende tu Inmueble"
+        description="¿Quieres vender tu casa, piso o chalet? En Fincas Trimar te ayudamos a vender tu inmueble de forma rápida y sencilla. Contacta sin compromiso."
+        keywords="vender piso Igualada, vender casa Barcelona, vender inmueble, tasación gratuita, venta rápida vivienda, Fincas Trimar"
+        type="website"
+        structuredData={generateContactPageSchema()}
+      />
+      
       {/* Hero Section */}
       <section className="vender-heroSection" aria-labelledby="hero-title">
         <div className="container">

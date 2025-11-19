@@ -15,6 +15,7 @@ import htmlParserRoutes from './routes/htmlParserRoutes.js';
 import { privateRoutes as dashboardPrivateRoutes } from './routes/dashboardRoutes.js';
 import csvImportRoutes from './routes/csvImportRoutes.js';
 import jsonImportRoutes from './routes/jsonImportRoutes.js';
+import sitemapRoutes from './routes/sitemapRoutes.js';
 
 const app = express();
 
@@ -49,6 +50,7 @@ import propertyController from './controllers/propertyController.js';
 
 // Rutas públicas (sin autenticación)
 app.use('/api', healthRoutes);
+app.use('/', sitemapRoutes); // Sitemap en raíz para SEO
 
 // IMPORTANTE: Registrar rutas específicas de captación ANTES de las rutas públicas generales
 // para evitar que /viviendas/:id capture "captacion" como un ID

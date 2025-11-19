@@ -1,8 +1,10 @@
 import React from 'react';
+import SEO from '../components/SEO';
 import './Contacto.css';
 import '../components/ContactForm/ContactForm.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import useContactForm from '../hooks/useContactForm';
+import { generateContactPageSchema } from '../utils/structuredData';
 
 export default function Contacto() {
   const {
@@ -37,6 +39,14 @@ export default function Contacto() {
 
   return (
     <div className="contacto">
+      <SEO
+        title="Contacto"
+        description="Contacta con Fincas Trimar. Estamos en Igualada para ayudarte con la compra, venta o alquiler de tu vivienda. Teléfono: 615 84 02 73"
+        keywords="contacto inmobiliaria Igualada, teléfono Fincas Trimar, dirección inmobiliaria Barcelona, consultas viviendas"
+        type="website"
+        structuredData={generateContactPageSchema()}
+      />
+      
       {/* Header */}
       <section className="contacto-contact-header">
         <div className="contacto-container">

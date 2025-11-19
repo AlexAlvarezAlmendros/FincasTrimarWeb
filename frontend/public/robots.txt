@@ -1,0 +1,44 @@
+# robots.txt para Fincas Trimar
+# Política de rastreo para motores de búsqueda
+
+# Permitir acceso a todos los crawlers principales
+User-agent: *
+Allow: /
+
+# Permitir específicamente a Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Permitir a Bingbot
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+# Bloquear acceso a áreas administrativas y privadas
+Disallow: /admin/
+Disallow: /admin
+Disallow: /api/
+
+# Bloquear archivos y recursos no indexables
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /node_modules/
+
+# Permitir recursos necesarios para renderizado
+Allow: /img/
+Allow: /css/
+Allow: /js/
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.png$
+Allow: /*.webp$
+Allow: /*.svg$
+
+# Sitemap
+Sitemap: https://fincastrimar.com/sitemap.xml
+
+# Información adicional
+# Contacto del webmaster: info@fincastrimar.com

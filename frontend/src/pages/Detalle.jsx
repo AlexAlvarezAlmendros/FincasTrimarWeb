@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useVivienda, useSimilarViviendas } from '../hooks/useViviendas.js';
 import useContactForm from '../hooks/useContactForm.js';
+import SEO from '../components/SEO';
 import GoogleMapEmbed from '../components/GoogleMapEmbed/GoogleMapEmbed.jsx';
 import SafeHtmlRenderer from '../components/SafeHtmlRenderer/SafeHtmlRenderer.jsx';
+import { generatePropertySchema, generateBreadcrumbSchema } from '../utils/structuredData';
 import './Detalle.css';
 
 export default function Detalle() {
@@ -207,6 +209,22 @@ ${infoVivienda}`;
 
   return (
     <div className="detalle">
+      <SEO
+        title={property.name}
+        description={property.shortDescription || property.description?.substring(0, 160)}
+        keywords={`${property.tipoVivienda} ${property.tipoAnuncio} ${property.poblacion}, ${property.rooms} habitaciones, ${property.squaredMeters}m2, inmobiliaria Igualada`}
+        image={property.imagenes?.[0]?.URL}
+        type="product"
+        structuredData={[
+          generatePropertySchema(property),
+          generateBreadcrumbSchema([
+            { name: 'Inicio', url: window.location.origin },
+            { name: 'Viviendas', url: `${window.location.origin}/viviendas` },
+            { name: property.name, url: window.location.href }
+          ])
+        ]}
+      />
+      
       <div className="container">
         {/* Breadcrumb */}
         <nav className="detalle-breadcrumb">

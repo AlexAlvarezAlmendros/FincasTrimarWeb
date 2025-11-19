@@ -3,8 +3,10 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
 import LocationAutocomplete from '../components/LocationAutocomplete/LocationAutocomplete';
 import CustomSelect from '../components/CustomSelect/CustomSelect';
+import SEO from '../components/SEO';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useViviendas } from '../hooks/useViviendas';
+import { generateItemListSchema, generateBreadcrumbSchema } from '../utils/structuredData';
 import { 
   TipoVivienda, 
   Estado, 
@@ -244,8 +246,44 @@ export default function Listado() {
   // Memoizar las viviendas para optimizar re-renders
   const displayedViviendas = useMemo(() => viviendas, [viviendas]);
 
+  // SEO dinámico basado en filtros
+  const getSEOInfo = () => {
+    const parts = [];
+    if (filters.location) parts.push(filters.location);
+    if (filters.type && filters.type !== 'all') parts.push(filters.type);
+    if (filters.tipoAnuncio && filters.tipoAnuncio !== 'all') parts.push(filters.tipoAnuncio);
+    
+    const titleParts = parts.length > 0 ? parts.join(' en ') : 'Todas las viviendas';
+    const descriptionParts = parts.length > 0 
+      ? `Encuentra ${parts.join(', ')} disponibles. ${pagination.total || 'Múltiples'} propiedades.`
+      : `Explora nuestro catálogo completo de viviendas. ${pagination.total || 'Múltiples'} propiedades en venta y alquiler.`;
+
+    return {
+      title: titleParts,
+      description: descriptionParts,
+      keywords: `${parts.join(', ')}, inmobiliaria, viviendas, pisos, casas, ${filters.location || 'Igualada'}`
+    };
+  };
+
+  const seoInfo = getSEOInfo();
+  const itemListSchema = displayedViviendas?.length > 0 ? generateItemListSchema(displayedViviendas) : null;
+
   return (
     <div className="listado">
+      <SEO
+        title={seoInfo.title}
+        description={seoInfo.description}
+        keywords={seoInfo.keywords}
+        type="website"
+        structuredData={itemListSchema ? [
+          itemListSchema,
+          generateBreadcrumbSchema([
+            { name: 'Inicio', url: window.location.origin },
+            { name: 'Viviendas', url: window.location.href }
+          ])
+        ] : null}
+      />
+      
       {/* Filter Bar */}
       <section className="filter-bar">
         <div className="container">

@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
 import CustomSelect from '../components/CustomSelect/CustomSelect';
 import LocationAutocomplete from '../components/LocationAutocomplete/LocationAutocomplete';
+import SEO from '../components/SEO';
 import { useViviendas } from '../hooks/useViviendas';
+import { generateOrganizationSchema, generateSearchActionSchema, generateItemListSchema } from '../utils/structuredData';
 import './Home.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -93,10 +95,26 @@ export default function Home() {
     { value: 'Villa', label: 'Villa' },
   ];
 
+  // Datos estructurados para SEO
+  const organizationSchema = generateOrganizationSchema();
+  const searchActionSchema = generateSearchActionSchema();
+  const itemListSchema = viviendas?.length > 0 ? generateItemListSchema(viviendas) : null;
 
+  // Combinar esquemas
+  const structuredData = itemListSchema 
+    ? [organizationSchema, searchActionSchema, itemListSchema]
+    : [organizationSchema, searchActionSchema];
 
   return (
     <div className="home">
+      <SEO
+        title="Inicio"
+        description="Encuentra tu vivienda ideal en Igualada y alrededores. Fincas Trimar ofrece venta, compra y alquiler de pisos, casas y chalets. Propiedades actualizadas diariamente."
+        keywords="inmobiliaria Igualada, venta pisos Igualada, alquiler casas Igualada, chalets venta Barcelona, comprar piso Anoia, Fincas Trimar"
+        type="website"
+        structuredData={structuredData}
+      />
+      
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
