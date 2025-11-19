@@ -33,11 +33,12 @@ export const useDashboardStats = () => {
     } finally {
       setLoading(false);
     }
-  }, [getAccessTokenSilently, handleAuthError]);
+  }, [getAccessTokenSilently]); // Removido handleAuthError de las dependencias
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar
 
   const refetch = useCallback(() => {
     fetchStats();
@@ -77,7 +78,8 @@ export const useMonthlySales = () => {
 
   useEffect(() => {
     fetchMonthlySales();
-  }, [fetchMonthlySales]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar
 
   return {
     monthlySales,
@@ -113,7 +115,8 @@ export const usePropertyTypeStats = () => {
 
   useEffect(() => {
     fetchTypeStats();
-  }, [fetchTypeStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar
 
   return {
     typeStats,
@@ -149,7 +152,8 @@ export const useLocationStats = () => {
 
   useEffect(() => {
     fetchLocationStats();
-  }, [fetchLocationStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar
 
   return {
     locationStats,
@@ -185,7 +189,8 @@ export const useRecentProperties = (limit = 4) => {
 
   useEffect(() => {
     fetchRecentProperties();
-  }, [fetchRecentProperties]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit]); // Solo re-ejecutar si cambia el límite
 
   return {
     properties,
@@ -221,7 +226,8 @@ export const useRecentMessages = (limit = 4) => {
 
   useEffect(() => {
     fetchRecentMessages();
-  }, [fetchRecentMessages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit]); // Solo re-ejecutar si cambia el límite
 
   return {
     messages,
