@@ -409,6 +409,13 @@
   .promotion-image {
     order: -1;
   }
+
+  /* Color plano en móvil para la sección de venta */
+  .sell-promotion {
+    background: #b9d2e8!important;
+    background-image: none;
+    padding: var(--spacing-2xl) var(--spacing-lg);
+  }
 }
 
 @media (max-width: 480px) {
