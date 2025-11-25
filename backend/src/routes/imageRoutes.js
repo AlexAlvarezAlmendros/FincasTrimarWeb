@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import imageController from '../controllers/imageController.js';
-import { requireRoles } from '../middlewares/authMiddleware.js';
+import { requireCaptador, requireSeller } from '../middlewares/authMiddleware.js';
 import { validateImageUpload, validatePropertyImages, validateImageReorder } from '../schemas/imageSchemas.js';
 import { logger } from '../utils/logger.js';
 
@@ -88,7 +88,7 @@ export const imagePrivateRoutes = Router();
 
 // POST /api/v1/images - Subir imágenes (requiere Seller, Admin o Captador)
 imagePrivateRoutes.post('/images',
-  requireRoles(['Admin', 'Seller', 'Captador']),
+  requireCaptador, // Permite AdminTrimar, SellerTrimar y CaptadorTrimar
   upload.array('images', 10), // Máximo 10 archivos con campo 'images'
   handleMulterError,
   validateImageUpload,
@@ -97,20 +97,20 @@ imagePrivateRoutes.post('/images',
 
 // POST /api/v1/viviendas/:id/imagenes - Asociar imágenes a vivienda
 imagePrivateRoutes.post('/viviendas/:id/imagenes',
-  requireRoles(['Admin', 'Seller', 'Captador']),
+  requireCaptador, // Permite AdminTrimar, SellerTrimar y CaptadorTrimar
   validatePropertyImages,
   imageController.addPropertyImages
 );
 
 // DELETE /api/v1/viviendas/:viviendaId/imagenes/:imagenId - Eliminar imagen
 imagePrivateRoutes.delete('/viviendas/:viviendaId/imagenes/:imagenId',
-  requireRoles(['Admin', 'Seller']),
+  requireSeller, // Permite AdminTrimar y SellerTrimar
   imageController.deletePropertyImage
 );
 
 // PUT /api/v1/viviendas/:id/imagenes/reorder - Reordenar imágenes
 imagePrivateRoutes.put('/viviendas/:id/imagenes/reorder',
-  requireRoles(['Admin', 'Seller', 'Captador']),
+  requireCaptador, // Permite AdminTrimar, SellerTrimar y CaptadorTrimar
   validateImageReorder,
   imageController.reorderPropertyImages
 );
