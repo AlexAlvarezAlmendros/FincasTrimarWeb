@@ -486,7 +486,6 @@ const PropertyForm = () => {
                 value={formData.shortDescription}
                 onChange={handleInputChange}
                 placeholder="Ej: Precioso piso reformado en el centro histórico"
-                maxLength={300}
                 disabled={isLoading}
               />
             </div>

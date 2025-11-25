@@ -12,12 +12,10 @@ export const propertySchema = z.object({
     .max(200, 'El nombre no puede exceder 200 caracteres'),
   
   shortDescription: z.string()
-    .max(300, 'La descripción corta no puede exceder 300 caracteres')
     .transform(val => val === '' ? undefined : val)
     .optional(),
   
   description: z.string()
-    .max(2000, 'La descripción no puede exceder 2000 caracteres')
     .transform(val => val === '' ? undefined : val)
     .optional(),
   

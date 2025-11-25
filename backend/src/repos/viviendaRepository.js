@@ -542,12 +542,6 @@ class ViviendaRepository {
   transformRow(row) {
     if (!row) return null;
     
-    // Truncar descripción larga para evitar problemas de memoria en listados
-    let description = row.Description;
-    if (description && description.length > 1000) {
-      description = description.substring(0, 1000) + '...';
-    }
-    
     // Procesar características de forma segura
     let caracteristicas = [];
     try {
@@ -568,7 +562,7 @@ class ViviendaRepository {
       id: row.Id,
       name: row.Name,
       shortDescription: row.ShortDescription,
-      description: description,
+      description: row.Description,
       price: row.Price,
       rooms: row.Rooms,
       bathRooms: row.BathRooms,
