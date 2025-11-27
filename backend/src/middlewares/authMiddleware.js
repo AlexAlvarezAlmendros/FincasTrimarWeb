@@ -13,9 +13,9 @@ if (!process.env.AUTH0_AUDIENCE || !process.env.AUTH0_ISSUER_BASE_URL) {
   );
 }
 
-console.log('🔐 Configurando Auth0 middleware:');
-console.log('  Audience:', process.env.AUTH0_AUDIENCE);
-console.log('  Issuer:', process.env.AUTH0_ISSUER_BASE_URL);
+// console.log('🔐 Configurando Auth0 middleware:');
+// console.log('  Audience:', process.env.AUTH0_AUDIENCE);
+// console.log('  Issuer:', process.env.AUTH0_ISSUER_BASE_URL);
 
 // Configuración del middleware de JWT (SIEMPRE requerido)
 export const checkJwt = auth({
@@ -26,31 +26,31 @@ export const checkJwt = auth({
 
 // Middleware personalizado para debugging
 export const debugCheckJwt = (req, res, next) => {
-  console.log('🔍 Request a endpoint protegido:');
-  console.log('  URL:', req.originalUrl);
-  console.log('  Method:', req.method);
-  console.log('  Headers:', Object.keys(req.headers));
-  console.log('  Auth header presente:', !!req.headers.authorization);
-  console.log('  Auth header:', req.headers.authorization ? req.headers.authorization.substring(0, 50) + '...' : 'AUSENTE');
+  // console.log('🔍 Request a endpoint protegido:');
+  // console.log('  URL:', req.originalUrl);
+  // console.log('  Method:', req.method);
+  // console.log('  Headers:', Object.keys(req.headers));
+  // console.log('  Auth header presente:', !!req.headers.authorization);
+  // console.log('  Auth header:', req.headers.authorization ? req.headers.authorization.substring(0, 50) + '...' : 'AUSENTE');
   
-  if (req.headers.authorization) {
-    console.log('  Bearer format:', req.headers.authorization.startsWith('Bearer '));
-  }
+  // if (req.headers.authorization) {
+  //   console.log('  Bearer format:', req.headers.authorization.startsWith('Bearer '));
+  // }
   
   // Ejecutar el middleware real de Auth0
   checkJwt(req, res, (error) => {
     if (error) {
-      console.log('❌ Error en Auth0 middleware:', error.message);
-      console.log('  Error type:', error.constructor.name);
-      console.log('  Error stack:', error.stack);
+      // console.log('❌ Error en Auth0 middleware:', error.message);
+      // console.log('  Error type:', error.constructor.name);
+      // console.log('  Error stack:', error.stack);
       
-      if (error.constructor.name === 'InvalidRequestError') {
-        console.log('  💡 InvalidRequestError - Posibles causas:');
-        console.log('    - Token malformado');
-        console.log('    - Header Authorization incorrecto');
-        console.log('    - Token sin Bearer prefix');
-        console.log('    - Audience incorrecto');
-      }
+      // if (error.constructor.name === 'InvalidRequestError') {
+      //   console.log('  💡 InvalidRequestError - Posibles causas:');
+      //   console.log('    - Token malformado');
+      //   console.log('    - Header Authorization incorrecto');
+      //   console.log('    - Token sin Bearer prefix');
+      //   console.log('    - Audience incorrecto');
+      // }
       
       // Respuesta más específica para InvalidRequestError
       if (error.constructor.name === 'InvalidRequestError') {
@@ -67,10 +67,10 @@ export const debugCheckJwt = (req, res, next) => {
       return next(error);
     }
     
-    console.log('✅ Auth0 middleware exitoso');
-    if (req.auth) {
-      console.log('  User ID:', req.auth.sub);
-    }
+    // console.log('✅ Auth0 middleware exitoso');
+    // if (req.auth) {
+    //   console.log('  User ID:', req.auth.sub);
+    // }
     next();
   });
 };
@@ -97,20 +97,20 @@ export const requireRoles = (allowedRoles = []) => {
       // IMPORTANTE: express-oauth2-jwt-bearer pone los datos en req.auth.payload
       const authData = req.auth.payload || req.auth;
       
-      console.log('🔍 Debugging roles en Vercel:', {
-        hasPayload: !!req.auth.payload,
-        sub: authData.sub,
-        permissions: authData.permissions,
-        otpRecordsClaim: authData['https://otp-records.com/roles']
-      });
+      // console.log('🔍 Debugging roles en Vercel:', {
+      //   hasPayload: !!req.auth.payload,
+      //   sub: authData.sub,
+      //   permissions: authData.permissions,
+      //   otpRecordsClaim: authData['https://otp-records.com/roles']
+      // });
       
       const userRoles = authData['https://otp-records.com/roles'] || authData.permissions || authData[`${process.env.AUTH0_AUDIENCE}/roles`] || [];
-      console.log('📋 Role verification:', {
-        userRoles,
-        allowedRoles,
-        endpoint: req.originalUrl,
-        hasRoles: userRoles.length > 0
-      });
+      // console.log('📋 Role verification:', {
+      //   userRoles,
+      //   allowedRoles,
+      //   endpoint: req.originalUrl,
+      //   hasRoles: userRoles.length > 0
+      // });
       
       // Si no se especifican roles, permitir acceso con token válido
       if (allowedRoles.length === 0) {
@@ -119,7 +119,7 @@ export const requireRoles = (allowedRoles = []) => {
       
       // Verificar si el usuario tiene al menos uno de los roles requeridos
       const hasRequiredRole = allowedRoles.some(role => userRoles.includes(role));
-      console.log('✅ Role check result:', { hasRequiredRole, userRoles, allowedRoles });
+      // console.log('✅ Role check result:', { hasRequiredRole, userRoles, allowedRoles });
       
       if (!hasRequiredRole) {
         console.error('❌ Acceso denegado - Roles insuficientes:', {
