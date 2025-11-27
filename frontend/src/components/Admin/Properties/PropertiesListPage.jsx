@@ -162,9 +162,7 @@ const PropertiesTable = ({
             <th className="col-name">Propiedad</th>
             <th className="col-location">Ubicación</th>
             <th className="col-price">Precio</th>
-            <th className="col-specs">Especificaciones</th>
             <th className="col-status">Estado</th>
-            <th className="col-stats">Estadísticas</th>
             <th className="col-actions">Acciones</th>
           </tr>
         </thead>
@@ -173,7 +171,15 @@ const PropertiesTable = ({
             <tr key={property.id} className="property-row">
               <td className="col-image">
                 <div className="property-image">
-                  {property.imagenes && property.imagenes.length > 0 ? (
+                  {property.mainImage ? (
+                    <img 
+                      src={property.mainImage} 
+                      alt={property.name}
+                      onError={(e) => {
+                        e.target.src = '/img/placeholder-house.jpg';
+                      }}
+                    />
+                  ) : property.imagenes && property.imagenes.length > 0 ? (
                     <img 
                       src={property.imagenes[0].url || property.imagenes[0]} 
                       alt={property.name}
@@ -217,24 +223,8 @@ const PropertiesTable = ({
                   <span className="operation">{property.tipoAnuncio}</span>
                 </div>
               </td>
-              <td className="col-specs">
-                <div className="specs-grid">
-                  <span className="spec-item">🛏️ {property.rooms || 0}</span>
-                  <span className="spec-item">🚿 {property.bathRooms || property.bathrooms || 0}</span>
-                  <span className="spec-item">🚗 {property.garage || 0}</span>
-                  <span className="spec-item">📐 {property.squaredMeters || 0}m²</span>
-                </div>
-              </td>
               <td className="col-status">
                 {getStatusBadge(property)}
-              </td>
-              <td className="col-stats">
-                <div className="stats-info">
-                  <span className="views">👁️ {property.views || 0}</span>
-                  <span className="updated">
-                    Act: {formatDate(property.updatedAt || property.fechaPublicacion)}
-                  </span>
-                </div>
               </td>
               <td className="col-actions">
                 <div className="action-buttons">
