@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './AdminSidebar.css';
+import { useUserRoles } from '../../../hooks/useUserRoles';
 
 const AdminSidebar = ({ collapsed, onToggle, currentPath, draftsCount = 0, messagesCount = 0 }) => {
+  const { isAdmin } = useUserRoles();
+
   const menuItems = [
     {
       id: 'dashboard',
@@ -12,11 +15,19 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath, draftsCount = 0, messa
       exact: true
     },
     {
+      id: 'captacion-direct',
+      path: '/admin/viviendas/captacion',
+      icon: '🎯',
+      label: 'Captación',
+      nonAdminOnly: true
+    },
+    {
       id: 'properties',
       path: '/admin/viviendas',
       icon: '🏠',
       label: 'Gestionar Viviendas',
       badge: null,
+      adminOnly: true,
       submenu: [
         { path: '/admin/viviendas', label: 'Todas las viviendas', icon: '📋' },
         { path: '/admin/viviendas/crear', label: 'Crear nueva', icon: '➕' },
@@ -29,14 +40,15 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath, draftsCount = 0, messa
       path: '/admin/mensajes',
       icon: '💬',
       label: 'Mensajes',
-      badge: messagesCount > 0 ? messagesCount.toString() : null
+      badge: messagesCount > 0 ? messagesCount.toString() : null,
+      adminOnly: true
     },
     {
       id: 'users',
       path: '/admin/usuarios',
       icon: '👥',
       label: 'Usuarios',
-      roles: ['Admin'], // Solo para admins
+      adminOnly: true,
       submenu: [
         { path: '/admin/usuarios', label: 'Gestionar usuarios', icon: '⚙️' },
         { path: '/admin/usuarios/roles', label: 'Roles y permisos', icon: '🔐' }
@@ -47,6 +59,7 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath, draftsCount = 0, messa
       path: '/admin/configuracion',
       icon: '⚙️',
       label: 'Configuración',
+      adminOnly: true,
       submenu: [
         { path: '/admin/configuracion/general', label: 'General', icon: '🔧' },
         { path: '/admin/configuracion/email', label: 'Email', icon: '📧' },
@@ -94,7 +107,11 @@ const AdminSidebar = ({ collapsed, onToggle, currentPath, draftsCount = 0, messa
       {/* Navigation */}
       <nav className="sidebar-nav" role="navigation" aria-label="Navegación de administración">
         <ul className="nav-list">
-          {menuItems.map(item => (
+          {menuItems.filter(item => {
+              if (item.adminOnly) return isAdmin;
+              if (item.nonAdminOnly) return !isAdmin;
+              return true;
+            }).map(item => (
             <li key={item.id} className="nav-item">
               <Link
                 to={item.path}

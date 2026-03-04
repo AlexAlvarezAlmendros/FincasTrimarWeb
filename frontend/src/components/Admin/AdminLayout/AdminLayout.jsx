@@ -11,19 +11,20 @@ const AdminLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth0();
   const location = useLocation();
-  const { isAdmin, isSeller, roles } = useUserRoles();
+  const { isAdmin, isSeller, isCaptador, roles } = useUserRoles();
   const { draftsCount, messagesCount } = useAdminStats();
 
   // Log para debugging
   console.log('🔐 AdminLayout - Verificación de roles:', { 
     isAdmin, 
-    isSeller, 
+    isSeller,
+    isCaptador,
     roles,
     user 
   });
 
-  // Si no es Admin ni Seller, redirigir
-  if (!isAdmin && !isSeller) {
+  // Si no es Admin, Seller ni Captador, redirigir
+  if (!isAdmin && !isSeller && !isCaptador) {
     console.warn('❌ Acceso denegado al panel de administración');
     return <Navigate to="/" replace />;
   }

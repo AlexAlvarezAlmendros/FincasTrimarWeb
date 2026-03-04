@@ -189,7 +189,7 @@ class ViviendaRepository {
             TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
             Caracteristicas, Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
             ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion,
-            TelefonoContacto, NombreContacto, UrlReferencia
+            TelefonoContacto, NombreContacto, UrlReferencia, Observaciones
           FROM Vivienda 
           WHERE Id = ?
         `, [row.Id]);

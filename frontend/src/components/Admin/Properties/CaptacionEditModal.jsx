@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import useAgents from '../../../hooks/useAgents.js';
 import './CaptacionEditModal.css';
 
 // Estados de captación válidos
@@ -10,6 +11,7 @@ const CAPTACION_STATES = {
 };
 
 const CaptacionEditModal = ({ property, onSave, onClose }) => {
+  const { agentes } = useAgents(true); // Solo agentes activos
   const [formData, setFormData] = useState({
     estadoVenta: '',
     fechaCaptacion: '',
@@ -80,11 +82,6 @@ const CaptacionEditModal = ({ property, onSave, onClose }) => {
       if (isNaN(comision) || comision < 0 || comision > 100) {
         newErrors.comisionGanada = 'Debe ser un porcentaje entre 0 y 100';
       }
-    }
-
-    // Validar captado por (opcional, pero si se incluye no debe estar vacío)
-    if (formData.captadoPor && formData.captadoPor.trim().length < 2) {
-      newErrors.captadoPor = 'Debe tener al menos 2 caracteres';
     }
 
     setErrors(newErrors);
@@ -198,15 +195,18 @@ const CaptacionEditModal = ({ property, onSave, onClose }) => {
                 <label htmlFor="captadoPor" className="form-label">
                   Captado Por
                 </label>
-                <input
-                  type="text"
+                <select
                   id="captadoPor"
                   value={formData.captadoPor}
                   onChange={(e) => handleInputChange('captadoPor', e.target.value)}
-                  placeholder="Nombre del captador..."
-                  className={`form-input ${errors.captadoPor ? 'error' : ''}`}
+                  className={`form-select ${errors.captadoPor ? 'error' : ''}`}
                   disabled={saving}
-                />
+                >
+                  <option value="">Sin asignar</option>
+                  {agentes.map(a => (
+                    <option key={a.id} value={a.nombre}>{a.nombre}</option>
+                  ))}
+                </select>
                 {errors.captadoPor && (
                   <span className="error-text">{errors.captadoPor}</span>
                 )}

@@ -5,6 +5,7 @@ import propertyService from '../../../services/propertyService.js';
 import CaptacionEditModal from './CaptacionEditModal.jsx';
 import CaptacionPropertyCard from './CaptacionPropertyCard.jsx';
 import JsonImportButton from './JsonImportButton.jsx';
+import useAgents from '../../../hooks/useAgents.js';
 import './CaptacionPage.css';
 
 // Estados de captación válidos según el modelo de datos
@@ -229,7 +230,7 @@ const useCaptacion = () => {
 };
 
 // Componente de filtros
-const CaptacionFilters = ({ filters, onFiltersChange }) => {
+const CaptacionFilters = ({ filters, onFiltersChange, agentes = [] }) => {
   const [searchInput, setSearchInput] = useState(filters.search);
 
   // Sincronizar con el filtro externo cuando se limpie
@@ -290,9 +291,9 @@ const CaptacionFilters = ({ filters, onFiltersChange }) => {
           >
             <option value="">Todos</option>
             <option value="NoAsignado">No Asignado</option>
-            <option value="Aina">Aina</option>
-            <option value="Maria">Maria</option>
-            <option value="Trini">Trini</option>
+            {agentes.map(a => (
+              <option key={a.id} value={a.nombre}>{a.nombre}</option>
+            ))}
           </select>
         </div>
         
@@ -427,6 +428,8 @@ const CaptacionPage = () => {
     changePage
   } = useCaptacion();
 
+  const { agentes } = useAgents(true); // Solo agentes activos
+
   const [editingProperty, setEditingProperty] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -521,7 +524,7 @@ const CaptacionPage = () => {
       </div>
 
       <div className="filters-section">
-        <CaptacionFilters filters={filters} onFiltersChange={setFilters} />
+        <CaptacionFilters filters={filters} onFiltersChange={setFilters} agentes={agentes} />
       </div>
 
       <div className="content-section">

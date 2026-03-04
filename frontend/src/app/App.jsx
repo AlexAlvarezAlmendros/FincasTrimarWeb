@@ -54,7 +54,7 @@ export default function App() {
             <Route 
               path="/admin/*" 
               element={
-                <RequireAuth roles={["AdminTrimar", "SellerTrimar"]}>
+                <RequireAuth roles={["AdminTrimar", "SellerTrimar", "CaptadorTrimar"]}>
                   <Admin />
                 </RequireAuth>
               } 

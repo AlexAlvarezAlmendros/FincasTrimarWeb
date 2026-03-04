@@ -16,6 +16,7 @@ import { privateRoutes as dashboardPrivateRoutes } from './routes/dashboardRoute
 import csvImportRoutes from './routes/csvImportRoutes.js';
 import jsonImportRoutes from './routes/jsonImportRoutes.js';
 import sitemapRoutes from './routes/sitemapRoutes.js';
+import agentRoutes from './routes/agentRoutes.js';
 
 const app = express();
 
@@ -45,7 +46,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/', rateLimiter);
 
 // Middleware de autenticación (configurado en authMiddleware.js)
-import { checkJwt, requireAdmin } from './middlewares/authMiddleware.js';
+import { checkJwt, requireAdmin, requireCaptador } from './middlewares/authMiddleware.js';
 import propertyController from './controllers/propertyController.js';
 
 // Rutas públicas (sin autenticación)
@@ -54,7 +55,7 @@ app.use('/', sitemapRoutes); // Sitemap en raíz para SEO
 
 // IMPORTANTE: Registrar rutas específicas de captación ANTES de las rutas públicas generales
 // para evitar que /viviendas/:id capture "captacion" como un ID
-app.get('/api/v1/viviendas/captacion', checkJwt, requireAdmin, propertyController.getCaptacionProperties);
+app.get('/api/v1/viviendas/captacion', checkJwt, requireCaptador, propertyController.getCaptacionProperties);
 
 // Rutas públicas generales
 app.use('/api/v1', propertyPublicRoutes);
@@ -70,6 +71,7 @@ app.use('/api/v1', imagePrivateRoutes);
 app.use('/api/v1', dashboardPrivateRoutes);
 app.use('/api/v1/csv', csvImportRoutes);
 app.use('/api/v1/json', jsonImportRoutes);
+app.use('/api/v1', agentRoutes);
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
