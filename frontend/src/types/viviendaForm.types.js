@@ -446,6 +446,19 @@ export const FormValidator = {
  */
 export const ImageUtils = {
   /**
+   * Ordena archivos alfabética y numéricamente por nombre de archivo.
+   * Usa comparación natural para que "img2" vaya antes que "img10".
+   * @param {File[]} files - Array de objetos File
+   * @returns {File[]} Nuevo array ordenado (no muta el original)
+   */
+  sortFilesByName(files) {
+    if (!Array.isArray(files) || files.length <= 1) return files;
+    return [...files].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' })
+    );
+  },
+
+  /**
    * Valida archivos de imagen
    */
   validateImageFile(file) {

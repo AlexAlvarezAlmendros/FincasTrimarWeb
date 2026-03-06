@@ -1,4 +1,4 @@
-import { executeQuery } from '../db/client.js';
+import { executeQuery, executeTransaction } from '../db/client.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger.js';
 
@@ -279,32 +279,45 @@ class ViviendaRepository {
   }
   
   /**
-   * Obtiene una vivienda por ID con sus imágenes
+   * Obtiene una vivienda por ID.
+   * Las imágenes se cargan por separado mediante el endpoint /imagenes
+   * para evitar bloquear la conexión WebSocket de Turso en propiedades con muchas imágenes.
    */
   async findById(id) {
     try {
-      // Obtener vivienda
       const viviendaResult = await executeQuery(
         'SELECT * FROM Vivienda WHERE Id = ?',
         [id]
       );
-      
+
       if (viviendaResult.rows.length === 0) {
         return null;
       }
-      
-      // Obtener imágenes
-      const imagenesResult = await executeQuery(
-        'SELECT * FROM ImagenesVivienda WHERE ViviendaId = ? ORDER BY Orden ASC',
-        [id]
-      );
-      
+
       const vivienda = this.transformRow(viviendaResult.rows[0]);
-      vivienda.imagenes = imagenesResult.rows;
-      
+      vivienda.imagenes = []; // Cargadas por endpoint separado (/imagenes)
+
       return vivienda;
     } catch (error) {
       logger.error('Error en ViviendaRepository.findById:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene solo los metadatos de una vivienda SIN imágenes.
+   * Usar cuando solo se necesitan campos de la vivienda (p.ej. para similares).
+   */
+  async findByIdLight(id) {
+    try {
+      const result = await executeQuery(
+        'SELECT * FROM Vivienda WHERE Id = ?',
+        [id]
+      );
+      if (result.rows.length === 0) return null;
+      return this.transformRow(result.rows[0]);
+    } catch (error) {
+      logger.error('Error en ViviendaRepository.findByIdLight:', error);
       throw error;
     }
   }

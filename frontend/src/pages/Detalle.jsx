@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useVivienda, useSimilarViviendas } from '../hooks/useViviendas.js';
 import useContactForm from '../hooks/useContactForm.js';
@@ -41,6 +41,23 @@ export default function Detalle() {
     tipo: 'detalle'
   });
 
+  // Imágenes cargadas de forma independiente (no-bloqueante)
+  const [imagenes, setImagenes] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoadingImages(true);
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    fetch(`${baseUrl}/api/v1/viviendas/${id}/imagenes`)
+      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then(data => {
+        if (data?.data?.images) setImagenes(data.data.images);
+      })
+      .catch(err => console.warn('No se pudieron cargar las imágenes:', err))
+      .finally(() => setLoadingImages(false));
+  }, [id]);
+
   // Estados locales para el envío personalizado
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -51,6 +68,8 @@ export default function Detalle() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
+  const [lightboxImgLoaded, setLightboxImgLoaded] = useState(true);
+  const [visibleGalleryCount, setVisibleGalleryCount] = useState(9);
 
   // Actualizar información cuando cambia la propiedad
   React.useEffect(() => {
@@ -164,6 +183,7 @@ ${infoVivienda}`;
 
   const openLightbox = (index) => {
     setCurrentImageIndex(index);
+    setLightboxImgLoaded(false);
     setShowLightbox(true);
   };
 
@@ -172,17 +192,22 @@ ${infoVivienda}`;
   };
 
   const nextImage = () => {
-    const totalImages = property?.imagenes?.length || 1;
+    setLightboxImgLoaded(false);
     setCurrentImageIndex((prev) => 
-      prev === totalImages - 1 ? 0 : prev + 1
+      prev === imagenes.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
-    const totalImages = property?.imagenes?.length || 1;
+    setLightboxImgLoaded(false);
     setCurrentImageIndex((prev) => 
-      prev === 0 ? totalImages - 1 : prev - 1
+      prev === 0 ? imagenes.length - 1 : prev - 1
     );
+  };
+
+  // Fade-in handler para imágenes lazy: añade clase CSS al cargar
+  const handleImageLoad = (e) => {
+    e.currentTarget.classList.add('detalle-img--loaded');
   };
 
   // Estados de carga y error
@@ -213,7 +238,7 @@ ${infoVivienda}`;
         title={property.name}
         description={property.shortDescription || property.description?.substring(0, 160)}
         keywords={`${property.tipoVivienda} ${property.tipoAnuncio} ${property.poblacion}, ${property.rooms} habitaciones, ${property.squaredMeters}m2, inmobiliaria Igualada`}
-        image={property.imagenes?.[0]?.URL}
+        image={imagenes?.[0]?.url}
         type="product"
         structuredData={[
           generatePropertySchema(property),
@@ -237,16 +262,22 @@ ${infoVivienda}`;
 
         {/* Hero Gallery */}
         <section className="detalle-hero-gallery">
-          <div className="detalle-main-image" onClick={() => openLightbox(0)}>
+          <div className="detalle-main-image detalle-img-skeleton" onClick={() => openLightbox(0)}>
             <img 
-              src={property.imagenes && property.imagenes.length > 0 
-                ? property.imagenes[0].URL 
+              src={imagenes && imagenes.length > 0 
+                ? imagenes[0].url 
                 : '/api/placeholder/800/600'} 
-              alt={property.name} 
+              alt={property.name}
+              fetchpriority="high"
+              decoding="async"
+              onLoad={(e) => {
+                e.currentTarget.classList.add('detalle-img--loaded');
+                e.currentTarget.parentElement.classList.remove('detalle-img-skeleton');
+              }}
             />
             <div className="detalle-view-all-images">
-              {property.imagenes && property.imagenes.length > 1 
-                ? `Ver todas las imágenes (${property.imagenes.length})` 
+              {imagenes && imagenes.length > 1 
+                ? `Ver todas las imágenes (${imagenes.length})` 
                 : 'Ver imagen'}
             </div>
           </div>
@@ -358,20 +389,37 @@ ${infoVivienda}`;
             </section>
 
             {/* Gallery - Solo mostrar si hay imágenes */}
-            {property.imagenes && property.imagenes.length > 0 && (
+            {imagenes && imagenes.length > 0 && (
               <section className="detalle-gallery-section">
                 <h3>Imágenes</h3>
                 <div className="detalle-image-grid-detalle">
-                  {property.imagenes.map((imagen, index) => (
-                    <div key={imagen.Id || index} className="detalle-gallery-item" onClick={() => openLightbox(index)}>
+                  {imagenes.slice(0, visibleGalleryCount).map((imagen, index) => (
+                    <div
+                      key={imagen.Id || index}
+                      className="detalle-gallery-item detalle-img-skeleton"
+                      onClick={() => openLightbox(index)}
+                    >
                       <img 
-                        src={imagen.URL} 
+                        src={imagen.url} 
                         alt={`${property.name} - Imagen ${index + 1}`} 
-                        loading="lazy" 
+                        loading="lazy"
+                        decoding="async"
+                        onLoad={(e) => {
+                          e.currentTarget.classList.add('detalle-img--loaded');
+                          e.currentTarget.parentElement.classList.remove('detalle-img-skeleton');
+                        }}
                       />
                     </div>
                   ))}
                 </div>
+                {imagenes.length > visibleGalleryCount && (
+                  <button
+                    className="detalle-load-more-btn"
+                    onClick={() => setVisibleGalleryCount((prev) => prev + 9)}
+                  >
+                    Ver más imágenes ({imagenes.length - visibleGalleryCount} restantes)
+                  </button>
+                )}
               </section>
             )}
 
@@ -578,22 +626,29 @@ ${infoVivienda}`;
       </div>
 
       {/* Lightbox */}
-      {showLightbox && property?.imagenes && property.imagenes.length > 0 && (
+      {showLightbox && imagenes.length > 0 && (
         <div className="detalle-lightbox" onClick={closeLightbox}>
           <div className="detalle-lightbox-content" onClick={(e) => e.stopPropagation()}>
             <button className="detalle-lightbox-close" onClick={closeLightbox}>×</button>
-            {property.imagenes.length > 1 && (
+            {imagenes.length > 1 && (
               <>
                 <button className="detalle-lightbox-prev" onClick={prevImage}>‹</button>
                 <button className="detalle-lightbox-next" onClick={nextImage}>›</button>
               </>
             )}
+            {!lightboxImgLoaded && (
+              <div className="detalle-lightbox-spinner-overlay">
+                <div className="detalle-lightbox-spinner" />
+              </div>
+            )}
             <img 
-              src={property.imagenes[currentImageIndex]?.URL || '/api/placeholder/800/600'} 
-              alt={`${property.name} - Imagen ${currentImageIndex + 1}`} 
+              src={imagenes[currentImageIndex]?.url || '/api/placeholder/800/600'} 
+              alt={`${property.name} - Imagen ${currentImageIndex + 1}`}
+              style={{ opacity: lightboxImgLoaded ? 1 : 0 }}
+              onLoad={() => setLightboxImgLoaded(true)}
             />
             <div className="detalle-lightbox-counter">
-              {currentImageIndex + 1} / {property.imagenes.length}
+              {currentImageIndex + 1} / {imagenes.length}
             </div>
           </div>
         </div>

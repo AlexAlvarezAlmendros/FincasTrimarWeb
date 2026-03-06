@@ -1,6 +1,55 @@
 import { logger } from '../utils/logger.js';
 import viviendaRepository from '../repos/viviendaRepository.js';
+import imagenesViviendaRepository from '../repos/imagenesViviendaRepository.js';
 import { executeQuery } from '../db/client.js';
+
+/**
+ * Características disponibles en la plataforma para matching con datos externos
+ */
+const CARACTERISTICAS_PLATAFORMA = [
+  'AireAcondicionado',
+  'ArmariosEmpotrados',
+  'Ascensor',
+  'Balcón',
+  'Terraza',
+  'Exterior',
+  'Garaje',
+  'Jardín',
+  'Piscina',
+  'Trastero',
+  'ViviendaAccesible',
+  'VistasAlMar',
+  'ViviendaDeLujo',
+  'VistasAMontaña',
+  'FuegoATierra',
+  'Calefacción',
+  'Guardilla',
+  'CocinaOffice'
+];
+
+/**
+ * Mapa de keywords del JSON externo a características de la plataforma
+ */
+const CARACTERISTICAS_MATCHING = {
+  'AireAcondicionado': ['aire acondicionado', 'a/c', 'climatización', 'climatizacion'],
+  'ArmariosEmpotrados': ['armarios empotrados', 'armario empotrado'],
+  'Ascensor': ['ascensor', 'con ascensor', 'elevador'],
+  'Balcón': ['balcón', 'balcon'],
+  'Terraza': ['terraza', 'terraza y balcón', 'terraza y balcon'],
+  'Exterior': ['exterior', 'planta.*exterior'],
+  'Garaje': ['garaje', 'plaza de garaje', 'parking', 'aparcamiento', 'garaje incluido'],
+  'Jardín': ['jardín', 'jardin', 'zona ajardinada'],
+  'Piscina': ['piscina', 'piscina comunitaria', 'piscina privada'],
+  'Trastero': ['trastero', 'almacén', 'almacen'],
+  'ViviendaAccesible': ['accesible', 'adaptad'],
+  'VistasAlMar': ['vistas al mar', 'vista al mar', 'primera línea de playa', 'primera linea de playa'],
+  'ViviendaDeLujo': ['lujo', 'premium', 'exclusiv'],
+  'VistasAMontaña': ['vistas a la montaña', 'vistas a montaña', 'vistas a montana'],
+  'FuegoATierra': ['chimenea', 'fuego a tierra', 'hogar', 'leña'],
+  'Calefacción': ['calefacción', 'calefaccion', 'calefacción individual', 'calefaccion individual', 'gas natural'],
+  'Guardilla': ['guardilla', 'buhardilla', 'altillo'],
+  'CocinaOffice': ['cocina office', 'office', 'cocina americana']
+};
 
 /**
  * Servicio para importación masiva de viviendas desde JSON
@@ -8,51 +57,62 @@ import { executeQuery } from '../db/client.js';
 class JsonImportService {
   
   /**
-   * Valida la estructura del JSON de importación
+   * Valida la estructura del JSON de importación.
+   * Soporta dos formatos:
+   *   - Formato agencia: { inmuebles: [...] }
+   *   - Formato legacy:  { viviendas: { todas: [...] } }
    */
   validateJsonStructure(data) {
     try {
-      // Validar estructura básica
       if (!data || typeof data !== 'object') {
         return { valid: false, error: 'El JSON debe ser un objeto válido' };
       }
 
-      // Validar que exista la estructura de viviendas
-      if (!data.viviendas || !data.viviendas.todas || !Array.isArray(data.viviendas.todas)) {
-        return { 
-          valid: false, 
-          error: 'El JSON debe contener una estructura "viviendas.todas" con un array de propiedades' 
-        };
+      // Formato agencia: { inmuebles: [...] }
+      if (Array.isArray(data.inmuebles)) {
+        if (data.inmuebles.length === 0) {
+          return { valid: false, error: 'No se encontraron inmuebles para importar' };
+        }
+        const requiredFields = ['titulo', 'precio', 'ubicacion'];
+        const sample = data.inmuebles[0];
+        const missing = requiredFields.filter(f => !sample[f]);
+        if (missing.length > 0) {
+          return { valid: false, error: `Los inmuebles deben incluir: ${missing.join(', ')}` };
+        }
+        return { valid: true, format: 'agencia' };
       }
 
-      // Validar que haya al menos una vivienda
-      if (data.viviendas.todas.length === 0) {
-        return { valid: false, error: 'No se encontraron viviendas para importar' };
+      // Formato legacy: { viviendas: { todas: [...] } }
+      if (data.viviendas?.todas && Array.isArray(data.viviendas.todas)) {
+        if (data.viviendas.todas.length === 0) {
+          return { valid: false, error: 'No se encontraron viviendas para importar' };
+        }
+        const requiredFields = ['titulo', 'precio', 'ubicacion', 'url'];
+        const sample = data.viviendas.todas[0];
+        const missing = requiredFields.filter(f => !sample[f]);
+        if (missing.length > 0) {
+          return { valid: false, error: `Las viviendas deben incluir: ${missing.join(', ')}` };
+        }
+        return { valid: true, format: 'legacy' };
       }
 
-      // Validar campos requeridos en la primera vivienda como muestra
-      const requiredFields = ['titulo', 'precio', 'ubicacion', 'url'];
-      const sampleVivienda = data.viviendas.todas[0];
-      
-      const missingFields = requiredFields.filter(field => !sampleVivienda[field]);
-      if (missingFields.length > 0) {
-        return { 
-          valid: false, 
-          error: `Las viviendas deben incluir los campos requeridos: ${missingFields.join(', ')}` 
-        };
-      }
-
-      // Validar metadatos opcionales
-      if (data.total !== undefined && typeof data.total !== 'number') {
-        return { valid: false, error: 'El campo "total" debe ser un número' };
-      }
-
-      return { valid: true };
-      
+      return {
+        valid: false,
+        error: 'El JSON debe contener "inmuebles" (array) o "viviendas.todas" (array)'
+      };
     } catch (error) {
       logger.error('❌ Error validando estructura JSON:', error);
       return { valid: false, error: 'Error interno validando la estructura JSON' };
     }
+  }
+
+  /**
+   * Extrae la lista de inmuebles del JSON independientemente del formato
+   */
+  extractInmuebles(jsonData) {
+    if (Array.isArray(jsonData.inmuebles)) return jsonData.inmuebles;
+    if (jsonData.viviendas?.todas) return jsonData.viviendas.todas;
+    return [];
   }
 
   /**
@@ -61,9 +121,12 @@ class JsonImportService {
   async processImport(jsonData, _user) {
     try {
       logger.info('📄 Iniciando procesamiento de importación JSON...');
-      
-      const viviendas = jsonData.viviendas.todas;
-      logger.info(`📊 JSON procesado: ${viviendas.length} viviendas encontradas`);
+
+      const viviendas = this.extractInmuebles(jsonData);
+      const validation = this.validateJsonStructure(jsonData);
+      const isAgenciaFormat = validation.format === 'agencia';
+
+      logger.info(`📊 JSON procesado (formato ${validation.format}): ${viviendas.length} viviendas encontradas`);
       
       const results = {
         summary: {
@@ -91,8 +154,10 @@ class JsonImportService {
             continue;
           }
 
-          // Transformar datos del JSON al formato de la base de datos
-          const transformedData = this.transformJsonToVivienda(vivienda);
+          // Transformar datos según el formato
+          const transformedData = isAgenciaFormat
+            ? this.transformAgenciaToVivienda(vivienda)
+            : this.transformJsonToVivienda(vivienda);
           
           // Verificar duplicados por URL (principal)
           if (transformedData.urlReferencia) {
@@ -128,8 +193,7 @@ class JsonImportService {
             continue;
           }
           
-          // Validar datos transformados usando el schema de propiedad estándar
-          // No necesitamos el jsonViviendaSchema específico, usamos validación básica aquí
+          // Validar datos transformados
           if (!transformedData.name || transformedData.name.length < 3) {
             throw new Error('El título debe tener al menos 3 caracteres');
           }
@@ -141,21 +205,39 @@ class JsonImportService {
           // Agregar metadatos de importación
           const finalData = {
             ...transformedData,
-            estadoVenta: 'Pendiente', // Estado por defecto para importaciones
             fechaCaptacion: new Date().toISOString(),
-            observaciones: `${transformedData.observaciones} - Importado el ${new Date().toLocaleDateString()}`
+            observaciones: transformedData.observaciones
+              ? `${transformedData.observaciones} - Importado el ${new Date().toLocaleDateString()}`
+              : `Importado el ${new Date().toLocaleDateString()}`
           };
           
           // Crear vivienda
           const newVivienda = await viviendaRepository.create(finalData);
+
+          // Asociar imágenes (si existen) directamente como URLs
+          const imageUrls = isAgenciaFormat
+            ? this.filterImageUrls(vivienda.imagenes)
+            : [];
+
+          if (imageUrls.length > 0 && newVivienda?.id) {
+            try {
+              const imageRecords = imageUrls.map((url, i) => ({ url, orden: i + 1 }));
+              await imagenesViviendaRepository.addImagesToProperty(newVivienda.id, imageRecords);
+              logger.info(`🖼️ ${imageUrls.length} imágenes asociadas a vivienda ${newVivienda.id}`);
+            } catch (imgError) {
+              logger.error(`⚠️ Error asociando imágenes a ${newVivienda.id}:`, imgError.message);
+              // No falla la importación si las imágenes fallan
+            }
+          }
           
-          logger.info(`✅ Ítem ${index + 1}: Vivienda creada con ID ${newVivienda.id}`);
+          logger.info(`✅ Ítem ${index + 1}: Vivienda creada con ID ${newVivienda.id} (${imageUrls.length} imágenes)`);
           results.summary.success++;
           results.details.push({
             row: index + 1,
             status: 'success',
             title: vivienda.titulo,
-            id: newVivienda.id
+            id: newVivienda.id,
+            images: imageUrls.length
           });
           
         } catch (error) {
@@ -180,7 +262,240 @@ class JsonImportService {
   }
 
   /**
-   * Transforma los datos del JSON al formato de vivienda de la base de datos
+   * Filtra las URLs de imágenes del array del JSON de agencia.
+   * Solo conserva imágenes reales (jpg/webp de tamaño XL), no SVGs, no flags, etc.
+   * Desduplicación por hash de imagen (parte final de la URL).
+   */
+  filterImageUrls(imagenes) {
+    if (!Array.isArray(imagenes) || imagenes.length === 0) return [];
+
+    const seen = new Set();
+    const filtered = [];
+
+    for (const url of imagenes) {
+      if (typeof url !== 'string') continue;
+
+      // Excluir SVGs, flags, logos y otros assets no-foto
+      if (url.endsWith('.svg')) continue;
+      if (url.includes('/flags/')) continue;
+      if (url.includes('logo-default')) continue;
+
+      // Solo imágenes de propiedades (contienen "image.master")
+      if (!url.includes('image.master')) continue;
+
+      // Preferir variante XL si disponible; excluir duplicados menores (WEB_DETAIL sin XL, TOP)
+      // Extraer hash único del archivo (última parte de la ruta)
+      const hashMatch = url.match(/([a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{2}\/\d+)/);
+      if (!hashMatch) continue;
+
+      const imageHash = hashMatch[1];
+      if (seen.has(imageHash)) continue;
+      seen.add(imageHash);
+
+      // Preferir formato jpg XL
+      filtered.push(url);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Transforma datos del formato agencia ({ inmuebles }) al formato de vivienda de la BD.
+   * - Extrae descripción corta
+   * - Ubicación como campo único → poblacion
+   * - TipoInmueble/TipoVivienda inteligente
+   * - Matching de características
+   * - TipoAnuncio = Venta, EstadoVenta = Disponible, Published = true
+   */
+  transformAgenciaToVivienda(inmueble) {
+    const precioNumerico = this.parsePrecio(inmueble.precio);
+    const description = inmueble.descripcion?.trim() || '';
+    const shortDescription = this.extractShortDescription(description);
+    const { tipoInmueble, tipoVivienda } = this.inferirTiposDesdeInmueble(inmueble);
+    const estado = this.inferirEstado(inmueble.estado);
+    const planta = this.inferirPlanta(inmueble.caracteristicas);
+    const caracteristicas = this.matchCaracteristicas(inmueble.caracteristicas || []);
+
+    // Convertir descripción a HTML
+    const htmlDescription = description
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => `<p>${line}</p>`)
+      .join('');
+
+    return {
+      name: inmueble.titulo?.trim(),
+      shortDescription,
+      description: htmlDescription || description,
+      price: precioNumerico,
+      rooms: this.parseNumeric(inmueble.habitaciones),
+      bathRooms: this.parseNumeric(inmueble.banos),
+      garage: this.parseNumeric(inmueble.garajes),
+      squaredMeters: this.parseNumeric(inmueble.metros_cuadrados),
+
+      // Ubicación: un solo campo → poblacion
+      provincia: null,
+      poblacion: inmueble.ubicacion?.trim() || null,
+      calle: null,
+      numero: null,
+
+      // Clasificación inteligente
+      tipoInmueble,
+      tipoVivienda,
+      estado,
+      planta,
+      tipoAnuncio: 'Venta',
+      estadoVenta: 'Disponible',
+      caracteristicas,
+
+      // Auto-publicar
+      published: true,
+      isDraft: false,
+
+      // Metadatos
+      captadoPor: null,
+      fechaCaptacion: new Date().toISOString(),
+      urlReferencia: inmueble.url?.trim() || null,
+      observaciones: `Importado desde JSON agencia`
+    };
+  }
+
+  /**
+   * Extrae una descripción corta (máx 300 chars) de la descripción completa
+   */
+  extractShortDescription(description, maxLength = 300) {
+    if (!description) return '';
+    // Tomar la primera frase significativa (hasta punto, o primeros N chars)
+    const clean = description.replace(/\s+/g, ' ').trim();
+    // Buscar el primer punto seguido de espacio o fin
+    const firstSentenceEnd = clean.search(/\.\s|\.$/);
+    if (firstSentenceEnd > 0 && firstSentenceEnd <= maxLength) {
+      return clean.substring(0, firstSentenceEnd + 1).trim();
+    }
+    // Si no hay punto razonable, cortar por palabra
+    if (clean.length <= maxLength) return clean;
+    const truncated = clean.substring(0, maxLength);
+    const lastSpace = truncated.lastIndexOf(' ');
+    return (lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated) + '...';
+  }
+
+  /**
+   * Infiere TipoInmueble y TipoVivienda a partir de los datos del inmueble
+   */
+  inferirTiposDesdeInmueble(inmueble) {
+    const tipoRaw = (inmueble.tipo_inmueble || inmueble.titulo || '').toLowerCase();
+
+    // Mapeo de tipo_inmueble del JSON a TipoVivienda de la plataforma
+    const viviendaMap = {
+      'piso': 'Piso',
+      'ático': 'Ático', 'atico': 'Ático',
+      'dúplex': 'Dúplex', 'duplex': 'Dúplex',
+      'casa': 'Casa',
+      'chalet': 'Chalet',
+      'villa': 'Villa',
+      'masía': 'Masía', 'masia': 'Masía',
+      'finca': 'Finca',
+      'loft': 'Loft',
+      'estudio': 'Loft'
+    };
+
+    // Mapeo de tipos NO-vivienda a TipoInmueble
+    const noViviendaMap = {
+      'oficina': 'Oficina',
+      'local': 'Local',
+      'nave': 'Nave',
+      'garaje': 'Garaje',
+      'terreno': 'Terreno',
+      'trastero': 'Trastero',
+      'edificio': 'Edificio'
+    };
+
+    // Primero revisar si es un tipo no-vivienda
+    for (const [keyword, tipoInmueble] of Object.entries(noViviendaMap)) {
+      if (tipoRaw.includes(keyword)) {
+        return { tipoInmueble, tipoVivienda: null };
+      }
+    }
+
+    // Es vivienda: determinar el tipo específico
+    for (const [keyword, tipoVivienda] of Object.entries(viviendaMap)) {
+      if (tipoRaw.includes(keyword)) {
+        return { tipoInmueble: 'Vivienda', tipoVivienda };
+      }
+    }
+
+    // Default
+    return { tipoInmueble: 'Vivienda', tipoVivienda: 'Piso' };
+  }
+
+  /**
+   * Infiere el estado de conservación
+   */
+  inferirEstado(estadoRaw) {
+    if (!estadoRaw) return null;
+    const lower = estadoRaw.toLowerCase();
+    if (lower.includes('obra nueva') || lower.includes('nueva construcción') || lower.includes('nueva construccion')) return 'ObraNueva';
+    if (lower.includes('buen estado') || lower.includes('segunda mano')) return 'BuenEstado';
+    if (lower.includes('reformar') || lower.includes('reformado')) return 'BuenEstado';
+    if (lower.includes('a reformar')) return 'AReformar';
+    return 'BuenEstado';
+  }
+
+  /**
+   * Infiere la planta desde las características
+   */
+  inferirPlanta(caracteristicas) {
+    if (!Array.isArray(caracteristicas)) return null;
+    const joined = caracteristicas.join(' ').toLowerCase();
+    if (joined.includes('última planta') || joined.includes('ultima planta') || joined.includes('ático') || joined.includes('atico')) return 'UltimaPlanta';
+    if (joined.includes('bajo') || joined.includes('planta baja')) return 'Bajo';
+    if (joined.match(/planta\s+\d/)) return 'PlantaIntermedia';
+    return null;
+  }
+
+  /**
+   * Hace matching de características externas con las de la plataforma
+   */
+  matchCaracteristicas(caracteristicasExternas) {
+    if (!Array.isArray(caracteristicasExternas) || caracteristicasExternas.length === 0) return [];
+
+    const matched = new Set();
+    const textoCompleto = caracteristicasExternas.join(' | ').toLowerCase();
+
+    for (const [caracteristica, keywords] of Object.entries(CARACTERISTICAS_MATCHING)) {
+      for (const keyword of keywords) {
+        // Soportar regex en keywords
+        try {
+          const regex = new RegExp(keyword, 'i');
+          if (regex.test(textoCompleto)) {
+            matched.add(caracteristica);
+            break;
+          }
+        } catch {
+          if (textoCompleto.includes(keyword.toLowerCase())) {
+            matched.add(caracteristica);
+            break;
+          }
+        }
+      }
+    }
+
+    return Array.from(matched);
+  }
+
+  /**
+   * Parse genérico de valor numérico desde string
+   */
+  parseNumeric(value) {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === 'number') return value;
+    const match = String(value).match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
+  /**
+   * Transforma los datos del JSON legacy al formato de vivienda de la base de datos
    */
   transformJsonToVivienda(jsonVivienda) {
     // Extraer precio numérico del texto (ej: "90.000€" -> 90000)

@@ -98,6 +98,11 @@ const ImageUploader = ({ images = [], onImagesChange, isLoading }) => {
     }
   };
 
+  const sortFiles = (files) =>
+    [...files].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' })
+    );
+
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -108,7 +113,7 @@ const ImageUploader = ({ images = [], onImagesChange, isLoading }) => {
     );
     
     if (files.length > 0) {
-      onImagesChange([...safeImages, ...files]);
+      onImagesChange([...safeImages, ...sortFiles(files)]);
     }
   };
 
@@ -118,7 +123,7 @@ const ImageUploader = ({ images = [], onImagesChange, isLoading }) => {
     );
     
     if (files.length > 0) {
-      onImagesChange([...safeImages, ...files]);
+      onImagesChange([...safeImages, ...sortFiles(files)]);
     }
   };
 

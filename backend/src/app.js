@@ -45,6 +45,23 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Rate limiting para rutas públicas
 app.use('/api/', rateLimiter);
 
+// Timeout de seguridad para todas las rutas API: 25 segundos máximo
+app.use('/api/', (req, res, next) => {
+  res.setTimeout(25_000, () => {
+    if (!res.headersSent) {
+      logger.error(`⏱️ Request timeout (25s): ${req.method} ${req.path}`);
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'REQUEST_TIMEOUT',
+          message: 'El servidor tardó demasiado en responder. Inténtalo de nuevo.'
+        }
+      });
+    }
+  });
+  next();
+});
+
 // Middleware de autenticación (configurado en authMiddleware.js)
 import { checkJwt, requireAdmin, requireCaptador } from './middlewares/authMiddleware.js';
 import propertyController from './controllers/propertyController.js';

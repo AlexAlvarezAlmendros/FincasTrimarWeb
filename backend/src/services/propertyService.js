@@ -199,8 +199,8 @@ class PropertyService {
     try {
       logger.info(`Actualizando propiedad ID: ${id}`);
       
-      // Verificar que la propiedad existe
-      const existingProperty = await viviendaRepository.findById(id);
+      // Verificar que la propiedad existe (sin cargar imágenes)
+      const existingProperty = await viviendaRepository.findByIdLight(id);
       if (!existingProperty) {
         const error = new Error('Propiedad no encontrada');
         error.statusCode = 404;
@@ -247,8 +247,8 @@ class PropertyService {
     try {
       logger.info(`Eliminando propiedad ID: ${id}`);
       
-      // Verificar que la propiedad existe
-      const existingProperty = await viviendaRepository.findById(id);
+      // Verificar que la propiedad existe (sin cargar imágenes)
+      const existingProperty = await viviendaRepository.findByIdLight(id);
       if (!existingProperty) {
         const error = new Error('Propiedad no encontrada');
         error.statusCode = 404;
@@ -298,7 +298,8 @@ class PropertyService {
    */
   async getSimilarProperties(propertyId, limit = 4) {
     try {
-      const property = await viviendaRepository.findById(propertyId);
+      // findByIdLight: solo metadatos, sin cargar imágenes (evita hit extra a ImagenesVivienda)
+      const property = await viviendaRepository.findByIdLight(propertyId);
       
       if (!property) {
         return [];
@@ -446,15 +447,16 @@ class PropertyService {
   async getPropertyImages(propertyId) {
     try {
       logger.info(`Obteniendo imágenes para propiedad: ${propertyId}`);
-      
-      const property = await viviendaRepository.findById(propertyId);
+
+      // Verificar existencia sin cargar imágenes (evita timeout en propiedades con muchas imágenes)
+      const property = await viviendaRepository.findByIdLight(propertyId);
       if (!property) {
         const error = new Error('Propiedad no encontrada');
         error.statusCode = 404;
         throw error;
       }
 
-      return property.imagenes || [];
+      return await imagenesViviendaRepository.findByViviendaId(propertyId);
     } catch (error) {
       logger.error('Error en PropertyService.getPropertyImages:', error);
       throw error;

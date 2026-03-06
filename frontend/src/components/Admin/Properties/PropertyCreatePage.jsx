@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCreateViviendaSimple } from '../../../hooks/useCreateViviendaSimple.js';
 import { useImageManager } from '../../../hooks/useImageManager.js';
@@ -8,10 +8,9 @@ import {
   Estado, 
   Planta, 
   TipoAnuncio, 
-  EstadoVenta, 
-  Caracteristica 
+  EstadoVenta
 } from '../../../types/vivienda.types.js';
-import HtmlExtractor from '../../HtmlExtractor/HtmlExtractor.jsx';
+import JsonBulkImport from './JsonBulkImport/JsonBulkImport.jsx';
 import CharacteristicsSelector from '../../CharacteristicsSelector/index.js';
 import DraggableImageGrid from '../../DraggableImageGrid/index.js';
 import DraggablePendingGrid from '../../DraggablePendingGrid/index.js';
@@ -30,8 +29,8 @@ const PropertyCreatePage = () => {
   const [successData, setSuccessData] = useState(null);
   const [wasSavedAsDraft, setWasSavedAsDraft] = useState(false);
   
-  // Estado para resetear el HtmlExtractor
-  const [htmlExtractorReset, setHtmlExtractorReset] = useState(0);
+  // Estado para resetear el JsonBulkImport
+  const [jsonImportReset, setJsonImportReset] = useState(0);
   
   // Estado para el popup de carga
   const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
@@ -175,7 +174,7 @@ const PropertyCreatePage = () => {
       if (window.confirm('¿Estás seguro de que quieres resetear el formulario?')) {
         resetForm();
         clearAllImages();
-        setHtmlExtractorReset(prev => prev + 1);
+        setJsonImportReset(prev => prev + 1);
       }
     }
   };
@@ -196,8 +195,8 @@ const PropertyCreatePage = () => {
       // Limpiar todas las imágenes (pendientes y guardadas)
       clearAllImages();
       
-      // Resetear el componente HtmlExtractor
-      setHtmlExtractorReset(prev => prev + 1);
+      // Resetear el componente JsonBulkImport
+      setJsonImportReset(prev => prev + 1);
       
       // Scroll hacia arriba para mejor UX
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -216,93 +215,6 @@ const PropertyCreatePage = () => {
       setWasSavedAsDraft(false);
       // El error ya se maneja en el hook
     }
-  };
-
-  // Función para manejar los datos extraídos del HTML de Idealista
-  const handleDataExtracted = (extractedData) => {
-    console.log('Datos extraídos de Idealista:', extractedData);
-    
-    // Mapear los datos extraídos a los campos del formulario
-    if (extractedData.name) {
-      updateField('name', extractedData.name);
-    }
-    
-    if (extractedData.shortDescription) {
-      updateField('shortDescription', extractedData.shortDescription);
-    }
-    
-    if (extractedData.description) {
-      // Convertir texto plano a HTML básico para el editor rich text
-      const htmlDescription = extractedData.description
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => `<p>${line}</p>`)
-        .join('');
-      updateField('description', htmlDescription);
-    }
-    
-    if (extractedData.price && extractedData.price > 0) {
-      updateField('price', extractedData.price.toString());
-    }
-    
-    if (extractedData.rooms && extractedData.rooms > 0) {
-      updateField('rooms', extractedData.rooms.toString());
-    }
-    
-    if (extractedData.bathRooms && extractedData.bathRooms > 0) {
-      updateField('bathRooms', extractedData.bathRooms.toString());
-    }
-    
-    if (extractedData.squaredMeters && extractedData.squaredMeters > 0) {
-      updateField('squaredMeters', extractedData.squaredMeters.toString());
-    }
-    
-    // Mapear ubicación si está disponible
-    if (extractedData.location && extractedData.location.poblacion) {
-      updateField('poblacion', extractedData.location.poblacion);
-    }
-    
-    if (extractedData.location && extractedData.location.provincia) {
-      updateField('provincia', extractedData.location.provincia);
-    }
-    
-    // Mapear tipos de inmueble y vivienda
-    if (extractedData.tipoInmueble && TipoInmueble[extractedData.tipoInmueble]) {
-      updateField('tipoInmueble', extractedData.tipoInmueble);
-    }
-    
-    if (extractedData.tipoVivienda && TipoVivienda[extractedData.tipoVivienda]) {
-      updateField('tipoVivienda', extractedData.tipoVivienda);
-    }
-    
-    // Mapear estado y tipo de anuncio
-    if (extractedData.estado && Estado[extractedData.estado]) {
-      updateField('estado', extractedData.estado);
-    }
-    
-    if (extractedData.tipoAnuncio && TipoAnuncio[extractedData.tipoAnuncio]) {
-      updateField('tipoAnuncio', extractedData.tipoAnuncio);
-    }
-    
-    // Mapear características
-    if (extractedData.caracteristicas && typeof extractedData.caracteristicas === 'object') {
-      const currentCaracteristicas = formData.caracteristicas || [];
-      const newCaracteristicas = [];
-      
-      Object.keys(extractedData.caracteristicas).forEach(key => {
-        if (extractedData.caracteristicas[key] === true && Caracteristica[key]) {
-          newCaracteristicas.push(key);
-        }
-      });
-      
-      if (newCaracteristicas.length > 0) {
-        updateField('caracteristicas', newCaracteristicas);
-      }
-    }
-    
-    // Mostrar mensaje de éxito
-    console.log('Formulario auto-rellenado con datos de Idealista');
   };
 
   return (
@@ -344,11 +256,13 @@ const PropertyCreatePage = () => {
       {/* Componente temporal de debug para Auth0 */}
       {/* <Auth0Debug /> */}
 
-      {/* Extractor de HTML de Idealista */}
+      {/* Importación masiva de inmuebles desde JSON */}
       {!id && (
-        <HtmlExtractor 
-          onDataExtracted={handleDataExtracted} 
-          resetTrigger={htmlExtractorReset}
+        <JsonBulkImport 
+          onImportComplete={(results) => {
+            console.log('Importación JSON completada:', results);
+          }}
+          resetTrigger={jsonImportReset}
         />
       )}
 

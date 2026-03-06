@@ -8,17 +8,38 @@ import { logger } from '../utils/logger.js';
 class ImagenesViviendaRepository {
   
   /**
-   * Obtiene imágenes de una vivienda ordenadas
+   * Obtiene imágenes de una vivienda ordenadas.
+   * Usa paginación interna en lotes de 40 para no superar el límite de
+   * tamaño de respuesta del WebSocket de Turso (~10 KB por query).
    */
   async findByViviendaId(viviendaId) {
     try {
-      const result = await executeQuery(`
-        SELECT * FROM ImagenesVivienda 
-        WHERE ViviendaId = ? 
-        ORDER BY Orden ASC
-      `, [viviendaId]);
-      
-      return result.rows.map(this.transformRow);
+      const BATCH = 40;
+      const images = [];
+      let offset = 0;
+
+      while (true) {
+        const result = await executeQuery(
+          `SELECT Id, URL, Orden FROM ImagenesVivienda
+           WHERE ViviendaId = ?
+           ORDER BY Orden ASC
+           LIMIT ? OFFSET ?`,
+          [viviendaId, BATCH, offset]
+        );
+
+        const batch = result.rows.map(row => ({
+          id: row.Id,
+          viviendaId,
+          url: row.URL,
+          orden: row.Orden,
+        }));
+
+        images.push(...batch);
+        if (batch.length < BATCH) break;
+        offset += BATCH;
+      }
+
+      return images;
     } catch (error) {
       logger.error('Error en ImagenesViviendaRepository.findByViviendaId:', error);
       throw error;

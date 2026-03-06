@@ -123,8 +123,8 @@ export const useImageManager = (propertyId = null, options = {}) => {
       return;
     }
 
-    // Sin límite de imágenes - añadir todos los archivos válidos
-    const filesToAdd = validFiles;
+    // Sin límite de imágenes - ordenar alfabética y numéricamente por nombre
+    const filesToAdd = ImageUtils.sortFilesByName(validFiles);
 
     const newPendingFiles = filesToAdd.map(file => ({
       id: Math.random().toString(36).substr(2, 9),

@@ -231,9 +231,10 @@ export const useCreateVivienda = (initialData = null, options = {}) => {
       return false;
     }
 
+    const sortedFiles = ImageUtils.sortFilesByName(Array.from(files));
     setFormData(prev => ({
       ...prev,
-      newImages: [...prev.newImages, ...Array.from(files)]
+      newImages: [...prev.newImages, ...sortedFiles]
     }));
 
     safeSetSubmitError(null);

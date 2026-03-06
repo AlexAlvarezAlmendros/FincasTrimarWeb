@@ -25,7 +25,7 @@ class JsonImportController {
         });
       }
       
-      // Validar estructura del JSON
+      // Validar estructura del JSON (soporta ambos formatos)
       const validation = jsonImportService.validateJsonStructure(req.body);
       if (!validation.valid) {
         return res.status(400).json({
@@ -37,7 +37,8 @@ class JsonImportController {
         });
       }
       
-      logger.info(`📊 JSON recibido con ${req.body.viviendas?.todas?.length || 0} viviendas`);
+      const inmuebles = jsonImportService.extractInmuebles(req.body);
+      logger.info(`📊 JSON recibido (formato ${validation.format}) con ${inmuebles.length} inmuebles`);
       
       // Procesar la importación
       const result = await jsonImportService.processImport(req.body, req.user);
@@ -51,9 +52,10 @@ class JsonImportController {
           summary: result.summary,
           details: result.details,
           metadata: {
+            format: validation.format,
             timestamp: req.body.timestamp,
-            url: req.body.url,
-            total: req.body.total,
+            url: req.body.url || req.body.agencia_url || null,
+            total: req.body.total || inmuebles.length,
             particulares: req.body.particulares,
             inmobiliarias: req.body.inmobiliarias
           }

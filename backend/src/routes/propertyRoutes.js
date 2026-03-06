@@ -53,6 +53,13 @@ publicRoutes.get('/viviendas/:id', validateUUID('id'), propertyController.getPro
  */
 publicRoutes.post('/viviendas/search', propertyController.searchProperties);
 
+/**
+ * @route GET /api/v1/viviendas/:id/imagenes
+ * @desc Obtener imágenes de una propiedad
+ * @access Public
+ */
+publicRoutes.get('/viviendas/:id/imagenes', validateUUID('id'), propertyController.getPropertyImages);
+
 // Rutas privadas para propiedades (requieren autenticación)
 const privateRoutes = Router();
 
@@ -100,13 +107,6 @@ privateRoutes.patch('/viviendas/:id/publish',
  * @access Private (Admin only)
  */
 privateRoutes.delete('/viviendas/:id', validateUUID('id'), propertyController.deleteProperty);
-
-/**
- * @route GET /api/v1/viviendas/:id/imagenes
- * @desc Obtener imágenes de una propiedad
- * @access Private (Owner, Admin)
- */
-privateRoutes.get('/viviendas/:id/imagenes', validateUUID('id'), propertyController.getPropertyImages);
 
 /**
  * @route POST /api/v1/viviendas/:id/imagenes
