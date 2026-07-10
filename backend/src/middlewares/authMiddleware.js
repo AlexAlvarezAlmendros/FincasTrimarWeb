@@ -1,4 +1,5 @@
 import { auth } from 'express-oauth2-jwt-bearer';
+import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -175,6 +176,69 @@ export const requireRoles = (allowedRoles = []) => {
  * Middleware específico para rutas de Admin
  */
 export const requireAdmin = requireRoles(['AdminTrimar']);
+
+/**
+ * Compara dos secretos en tiempo constante (evita timing attacks).
+ * Se hashean ambos con SHA-256 para trabajar siempre con buffers de igual
+ * longitud (timingSafeEqual lanza si difieren) y no filtrar la longitud real.
+ */
+const safeCompare = (a, b) => {
+  const hash = (v) => crypto.createHash('sha256').update(String(v)).digest();
+  return crypto.timingSafeEqual(hash(a), hash(b));
+};
+
+/**
+ * Autenticación por API key para acceso máquina-a-máquina (integraciones externas).
+ * La clave se envía en la cabecera `X-API-Key` y se compara contra
+ * `JSON_IMPORT_API_KEY` (admite varias claves separadas por comas para rotación).
+ * Devuelve true y marca el request si la clave es válida.
+ */
+const hasValidApiKey = (req) => {
+  const provided = req.headers['x-api-key'];
+  const configured = process.env.JSON_IMPORT_API_KEY;
+
+  if (!provided || !configured) return false;
+
+  const validKeys = configured.split(',').map(k => k.trim()).filter(Boolean);
+  const match = validKeys.some(key => safeCompare(provided, key));
+
+  if (match) {
+    // Identidad de servicio con permisos equivalentes a Admin
+    req.user = { id: 'api-key', roles: ['AdminTrimar'], viaApiKey: true };
+  }
+  return match;
+};
+
+/**
+ * Middleware de auth dual para endpoints accesibles desde fuera.
+ * Permite el acceso si:
+ *   1) Se aporta una API key válida en `X-API-Key`, o
+ *   2) El request trae un JWT de Auth0 válido con rol Admin (UI interna).
+ * Así el mismo endpoint sirve a integraciones externas y al panel de administración.
+ */
+export const requireApiKeyOrAdmin = (req, res, next) => {
+  if (hasValidApiKey(req)) {
+    return next();
+  }
+
+  // Sin API key válida → exigir JWT de Auth0 + rol Admin
+  return checkJwt(req, res, (error) => {
+    if (error) {
+      // Petición externa sin credenciales válidas
+      if (!req.headers.authorization) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Se requiere una API key válida (cabecera X-API-Key) o un token de administrador'
+          }
+        });
+      }
+      return next(error);
+    }
+    return requireAdmin(req, res, next);
+  });
+};
 
 /**
  * Middleware específico para rutas de Seller (Seller o Admin)

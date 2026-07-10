@@ -80,6 +80,11 @@ app.use('/api/v1', messagePublicRoutes);
 app.use('/api/v1', imagePublicRoutes);
 app.use('/api/v1/parse', htmlParserRoutes);
 
+// Sincronización JSON: accesible desde integraciones externas.
+// Trae su propia auth dual (API key X-API-Key o JWT Admin), por lo que se
+// registra ANTES del gate global de JWT para permitir el acceso por API key.
+app.use('/api/v1/json', jsonImportRoutes);
+
 // Rutas protegidas (requieren JWT)
 app.use('/api/v1', checkJwt);
 app.use('/api/v1', propertyPrivateRoutes);
@@ -87,7 +92,6 @@ app.use('/api/v1', messagePrivateRoutes);
 app.use('/api/v1', imagePrivateRoutes);
 app.use('/api/v1', dashboardPrivateRoutes);
 app.use('/api/v1/csv', csvImportRoutes);
-app.use('/api/v1/json', jsonImportRoutes);
 app.use('/api/v1', agentRoutes);
 
 // Manejo de rutas no encontradas

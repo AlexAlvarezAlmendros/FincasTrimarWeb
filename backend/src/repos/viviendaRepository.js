@@ -323,6 +323,42 @@ class ViviendaRepository {
   }
   
   /**
+   * Busca una vivienda por su URL de referencia (clave usada en la sincronización JSON).
+   * Devuelve el registro transformado o null si no existe.
+   */
+  async findByUrlReferencia(url) {
+    try {
+      if (!url) return null;
+      const result = await executeQuery(
+        'SELECT * FROM Vivienda WHERE UrlReferencia = ? LIMIT 1',
+        [url]
+      );
+      return result.rows.length > 0 ? this.transformRow(result.rows[0]) : null;
+    } catch (error) {
+      logger.error('Error en ViviendaRepository.findByUrlReferencia:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca una vivienda por título (Name) y precio exactos.
+   * Respaldo de la sincronización JSON cuando no hay URL de referencia coincidente.
+   */
+  async findByNameAndPrice(name, price) {
+    try {
+      if (!name || !price) return null;
+      const result = await executeQuery(
+        'SELECT * FROM Vivienda WHERE Name = ? AND Price = ? LIMIT 1',
+        [name.trim(), price]
+      );
+      return result.rows.length > 0 ? this.transformRow(result.rows[0]) : null;
+    } catch (error) {
+      logger.error('Error en ViviendaRepository.findByNameAndPrice:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Crea una nueva vivienda
    */
   async create(viviendaData) {

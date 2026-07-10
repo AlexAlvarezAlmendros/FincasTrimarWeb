@@ -381,6 +381,11 @@
   color: #065f46;
 }
 
+.summary-card.info {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
 .summary-card.warning {
   background: #fffbeb;
   color: #92400e;
@@ -437,7 +442,9 @@
   font-size: 12px;
 }
 
-.result-detail-item.success .detail-message svg { color: #059669; }
+.result-detail-item.success .detail-message svg,
+.result-detail-item.created .detail-message svg { color: #059669; }
+.result-detail-item.updated .detail-message svg { color: #2563eb; }
 .result-detail-item.duplicate .detail-message svg { color: #f59e0b; }
 .result-detail-item.error .detail-message svg { color: #ef4444; }
 

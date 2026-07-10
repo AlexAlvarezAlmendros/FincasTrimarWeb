@@ -58,9 +58,10 @@ class JsonImportService {
   
   /**
    * Valida la estructura del JSON de importación.
-   * Soporta dos formatos:
+   * Soporta tres formatos:
    *   - Formato agencia: { inmuebles: [...] }
    *   - Formato legacy:  { viviendas: { todas: [...] } }
+   *   - Formato único:   { titulo, precio, ubicacion, ... }  (un solo inmueble suelto)
    */
   validateJsonStructure(data) {
     try {
@@ -96,9 +97,19 @@ class JsonImportService {
         return { valid: true, format: 'legacy' };
       }
 
+      // Formato único: un solo inmueble suelto con forma de agencia
+      if (data.titulo || data.precio || data.ubicacion) {
+        const requiredFields = ['titulo', 'precio', 'ubicacion'];
+        const missing = requiredFields.filter(f => !data[f]);
+        if (missing.length > 0) {
+          return { valid: false, error: `El inmueble debe incluir: ${missing.join(', ')}` };
+        }
+        return { valid: true, format: 'single' };
+      }
+
       return {
         valid: false,
-        error: 'El JSON debe contener "inmuebles" (array) o "viviendas.todas" (array)'
+        error: 'El JSON debe contener "inmuebles" (array), "viviendas.todas" (array) o un inmueble suelto ({ titulo, precio, ubicacion })'
       };
     } catch (error) {
       logger.error('❌ Error validando estructura JSON:', error);
@@ -107,40 +118,53 @@ class JsonImportService {
   }
 
   /**
-   * Extrae la lista de inmuebles del JSON independientemente del formato
+   * Extrae la lista de inmuebles del JSON independientemente del formato.
+   * El formato único se normaliza como un array de un solo elemento.
    */
   extractInmuebles(jsonData) {
     if (Array.isArray(jsonData.inmuebles)) return jsonData.inmuebles;
     if (jsonData.viviendas?.todas) return jsonData.viviendas.todas;
+    if (jsonData.titulo || jsonData.precio || jsonData.ubicacion) return [jsonData];
     return [];
   }
 
   /**
-   * Procesa la importación de viviendas desde JSON
+   * Procesa la sincronización (upsert) de viviendas desde JSON.
+   * Para cada inmueble:
+   *   - Si ya existe (clave: URL de referencia; respaldo: título+precio) → ACTUALIZA
+   *     el contenido del anuncio preservando los datos de gestión/captación.
+   *   - Si no existe → CREA la vivienda.
+   * Los duplicados dentro del mismo lote (el mismo inmueble repetido) se saltan.
    */
   async processImport(jsonData, _user) {
     try {
-      logger.info('📄 Iniciando procesamiento de importación JSON...');
+      logger.info('📄 Iniciando sincronización (upsert) JSON...');
+
+      const validation = this.validateJsonStructure(jsonData);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
 
       const viviendas = this.extractInmuebles(jsonData);
-      const validation = this.validateJsonStructure(jsonData);
-      const isAgenciaFormat = validation.format === 'agencia';
+      // Los formatos "agencia" y "single" comparten la misma forma de inmueble
+      const isAgenciaFormat = validation.format === 'agencia' || validation.format === 'single';
 
-      logger.info(`📊 JSON procesado (formato ${validation.format}): ${viviendas.length} viviendas encontradas`);
-      
+      logger.info(`📊 JSON procesado (formato ${validation.format}): ${viviendas.length} inmuebles encontrados`);
+
       const results = {
         summary: {
           total: viviendas.length,
-          success: 0,
+          created: 0,
+          updated: 0,
           duplicates: 0,
           errors: 0
         },
         details: []
       };
-      
+
       for (const [index, vivienda] of viviendas.entries()) {
         try {
-          // Verificar duplicados dentro del mismo lote primero
+          // Verificar duplicados dentro del mismo lote primero (mismo inmueble repetido)
           const batchDuplicate = this.checkDuplicateInBatch(viviendas, index);
           if (batchDuplicate.isDuplicate) {
             logger.warn(`⚠️ Ítem ${index + 1}: ${batchDuplicate.reason} (similar al ítem ${batchDuplicate.duplicateIndex})`);
@@ -158,51 +182,55 @@ class JsonImportService {
           const transformedData = isAgenciaFormat
             ? this.transformAgenciaToVivienda(vivienda)
             : this.transformJsonToVivienda(vivienda);
-          
-          // Verificar duplicados por URL (principal)
-          if (transformedData.urlReferencia) {
-            const isDuplicateByUrl = await this.checkDuplicateByUrl(transformedData.urlReferencia);
-            if (isDuplicateByUrl) {
-              logger.warn(`⚠️ Ítem ${index + 1}: URL duplicada - ${transformedData.urlReferencia}`);
-              results.summary.duplicates++;
-              results.details.push({
-                row: index + 1,
-                status: 'duplicate',
-                url: transformedData.urlReferencia,
-                titulo: vivienda.titulo,
-                reason: 'URL duplicada'
-              });
-              continue;
-            }
-          }
 
-          // Verificar duplicados por título + precio (backup)
-          const isDuplicateByTitlePrice = await this.checkDuplicateByTitlePrice(
-            transformedData.name, 
-            transformedData.price
-          );
-          if (isDuplicateByTitlePrice) {
-            logger.warn(`⚠️ Ítem ${index + 1}: Título + Precio duplicado - ${transformedData.name} (${transformedData.price}€)`);
-            results.summary.duplicates++;
-            results.details.push({
-              row: index + 1,
-              status: 'duplicate',
-              titulo: vivienda.titulo,
-              reason: 'Título y precio duplicados'
-            });
-            continue;
-          }
-          
           // Validar datos transformados
           if (!transformedData.name || transformedData.name.length < 3) {
             throw new Error('El título debe tener al menos 3 caracteres');
           }
-          
+
           if (!transformedData.price || transformedData.price <= 0) {
             throw new Error('El precio debe ser un número positivo');
           }
-          
-          // Agregar metadatos de importación
+
+          // Resolver si el inmueble ya existe (URL de referencia → respaldo título+precio)
+          const existing = await this.findExistingVivienda(transformedData);
+
+          if (existing) {
+            // ── EDITAR ──────────────────────────────────────────────────
+            // Actualiza el contenido del anuncio y preserva gestión/captación
+            const mergedData = this.mergeForUpdate(existing, transformedData);
+            await viviendaRepository.update(existing.id, mergedData);
+
+            // Imágenes: solo se añaden si la vivienda todavía no tiene ninguna,
+            // para no duplicar ni pisar un orden curado manualmente.
+            const imageUrls = isAgenciaFormat ? this.filterImageUrls(vivienda.imagenes) : [];
+            let addedImages = 0;
+            if (imageUrls.length > 0) {
+              const mainImage = await imagenesViviendaRepository.getMainImage(existing.id);
+              if (!mainImage) {
+                try {
+                  const imageRecords = imageUrls.map((url, i) => ({ url, orden: i + 1 }));
+                  await imagenesViviendaRepository.addImagesToProperty(existing.id, imageRecords);
+                  addedImages = imageUrls.length;
+                } catch (imgError) {
+                  logger.error(`⚠️ Error asociando imágenes a ${existing.id}:`, imgError.message);
+                }
+              }
+            }
+
+            logger.info(`♻️ Ítem ${index + 1}: Vivienda ${existing.id} actualizada (${addedImages} imágenes nuevas)`);
+            results.summary.updated++;
+            results.details.push({
+              row: index + 1,
+              status: 'updated',
+              title: vivienda.titulo,
+              id: existing.id,
+              images: addedImages
+            });
+            continue;
+          }
+
+          // ── CREAR ─────────────────────────────────────────────────────
           const finalData = {
             ...transformedData,
             fechaCaptacion: new Date().toISOString(),
@@ -210,8 +238,7 @@ class JsonImportService {
               ? `${transformedData.observaciones} - Importado el ${new Date().toLocaleDateString()}`
               : `Importado el ${new Date().toLocaleDateString()}`
           };
-          
-          // Crear vivienda
+
           const newVivienda = await viviendaRepository.create(finalData);
 
           // Asociar imágenes (si existen) directamente como URLs
@@ -229,17 +256,17 @@ class JsonImportService {
               // No falla la importación si las imágenes fallan
             }
           }
-          
+
           logger.info(`✅ Ítem ${index + 1}: Vivienda creada con ID ${newVivienda.id} (${imageUrls.length} imágenes)`);
-          results.summary.success++;
+          results.summary.created++;
           results.details.push({
             row: index + 1,
-            status: 'success',
+            status: 'created',
             title: vivienda.titulo,
             id: newVivienda.id,
             images: imageUrls.length
           });
-          
+
         } catch (error) {
           logger.error(`❌ Error en ítem ${index + 1}:`, error.message);
           results.summary.errors++;
@@ -251,14 +278,81 @@ class JsonImportService {
           });
         }
       }
-      
-      logger.info(`✅ Importación JSON completada: ${results.summary.success}/${results.summary.total} viviendas procesadas`);
+
+      // Alias de compatibilidad: success = creadas + actualizadas
+      results.summary.success = results.summary.created + results.summary.updated;
+
+      logger.info(`✅ Sincronización JSON completada: ${results.summary.created} creadas, ${results.summary.updated} actualizadas, ${results.summary.duplicates} duplicadas, ${results.summary.errors} errores`);
       return results;
-      
+
     } catch (error) {
       logger.error('❌ Error procesando importación JSON:', error);
       throw new Error(`Error procesando importación JSON: ${error.message}`);
     }
+  }
+
+  /**
+   * Localiza una vivienda existente a partir de los datos transformados.
+   * Clave principal: URL de referencia. Respaldo: título (Name) + precio exactos.
+   * Devuelve la vivienda existente o null si no hay coincidencia.
+   */
+  async findExistingVivienda(transformedData) {
+    if (transformedData.urlReferencia) {
+      const byUrl = await viviendaRepository.findByUrlReferencia(transformedData.urlReferencia);
+      if (byUrl) return byUrl;
+    }
+    const byTitlePrice = await viviendaRepository.findByNameAndPrice(
+      transformedData.name,
+      transformedData.price
+    );
+    return byTitlePrice || null;
+  }
+
+  /**
+   * Construye el payload de actualización combinando la vivienda existente con
+   * los datos entrantes del JSON.
+   *   - Contenido del anuncio (título, precio, descripción, características…) → JSON.
+   *   - Gestión/captación (estadoVenta, published, captadoPor, comisión…) → se
+   *     preservan de la vivienda existente para no pisar el trabajo manual.
+   * Se usa `?? existing` para que un campo ausente en el JSON no borre el valor previo.
+   */
+  mergeForUpdate(existing, transformed) {
+    return {
+      // ── Contenido del anuncio (proviene del JSON) ──
+      name: transformed.name ?? existing.name,
+      shortDescription: transformed.shortDescription ?? existing.shortDescription,
+      description: transformed.description ?? existing.description,
+      price: transformed.price ?? existing.price,
+      rooms: transformed.rooms ?? existing.rooms,
+      bathRooms: transformed.bathRooms ?? existing.bathRooms,
+      garage: transformed.garage ?? existing.garage,
+      squaredMeters: transformed.squaredMeters ?? existing.squaredMeters,
+      provincia: transformed.provincia ?? existing.provincia,
+      poblacion: transformed.poblacion ?? existing.poblacion,
+      calle: transformed.calle ?? existing.calle,
+      numero: transformed.numero ?? existing.numero,
+      tipoInmueble: transformed.tipoInmueble ?? existing.tipoInmueble,
+      tipoVivienda: transformed.tipoVivienda ?? existing.tipoVivienda,
+      estado: transformed.estado ?? existing.estado,
+      planta: transformed.planta ?? existing.planta,
+      tipoAnuncio: transformed.tipoAnuncio ?? existing.tipoAnuncio,
+      caracteristicas: (Array.isArray(transformed.caracteristicas) && transformed.caracteristicas.length > 0)
+        ? transformed.caracteristicas
+        : existing.caracteristicas,
+      urlReferencia: transformed.urlReferencia ?? existing.urlReferencia,
+
+      // ── Gestión / captación (se preserva lo existente) ──
+      estadoVenta: existing.estadoVenta,
+      published: existing.published,
+      isDraft: existing.isDraft,
+      comisionGanada: existing.comisionGanada,
+      captadoPor: existing.captadoPor,
+      porcentajeCaptacion: existing.porcentajeCaptacion,
+      fechaCaptacion: existing.fechaCaptacion,
+      telefonoContacto: existing.telefonoContacto,
+      nombreContacto: existing.nombreContacto,
+      observaciones: existing.observaciones
+    };
   }
 
   /**
@@ -606,55 +700,6 @@ class JsonImportService {
     if (tituloLower.includes('estudio')) return 'Loft';
     
     return 'Piso'; // Por defecto
-  }
-
-  /**
-   * Verifica si existe una vivienda con la misma URL
-   */
-  async checkDuplicateByUrl(url) {
-    if (!url) return false;
-    
-    try {
-      const query = `
-        SELECT COUNT(*) as count
-        FROM Vivienda 
-        WHERE UrlReferencia = ?
-      `;
-      const result = await executeQuery(query, [url]);
-      
-      // Manejar tanto el formato directo como el ResultSetImpl
-      const rows = Array.isArray(result) ? result : result.rows;
-      return rows[0].count > 0;
-      
-    } catch (error) {
-      logger.error('❌ Error verificando duplicado por URL:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Verifica si existe una vivienda con el mismo título y precio
-   * (verificación secundaria para casos sin URL o URLs diferentes)
-   */
-  async checkDuplicateByTitlePrice(name, price) {
-    if (!name || !price) return false;
-    
-    try {
-      const query = `
-        SELECT COUNT(*) as count
-        FROM Vivienda 
-        WHERE Name = ? AND Price = ?
-      `;
-      const result = await executeQuery(query, [name.trim(), price]);
-      
-      // Manejar tanto el formato directo como el ResultSetImpl
-      const rows = Array.isArray(result) ? result : result.rows;
-      return rows[0].count > 0;
-      
-    } catch (error) {
-      logger.error('❌ Error verificando duplicado por título y precio:', error);
-      return false;
-    }
   }
 
   /**

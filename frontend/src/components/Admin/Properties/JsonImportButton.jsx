@@ -238,8 +238,14 @@ const JsonImportButton = ({ onImportComplete }) => {
             <div className="results-summary">
               <div className="summary-item success">
                 <FontAwesomeIcon icon={faCheckCircle} />
-                <span>{importResults.summary.success} viviendas creadas</span>
+                <span>{importResults.summary.created ?? importResults.summary.success ?? 0} viviendas creadas</span>
               </div>
+              {importResults.summary.updated > 0 && (
+                <div className="summary-item success">
+                  <FontAwesomeIcon icon={faCheckCircle} />
+                  <span>{importResults.summary.updated} viviendas actualizadas</span>
+                </div>
+              )}
               <div className="summary-item warning">
                 <FontAwesomeIcon icon={faExclamationTriangle} />
                 <span>{importResults.summary.duplicates} duplicados omitidos</span>
@@ -295,7 +301,8 @@ const JsonImportButton = ({ onImportComplete }) => {
                     >
                       <span className="row-number">Ítem {detail.row || index + 1}:</span>
                       <span className="detail-message">
-                        {detail.status === 'success' && `✓ ${detail.title || detail.titulo}`}
+                        {(detail.status === 'success' || detail.status === 'created') && `✓ ${detail.title || detail.titulo}`}
+                        {detail.status === 'updated' && `♻ ${detail.title || detail.titulo} (actualizada)`}
                         {detail.status === 'duplicate' && (
                           <span className="duplicate-info">
                             ⚠ Duplicado: {detail.titulo}

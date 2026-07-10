@@ -43,7 +43,7 @@ class JsonImportController {
       // Procesar la importación
       const result = await jsonImportService.processImport(req.body, req.user);
       
-      logger.info(`✅ Importación JSON completada: ${result.summary.success} éxitos, ${result.summary.errors} errores`);
+      logger.info(`✅ Sincronización JSON completada: ${result.summary.created} creadas, ${result.summary.updated} actualizadas, ${result.summary.errors} errores`);
       
       // Responder con los resultados
       res.status(200).json({
@@ -104,11 +104,12 @@ class JsonImportController {
       const validation = jsonImportService.validateJsonStructure(req.body);
       
       if (validation.valid) {
-        const viviendasCount = req.body.viviendas?.todas?.length || 0;
+        const viviendasCount = jsonImportService.extractInmuebles(req.body).length;
         res.status(200).json({
           success: true,
           data: {
             valid: true,
+            format: validation.format,
             viviendasCount,
             metadata: {
               timestamp: req.body.timestamp,

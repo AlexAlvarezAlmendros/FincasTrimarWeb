@@ -11,7 +11,8 @@ import {
   faChevronDown,
   faChevronUp,
   faImage,
-  faBuilding
+  faBuilding,
+  faRotate
 } from '@fortawesome/free-solid-svg-icons';
 import './JsonBulkImport.css';
 
@@ -188,8 +189,8 @@ const JsonBulkImport = ({ onImportComplete, resetTrigger }) => {
           <div className="toggle-text">
             <h3>Importar inmuebles desde JSON</h3>
             <p>
-              Sube un archivo JSON con listado de inmuebles para crearlos y
-              publicarlos automáticamente
+              Sube un archivo JSON con listado de inmuebles: los nuevos se crean
+              y los ya existentes (misma URL) se actualizan automáticamente
             </p>
           </div>
           <FontAwesomeIcon
@@ -295,8 +296,10 @@ const JsonBulkImport = ({ onImportComplete, resetTrigger }) => {
               <div className="preview-notice">
                 <FontAwesomeIcon icon={faExclamationTriangle} />
                 <span>
-                  Los inmuebles se crearán y <strong>publicarán automáticamente</strong>
-                  . Las imágenes se importarán directamente desde las URLs del JSON.
+                  Los inmuebles nuevos se <strong>crearán y publicarán</strong>; los
+                  que ya existan (misma URL de referencia) se <strong>actualizarán</strong>
+                  {' '}conservando sus datos de captación. Las imágenes se importan desde
+                  las URLs del JSON (solo en inmuebles sin imágenes previas).
                 </span>
               </div>
 
@@ -340,9 +343,18 @@ const JsonBulkImport = ({ onImportComplete, resetTrigger }) => {
                   <FontAwesomeIcon icon={faCheckCircle} />
                   <div>
                     <span className="card-number">
-                      {importResults.summary.success}
+                      {importResults.summary.created ?? importResults.summary.success ?? 0}
                     </span>
                     <span className="card-label">Creadas</span>
+                  </div>
+                </div>
+                <div className="summary-card info">
+                  <FontAwesomeIcon icon={faRotate} />
+                  <div>
+                    <span className="card-number">
+                      {importResults.summary.updated ?? 0}
+                    </span>
+                    <span className="card-label">Actualizadas</span>
                   </div>
                 </div>
                 <div className="summary-card warning">
@@ -374,13 +386,25 @@ const JsonBulkImport = ({ onImportComplete, resetTrigger }) => {
                     >
                       <span className="detail-row">#{detail.row}</span>
                       <span className="detail-message">
-                        {detail.status === 'success' && (
+                        {(detail.status === 'success' || detail.status === 'created') && (
                           <>
                             <FontAwesomeIcon icon={faCheckCircle} />
                             {detail.title || detail.titulo}
                             {detail.images > 0 && (
                               <span className="detail-images">
                                 ({detail.images} img)
+                              </span>
+                            )}
+                          </>
+                        )}
+                        {detail.status === 'updated' && (
+                          <>
+                            <FontAwesomeIcon icon={faRotate} />
+                            {detail.title || detail.titulo}
+                            <span className="detail-images">actualizada</span>
+                            {detail.images > 0 && (
+                              <span className="detail-images">
+                                (+{detail.images} img)
                               </span>
                             )}
                           </>

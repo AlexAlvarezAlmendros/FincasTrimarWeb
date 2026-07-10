@@ -1,17 +1,18 @@
 import express from 'express';
 import jsonImportController from '../controllers/jsonImportController.js';
-import { requireAdmin } from '../middlewares/authMiddleware.js';
+import { requireApiKeyOrAdmin } from '../middlewares/authMiddleware.js';
 import { rateLimiter } from '../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
 /**
- * Rutas para importación JSON de viviendas
- * Todas las rutas requieren autenticación
+ * Rutas para importación/sincronización JSON de viviendas.
+ * Auth dual: API key (cabecera X-API-Key) para integraciones externas,
+ * o JWT de Auth0 con rol Admin para el panel interno.
  */
 
 // Middleware global para todas las rutas JSON
-router.use(requireAdmin);
+router.use(requireApiKeyOrAdmin);
 
 // Rate limiting para importaciones
 // Usamos el rateLimiter global que ya está configurado
