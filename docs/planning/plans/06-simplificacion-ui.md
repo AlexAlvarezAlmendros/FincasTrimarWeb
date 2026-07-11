@@ -30,12 +30,12 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 | F1 | Eliminar código muerto del form y sus hooks (debug block, console.log, campos fantasma de captación, SimpleTextEditor 0 bytes) | alto/bajo/bajo | ✅ |
 | F2 | Divulgación progresiva: colapsar en acordeones las secciones avanzadas (ubicación detallada, clasificación avanzada, características) | alto/medio/bajo | ✅ |
 | F3 | Validación inline por campo cableando `useFormValidation` + `ValidationRules` (quitar la ad-hoc de submit) | alto/medio/bajo | ✅ |
-| F4 | Reemplazar los 6 `<select>` nativos por `CustomSelect` | medio/bajo/bajo | ⬜ |
+| F4 | Reemplazar los 6 `<select>` nativos por `CustomSelect` | medio/bajo/bajo | ✅ |
 | F5 | Feedback honesto del flujo de imágenes en 2 fases (no mostrar éxito si fallan; reintento con el id ya creado) | alto/bajo/bajo | ✅ |
 | F6 | Deduplicar y adelgazar el CSS del form (un solo sistema de botones, clases muertas, mover reglas de imágenes) | medio/medio/medio | ⬜ |
 | F7 | Autoguardado de borrador en localStorage con recuperación (namespaced por id) | alto/medio/medio | ⬜ |
 | F8 | Trocear el monolito en subcomponentes de sección (`sections/`) | medio/medio/bajo | ⬜ |
-| F9 | Defaults inteligentes + contador de descripción eficiente + toolbar Quill reducida | bajo/bajo/bajo | ⬜ |
+| F9 | Defaults inteligentes + contador de descripción eficiente + toolbar Quill reducida | bajo/bajo/bajo | ✅ |
 
 ### Mensajes
 | # | Tarea | I/E/R | Status |
@@ -53,19 +53,20 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 | D1 | Borrar el dashboard duplicado muerto y su cadena (`pages/admin/Dashboard.jsx`, `components/dashboard/StatCard`+`MonthlyChart`, `SalesSummary/`) | alto/bajo/bajo | ✅ |
 | D2 | Reducir a 3-4 métricas reales; quitar las de dinero falsas | alto/bajo/bajo | ✅ |
 | D3 | Arreglar enlaces rotos de quick actions y tabla (rutas reales de Admin.jsx) | medio/bajo/bajo | ✅ |
-| D4 | Cablear el contador real de mensajes pendientes (`useAdminStats` vía messageService) | alto/medio/bajo | ⬜ |
-| D5 | Purgar hooks/métodos de servicio/CSS muertos del dashboard | medio/bajo/bajo | ⬜ |
+| D4 | Cablear el contador real de mensajes pendientes (`useAdminStats` vía messageService) | alto/medio/bajo | ✅ |
+| D5 | Purgar hooks/métodos de servicio/CSS muertos del dashboard | medio/bajo/bajo | ✅ |
 
 ### Design system / compartidos
 | # | Tarea | I/E/R | Status |
 |---|-------|-------|--------|
 | X1 | Aliases de compatibilidad de tokens en `index.css` (repara ~25 CSS sin tocar componentes) | alto/bajo/bajo | ✅ |
-| X2 | Eliminar ficheros muertos del design system (`Icon.jsx/css` 0 bytes, `ContactForm.module.css` 0 bytes) | bajo/bajo/bajo | ⬜ |
+| X2 | Eliminar ficheros muertos del design system (`Icon.jsx/css` 0 bytes, `ContactForm.module.css` 0 bytes) | bajo/bajo/bajo | ✅ |
 | X3 | Ampliar tokens que faltan (sombras, focus-ring, overlay, success-strong) | medio/bajo/bajo | ⬜ |
 | X4 | Componente `Button` unificado con variantes | alto/medio/medio | ⬜ |
 | X5 | Componente `FormField` compartido (label + control + error) | alto/medio/medio | ⬜ |
 | X6 | Modal/Overlay base + spinner único | medio/medio/medio | ⬜ |
 | X7 | Migrar componentes legacy a `--color-*` y retirar los aliases de X1 | medio/alto/bajo | ⬜ |
+| X8 | Arreglar los `<i className="fas">` del admin que no pintan (el proyecto no carga el webfont FA, solo el SVG core): convertir a `<FontAwesomeIcon>` o activar `dom.watch()`. Descubierto en M6; requiere verificación visual | medio/medio/medio | ⬜ |
 
 ## Primera tanda (alto impacto / bajo riesgo — implementar ya)
 
@@ -93,4 +94,6 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 | 2026-07-11 | F3 | Validación inline (ValidationRules/FormValidator); lógica verificada por test node. `41c0833` |
 | 2026-07-11 | M1/M2 | Mensajes muertos borrados; `useMessages` adelgazado (sin caché/HookStates/safe-setters; AbortController real; update optimista; stats). `dfa11a4` |
 | 2026-07-11 | M3/M4/M5/M6 | `MessagesPage` reescrita a bandeja lista/detalle: leído/no leído reversible + leído al abrir, Responder (mailto), iconos FontAwesome + tokens. `9537caf` |
-| — | Pendiente | 13 tareas restantes (F4, F6–F9, D4–D5, X2–X7). Descubierto: los `<i class="fas">` del admin no pintan (no hay webfont FA); usar `<FontAwesomeIcon>`. Recorrido manual en entorno real sigue pendiente |
+| 2026-07-11 | X2/D5/D4 | Muertos design-system/dashboard borrados; `useAdminStats` con conteo real de mensajes pendientes (badge + MetricCard clicable) vía useApi. `94d9363` |
+| 2026-07-11 | F4/F9 | 6 selects → CustomSelect; toolbar Quill mínima; default tipoAnuncio='Venta'; contador de descripción memoizado. `84bc48d` |
+| — | Pendiente | 8 tareas: F6, F7, F8, X3, X4, X5, X6, X7, más la nueva X8 (iconos FA). Recorrido manual en entorno real sigue pendiente |
