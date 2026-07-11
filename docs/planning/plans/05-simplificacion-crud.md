@@ -1,6 +1,6 @@
 # Plan 05 — Simplificación del panel admin (CRUD de viviendas)
 
-> Fase: 5 de 5 | Status: ✅ Casi completa (pendiente F.2 recorrido manual + B.4 opcional) | Started: 2026-07-11
+> Fase: 5 de 5 | Status: ✅ Completa a nivel de código (solo pendiente F.2, recorrido manual en entorno real) | Started: 2026-07-11
 > Milestone: Panel admin reducido a **CRUD de viviendas + Mensajes + Usuarios + Configuración**. Todo el flujo de **captación** eliminado y el alta de viviendas simplificada al máximo.
 
 ## Objetivo
@@ -40,7 +40,7 @@ Hacer que el CRUD de viviendas sea **mucho más simple**: un panel con una lista
 | B.1 | `App.jsx:57`: gate del área `/admin` → `roles={["AdminTrimar"]}` | ✅ Done | — |
 | B.2 | `AdminLayout.jsx:14,27`: simplificar el chequeo de acceso a solo `isAdmin` (quitar `isSeller`/`isCaptador`) | ✅ Done | — |
 | B.3 | `Admin.jsx`: como todo el área es admin-only, se puede retirar el wrapper `adminOnly(...)` por ruta y aplicar el gate una sola vez (o dejarlo, es defensivo). Decidir al implementar | ✅ Done | Simplificación opcional |
-| B.4 | `useUserRoles.js`: (opcional) podar `isSeller`/`isCaptador`/`isUser` si dejan de usarse tras B.1–B.2 | ⬜ Pendiente | No podado: se dejaron intactos (inofensivos). Limpieza opcional futura |
+| B.4 | `useUserRoles.js`: (opcional) podar `isSeller`/`isCaptador`/`isUser` si dejan de usarse tras B.1–B.2 | ✅ Done | Podados (cero usos externos); se conservan `isAdmin`, `roles` y los helpers `hasRole`/`hasAnyRole`/`hasAllRoles` |
 
 ### C · Borradores → toggle en la lista
 | # | Tarea | Status | Notas |
