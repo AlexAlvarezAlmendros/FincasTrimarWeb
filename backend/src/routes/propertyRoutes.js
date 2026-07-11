@@ -24,13 +24,6 @@ publicRoutes.get('/viviendas', propertyController.getProperties);
 publicRoutes.get('/viviendas/stats', propertyController.getStats);
 
 /**
- * @route GET /api/v1/viviendas/drafts
- * @desc Obtener lista de borradores
- * @access Public (temporal para testing - debería ser Private)
- */
-publicRoutes.get('/viviendas/drafts', propertyController.getDrafts);
-
-/**
  * @route GET /api/v1/viviendas/:id/similar
  * @desc Obtener propiedades similares
  * @access Public
@@ -62,16 +55,6 @@ publicRoutes.get('/viviendas/:id/imagenes', validateUUID('id'), propertyControll
 
 // Rutas privadas para propiedades (requieren autenticación)
 const privateRoutes = Router();
-
-/**
- * @route GET /api/v1/viviendas/captacion
- * @desc Obtener propiedades en proceso de captación
- * @access Private (Admin, Seller)
- * NOTA: Esta ruta se registra directamente en app.js ANTES de las rutas públicas
- * para evitar que /viviendas/:id capture "captacion" como un ID
- */
-// privateRoutes.get('/viviendas/captacion', propertyController.getCaptacionProperties);
-// ☝️ Comentado porque se registra directamente en app.js
 
 /**
  * @route POST /api/v1/viviendas
@@ -131,16 +114,6 @@ privateRoutes.delete('/viviendas/:id/imagenes/:imageId',
   validateUUID('id'), 
   validateUUID('imageId'), 
   propertyController.deletePropertyImage
-);
-
-/**
- * @route PATCH /api/v1/viviendas/:id/captacion
- * @desc Actualizar datos de captación de una propiedad
- * @access Private (Admin, Seller)
- */
-privateRoutes.patch('/viviendas/:id/captacion', 
-  validateUUID('id'), 
-  propertyController.updateCaptacionData
 );
 
 export { publicRoutes, privateRoutes };

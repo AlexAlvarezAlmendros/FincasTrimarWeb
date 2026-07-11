@@ -221,64 +221,6 @@ class ViviendaRepository {
   }
 
   /**
-   * Obtiene solo las viviendas que son borradores
-   */
-  async findDrafts({ q, page = 1, pageSize = 20 } = {}) {
-    try {
-      logger.info(`🔍 findDrafts llamado con pageSize=${pageSize}`);
-      
-      const conditions = ['IsDraft = ?'];
-      const params = [1]; // Solo borradores
-      
-      // Búsqueda de texto libre en borradores
-      if (q) {
-        conditions.push('(Name LIKE ? OR Description LIKE ? OR Poblacion LIKE ?)');
-        const searchTerm = `%${q}%`;
-        params.push(searchTerm, searchTerm, searchTerm);
-      }
-      
-      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const offset = (page - 1) * pageSize;
-      
-      // Query para borradores con los mismos campos que findAll
-      const sql = `
-        SELECT 
-          Id, Name, ShortDescription, Description, Price, Rooms, BathRooms, Garage, 
-          SquaredMeters, Provincia, Poblacion, Calle, Numero, TipoInmueble, 
-          TipoVivienda, Estado, Planta, TipoAnuncio, EstadoVenta, 
-          Caracteristicas, Published, FechaPublicacion, CreatedAt, UpdatedAt, IsDraft,
-          ComisionGanada, CaptadoPor, PorcentajeCaptacion, FechaCaptacion,
-          TelefonoContacto, NombreContacto, UrlReferencia
-        FROM Vivienda 
-        ${whereClause}
-        ORDER BY UpdatedAt DESC 
-        LIMIT ? OFFSET ?
-      `;
-      
-      const result = await executeQuery(sql, [...params, String(pageSize), String(offset)]);
-      
-      // Obtener total para paginación
-      const countSql = `SELECT COUNT(*) as total FROM Vivienda ${whereClause}`;
-      const countResult = await executeQuery(countSql, params);
-      const total = countResult.rows[0]?.total || 0;
-      
-      return {
-        data: result.rows.map(this.transformRow),
-        pagination: {
-          page: Number(page),
-          pageSize: Number(pageSize),
-          total: Number(total),
-          totalPages: Math.ceil(total / pageSize),
-          hasMore: (page * pageSize) < total
-        }
-      };
-    } catch (error) {
-      logger.error('Error en ViviendaRepository.findDrafts:', error);
-      throw error;
-    }
-  }
-  
-  /**
    * Obtiene una vivienda por ID.
    * Las imágenes se cargan por separado mediante el endpoint /imagenes
    * para evitar bloquear la conexión WebSocket de Turso en propiedades con muchas imágenes.
@@ -524,67 +466,6 @@ class ViviendaRepository {
     }
   }
 
-  /**
-   * Actualiza solo los datos de captación de una vivienda
-   */
-  async updateCaptacionData(id, captacionData) {
-    try {
-      // Construir la consulta dinámicamente solo con los campos proporcionados
-      const fields = [];
-      const values = [];
-
-      if (captacionData.estadoVenta !== undefined) {
-        fields.push('EstadoVenta = ?');
-        values.push(captacionData.estadoVenta);
-      }
-
-      if (captacionData.fechaCaptacion !== undefined) {
-        fields.push('FechaCaptacion = ?');
-        values.push(captacionData.fechaCaptacion);
-      }
-
-      if (captacionData.porcentajeCaptacion !== undefined) {
-        fields.push('PorcentajeCaptacion = ?');
-        values.push(captacionData.porcentajeCaptacion);
-      }
-
-      if (captacionData.captadoPor !== undefined) {
-        fields.push('CaptadoPor = ?');
-        values.push(captacionData.captadoPor);
-      }
-
-      if (captacionData.comisionGanada !== undefined) {
-        fields.push('ComisionGanada = ?');
-        values.push(captacionData.comisionGanada);
-      }
-
-      if (captacionData.observaciones !== undefined) {
-        fields.push('Observaciones = ?');
-        values.push(captacionData.observaciones);
-      }
-
-      // Siempre actualizar UpdatedAt
-      fields.push('UpdatedAt = CURRENT_TIMESTAMP');
-
-      if (fields.length === 1) {
-        // Solo UpdatedAt, no hay nada que actualizar
-        return await this.findById(id);
-      }
-
-      // Agregar el ID al final de los valores
-      values.push(id);
-
-      const sql = `UPDATE Vivienda SET ${fields.join(', ')} WHERE Id = ?`;
-      
-      await executeQuery(sql, values);
-      
-      return await this.findById(id);
-    } catch (error) {
-      logger.error('Error en ViviendaRepository.updateCaptacionData:', error);
-      throw error;
-    }
-  }
-  
   /**
    * Transforma una fila de la DB al formato del modelo
    */

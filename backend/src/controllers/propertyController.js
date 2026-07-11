@@ -24,10 +24,11 @@ const propertyController = {
         provincia: req.query.provincia,
         poblacion: req.query.poblacion,
         published: req.query.published !== undefined ? req.query.published === 'true' : true,
+        includeDrafts: req.query.includeDrafts === 'true',
         page: req.query.page ? parseInt(req.query.page) : 1,
         pageSize: req.query.pageSize ? parseInt(req.query.pageSize) : 20
       };
-      
+
       const result = await propertyService.searchProperties(filters);
       
       res.json({
@@ -37,31 +38,6 @@ const propertyController = {
       });
     } catch (error) {
       logger.error('Error getting properties:', error);
-      next(error);
-    }
-  },
-
-  /**
-   * GET /api/v1/properties/drafts
-   * Obtiene lista de borradores (requiere autenticación)
-   */
-  async getDrafts(req, res, next) {
-    try {
-      const filters = {
-        q: req.query.q,
-        page: req.query.page ? parseInt(req.query.page) : 1,
-        pageSize: req.query.pageSize ? parseInt(req.query.pageSize) : 20
-      };
-      
-      const result = await propertyService.getDrafts(filters);
-      
-      res.json({
-        success: true,
-        data: result.data,
-        pagination: result.pagination
-      });
-    } catch (error) {
-      logger.error('Error getting drafts:', error);
       next(error);
     }
   },
@@ -316,63 +292,6 @@ const propertyController = {
       });
     } catch (error) {
       logger.error('Error deleting property image:', error);
-      next(error);
-    }
-  },
-
-  /**
-   * GET /api/v1/properties/captacion
-   * Obtiene propiedades en proceso de captación (requiere autenticación)
-   */
-  async getCaptacionProperties(req, res, next) {
-    try {
-      const filters = {
-        q: req.query.q,
-        estadoVenta: req.query.estadoVenta,
-        minPrice: req.query.minPrice ? parseInt(req.query.minPrice) : undefined,
-        maxPrice: req.query.maxPrice ? parseInt(req.query.maxPrice) : undefined,
-        tipoInmueble: req.query.tipoInmueble,
-        tipoVivienda: req.query.tipoVivienda,
-        provincia: req.query.provincia,
-        poblacion: req.query.poblacion,
-        captadoPor: req.query.captadoPor,
-        sinCaptador: req.query.sinCaptador === 'true', // Flag para viviendas sin captador asignado
-        sortBy: req.query.sortBy, // Parámetro de ordenación
-        page: req.query.page ? parseInt(req.query.page) : 1,
-        pageSize: req.query.pageSize ? parseInt(req.query.pageSize) : 20
-      };
-      
-      const result = await propertyService.getCaptacionProperties(filters);
-      
-      res.json({
-        success: true,
-        data: result.data,
-        pagination: result.pagination
-      });
-    } catch (error) {
-      logger.error('Error getting captacion properties:', error);
-      next(error);
-    }
-  },
-
-  /**
-   * PATCH /api/v1/properties/:id/captacion
-   * Actualiza datos de captación de una propiedad (requiere autenticación)
-   */
-  async updateCaptacionData(req, res, next) {
-    try {
-      const { id } = req.params;
-      const captacionData = req.body;
-      
-      const updatedProperty = await propertyService.updateCaptacionData(id, captacionData);
-      
-      res.json({
-        success: true,
-        data: updatedProperty,
-        message: 'Datos de captación actualizados correctamente'
-      });
-    } catch (error) {
-      logger.error('Error updating captacion data:', error);
       next(error);
     }
   }

@@ -29,7 +29,10 @@ const PropertyFilters = ({ filters, onFiltersChange }) => {
         <div className="filter-group">
           <select
             value={filters.published === false ? 'false' : 'true'}
-            onChange={(e) => handleFilterChange('published', e.target.value === 'true')}
+            onChange={(e) => onFiltersChange({
+              published: e.target.value === 'true',
+              includeDrafts: e.target.value === 'false'
+            })}
             className="filter-select"
           >
             <option value="true">Publicadas</option>
