@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useDashboardStats, useRecentProperties, useRecentMessages } from '../../../hooks/useDashboard';
+import { useAdminStats } from '../../../hooks/useAdminStats';
 import MetricCard from './MetricCard';
 import RecentPropertiesTable from './RecentPropertiesTable';
 import RecentMessagesList from './RecentMessagesList';
@@ -18,6 +19,7 @@ const AdminDashboard = () => {
   const { stats, loading, error, refetch } = useDashboardStats();
   const { properties: recentProperties, loading: loadingProperties } = useRecentProperties(4);
   const { messages: recentMessages, loading: loadingMessages } = useRecentMessages(2);
+  const { messagesCount } = useAdminStats();
 
   if (loading) {
     return (
@@ -98,6 +100,15 @@ const AdminDashboard = () => {
           icon="📋"
           color="purple"
         />
+        <Link to="/admin/mensajes" className="metric-card-link">
+          <MetricCard
+            title="Mensajes pendientes"
+            value={messagesCount}
+            subtitle="Nuevos y en curso"
+            icon="✉️"
+            color="orange"
+          />
+        </Link>
       </div>
 
 

@@ -85,17 +85,16 @@
 }
 
 /* Metrics Grids */
+.metric-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.secondary-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.25rem;
   margin-bottom: 2rem;
 }
 
@@ -278,8 +277,7 @@
     font-size: 1rem;
   }
 
-  .metrics-grid,
-  .secondary-metrics {
+  .metrics-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
@@ -330,14 +328,6 @@
 .section-link:focus-visible {
   outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
-}
-
-/* Chart Section Specific Styles */
-.dashboard-section .chart-section {
-  background: white;
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  min-height: 400px;
 }
 
 /* Print Styles */
