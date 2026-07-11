@@ -432,33 +432,38 @@ const PropertyCreatePage = () => {
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="calle">Calle</label>
-              <input
-                id="calle"
-                type="text"
-                value={formData.calle}
-                onChange={(e) => updateField('calle', e.target.value)}
-                placeholder="Ej: Carrer del Mar"
-                maxLength="100"
-                className="form-input"
-              />
-            </div>
+          <details className="form-accordion">
+            <summary className="form-accordion__summary">Dirección exacta (opcional)</summary>
+            <div className="form-accordion__body">
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="calle">Calle</label>
+                  <input
+                    id="calle"
+                    type="text"
+                    value={formData.calle}
+                    onChange={(e) => updateField('calle', e.target.value)}
+                    placeholder="Ej: Carrer del Mar"
+                    maxLength="100"
+                    className="form-input"
+                  />
+                </div>
 
-            <div className="form-group">
-              <label htmlFor="numero">Número</label>
-              <input
-                id="numero"
-                type="text"
-                value={formData.numero}
-                onChange={(e) => updateField('numero', e.target.value)}
-                placeholder="Ej: 123 A"
-                maxLength="20"
-                className="form-input"
-              />
+                <div className="form-group">
+                  <label htmlFor="numero">Número</label>
+                  <input
+                    id="numero"
+                    type="text"
+                    value={formData.numero}
+                    onChange={(e) => updateField('numero', e.target.value)}
+                    placeholder="Ej: 123 A"
+                    maxLength="20"
+                    className="form-input"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          </details>
         </div>
 
         <div className="form-section">
@@ -500,6 +505,9 @@ const PropertyCreatePage = () => {
             </div>
           </div>
 
+          <details className="form-accordion">
+            <summary className="form-accordion__summary">Clasificación avanzada (estado, planta, tipo de anuncio…)</summary>
+            <div className="form-accordion__body">
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="estado">Estado</label>
@@ -576,16 +584,28 @@ const PropertyCreatePage = () => {
               </select>
             </div>
           </div>
+            </div>
+          </details>
         </div>
 
         <div className="form-section">
-          <CharacteristicsSelector
-            selectedCharacteristics={formData.caracteristicas || []}
-            onChange={(characteristics) => updateField('caracteristicas', characteristics)}
-            disabled={isCreating}
-            title="✨ Características Adicionales"
-            subtitle="Selecciona todas las características que apliquen a esta vivienda. Estas aparecerán destacadas en el anuncio para ayudar a los usuarios a encontrar la propiedad perfecta."
-          />
+          <details className="form-accordion">
+            <summary className="form-accordion__summary">
+              ✨ Características adicionales
+              <span className="form-accordion__count">
+                {formData.caracteristicas?.length || 0} seleccionadas
+              </span>
+            </summary>
+            <div className="form-accordion__body">
+              <CharacteristicsSelector
+                selectedCharacteristics={formData.caracteristicas || []}
+                onChange={(characteristics) => updateField('caracteristicas', characteristics)}
+                disabled={isCreating}
+                title=""
+                subtitle="Selecciona todas las características que apliquen a esta vivienda."
+              />
+            </div>
+          </details>
         </div>
 
         <div className="form-section">
