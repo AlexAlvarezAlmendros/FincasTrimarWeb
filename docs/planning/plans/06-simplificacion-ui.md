@@ -40,12 +40,12 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 ### Mensajes
 | # | Tarea | I/E/R | Status |
 |---|-------|-------|--------|
-| M1 | Eliminar código muerto/duplicado (`pages/admin/MessagesPage.jsx`, `useContactMessage`, export `useMessage`, CSS de PIN huérfano) | medio/bajo/bajo | ⬜ |
-| M2 | Adelgazar `useMessages` y quitar la caché/HookStates/isMountedRef; update optimista sin refetch | alto/medio/medio | ⬜ |
-| M3 | Leído/no leído como toggle real y separado del pipeline; marcar leído al abrir | alto/medio/medio | ⬜ |
-| M4 | Botón 'Responder' con `mailto` enriquecido (Re:, cita, pasa a EnCurso) | medio/bajo/bajo | ⬜ |
-| M5 | Rediseñar a patrón lista/detalle (bandeja de entrada) | alto/alto/medio | ⬜ |
-| M6 | Unificar iconografía FontAwesome + tokens de color | bajo/medio/bajo | ⬜ |
+| M1 | Eliminar código muerto/duplicado (`pages/admin/MessagesPage.jsx`, `useContactMessage`, export `useMessage`, CSS de PIN huérfano) | medio/bajo/bajo | ✅ |
+| M2 | Adelgazar `useMessages` y quitar la caché/HookStates/isMountedRef; update optimista sin refetch | alto/medio/medio | ✅ |
+| M3 | Leído/no leído como toggle real y separado del pipeline; marcar leído al abrir | alto/medio/medio | ✅ |
+| M4 | Botón 'Responder' con `mailto` enriquecido (Re:, cita, pasa a EnCurso) | medio/bajo/bajo | ✅ |
+| M5 | Rediseñar a patrón lista/detalle (bandeja de entrada) | alto/alto/medio | ✅ |
+| M6 | Unificar iconografía FontAwesome + tokens de color | bajo/medio/bajo | ✅ |
 
 ### Dashboard
 | # | Tarea | I/E/R | Status |
@@ -91,4 +91,6 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 | 2026-07-11 | F5 | Feedback honesto de imágenes (variante warning + reintento). `cabd97f` |
 | 2026-07-11 | F2 | Divulgación progresiva con acordeones `<details>`. `c8c0524` |
 | 2026-07-11 | F3 | Validación inline (ValidationRules/FormValidator); lógica verificada por test node. `41c0833` |
-| — | Pendiente | 19 tareas restantes (F4,F6–F9, M1–M6, D4–D5, X2–X7). Recorrido manual F.2 en entorno real sigue pendiente |
+| 2026-07-11 | M1/M2 | Mensajes muertos borrados; `useMessages` adelgazado (sin caché/HookStates/safe-setters; AbortController real; update optimista; stats). `dfa11a4` |
+| 2026-07-11 | M3/M4/M5/M6 | `MessagesPage` reescrita a bandeja lista/detalle: leído/no leído reversible + leído al abrir, Responder (mailto), iconos FontAwesome + tokens. `9537caf` |
+| — | Pendiente | 13 tareas restantes (F4, F6–F9, D4–D5, X2–X7). Descubierto: los `<i class="fas">` del admin no pintan (no hay webfont FA); usar `<FontAwesomeIcon>`. Recorrido manual en entorno real sigue pendiente |
