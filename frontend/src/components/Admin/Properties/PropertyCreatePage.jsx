@@ -28,6 +28,11 @@ const PropertyCreatePage = () => {
   const [successData, setSuccessData] = useState(null);
   const [wasSavedAsDraft, setWasSavedAsDraft] = useState(false);
 
+  // Éxito parcial: la vivienda se guardó pero fallaron las imágenes.
+  // Guardamos el id para poder reintentar la subida sin recrear la vivienda.
+  const [imageUploadFailed, setImageUploadFailed] = useState(false);
+  const [savedPropertyId, setSavedPropertyId] = useState(null);
+
   // Estado para el popup de carga
   const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
   
@@ -59,19 +64,23 @@ const PropertyCreatePage = () => {
     loadProperty
   } = useCreateViviendaSimple({
     onSuccess: async (data) => {
-      
-      // Si hay imágenes pendientes, subirlas después de crear/actualizar la vivienda
+      // Si hay imágenes pendientes, subirlas tras crear/actualizar la vivienda.
       const propertyId = data?.id || id;
+      setSavedPropertyId(propertyId);
+
+      let imgFailed = false;
       if (propertyId && pendingFiles.length > 0) {
         try {
           setLoadingMessage('Subiendo imágenes...');
           await uploadPendingFiles(propertyId);
         } catch (imgError) {
           console.error('Error subiendo imágenes:', imgError);
+          imgFailed = true;
         }
       }
-      
-      // Guardar datos de éxito y mostrar popup
+
+      // Feedback honesto: si fallaron las imágenes, el popup lo refleja (no éxito pleno).
+      setImageUploadFailed(imgFailed);
       setSuccessData(data);
       setShowSuccessPopup(true);
     },
@@ -169,12 +178,26 @@ const PropertyCreatePage = () => {
     }
   };
 
+  // Reintentar la subida de imágenes usando el id ya creado (sin recrear la vivienda)
+  const handleRetryImages = async () => {
+    if (!savedPropertyId) return;
+    try {
+      setLoadingMessage('Reintentando subida de imágenes...');
+      await uploadPendingFiles(savedPropertyId);
+      setImageUploadFailed(false);
+    } catch (imgError) {
+      console.error('Reintento de subida de imágenes fallido:', imgError);
+      // Permanece en estado de éxito parcial para poder reintentar de nuevo.
+    }
+  };
+
   // Función para manejar el cierre del popup de éxito
   const handleSuccessPopupClose = () => {
     setShowSuccessPopup(false);
     setSuccessData(null);
     setWasSavedAsDraft(false);
-    
+    setImageUploadFailed(false);
+
     if (isEditing) {
       // En modo edición, volver al listado
       navigate('/admin/viviendas');
@@ -666,21 +689,28 @@ const PropertyCreatePage = () => {
         progress={isProcessing && uploadProgress > 0 ? uploadProgress : null}
       />
 
-      {/* Popup de éxito */}
+      {/* Popup de resultado */}
       <SuccessPopup
         isVisible={showSuccessPopup}
         onClose={handleSuccessPopupClose}
+        variant={imageUploadFailed ? 'warning' : 'success'}
         title={
-          wasSavedAsDraft 
-            ? '¡Borrador guardado exitosamente!'
-            : `¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`
+          imageUploadFailed
+            ? 'Vivienda guardada, pero faltan imágenes'
+            : wasSavedAsDraft
+              ? '¡Borrador guardado exitosamente!'
+              : `¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`
         }
         message={
-          wasSavedAsDraft
-            ? `El borrador "${successData?.name || 'Nueva vivienda'}" ha sido guardado correctamente. Puedes encontrarlo filtrando por "Borradores" en el listado de viviendas.`
-            : `La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'publicada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`
+          imageUploadFailed
+            ? `La vivienda "${successData?.name || 'Nueva vivienda'}" se guardó correctamente, pero algunas imágenes no se subieron. Puedes reintentar la subida sin recrear la vivienda.`
+            : wasSavedAsDraft
+              ? `El borrador "${successData?.name || 'Nueva vivienda'}" ha sido guardado correctamente. Puedes encontrarlo filtrando por "Borradores" en el listado de viviendas.`
+              : `La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'publicada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`
         }
-        autoClose={true}
+        actionLabel={imageUploadFailed ? 'Reintentar subida' : undefined}
+        onAction={imageUploadFailed ? handleRetryImages : undefined}
+        autoClose={!imageUploadFailed}
         autoCloseDelay={4000}
       />
     </div>
