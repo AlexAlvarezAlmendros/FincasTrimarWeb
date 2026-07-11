@@ -10,6 +10,7 @@ import {
   TipoAnuncio, 
   EstadoVenta
 } from '../../../types/vivienda.types.js';
+import { ValidationRules, FormValidator } from '../../../types/viviendaForm.types.js';
 import CharacteristicsSelector from '../../CharacteristicsSelector/index.js';
 import DraggableImageGrid from '../../DraggableImageGrid/index.js';
 import DraggablePendingGrid from '../../DraggablePendingGrid/index.js';
@@ -32,6 +33,10 @@ const PropertyCreatePage = () => {
   // Guardamos el id para poder reintentar la subida sin recrear la vivienda.
   const [imageUploadFailed, setImageUploadFailed] = useState(false);
   const [savedPropertyId, setSavedPropertyId] = useState(null);
+
+  // Validación inline por campo (errores + campos tocados)
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   // Estado para el popup de carga
   const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
@@ -145,8 +150,38 @@ const PropertyCreatePage = () => {
     }
   }, [isEditing, id, hasLoadedData, loadProperty, loadPropertyImages]);
 
+  // Valida un campo con las ValidationRules compartidas; devuelve el mensaje o null
+  const runFieldValidation = (field, value) =>
+    ValidationRules[field] ? ValidationRules[field].validate(value) : null;
+
+  // Actualiza un campo y, si ya fue tocado, revalida en vivo
+  const handleFieldChange = (field, value) => {
+    updateField(field, value);
+    if (touched[field]) {
+      setErrors((prev) => ({ ...prev, [field]: runFieldValidation(field, value) }));
+    }
+  };
+
+  // Marca el campo como tocado y lo valida al perder el foco
+  const handleFieldBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setErrors((prev) => ({ ...prev, [field]: runFieldValidation(field, formData[field]) }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validación completa antes de enviar (un único camino, reglas compartidas)
+    const { isValid, errors: allErrors } = await FormValidator.validateViviendaForm(formData);
+    if (!isValid) {
+      setErrors(allErrors);
+      setTouched(Object.keys(allErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}));
+      const firstError = Object.keys(allErrors)[0];
+      const el = firstError && document.getElementById(firstError);
+      if (el) el.focus();
+      return;
+    }
+
     try {
       setLoadingMessage(isEditing ? 'Actualizando vivienda...' : 'Creando vivienda...');
       await createVivienda(formData, isEditing ? id : null);
@@ -274,25 +309,31 @@ const PropertyCreatePage = () => {
                 id="name"
                 type="text"
                 value={formData.name}
-                onChange={(e) => updateField('name', e.target.value)}
+                onChange={(e) => handleFieldChange('name', e.target.value)}
+                onBlur={() => handleFieldBlur('name')}
                 placeholder="Ej: Piso céntrico con terraza en el centro"
-                required
-                className="form-input"
+                className={`form-input ${touched.name && errors.name ? 'error' : ''}`}
               />
+              {touched.name && errors.name && (
+                <span className="error-message">{errors.name}</span>
+              )}
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="price">Precio *</label>
               <input
                 id="price"
                 type="number"
                 value={formData.price}
-                onChange={(e) => updateField('price', e.target.value)}
+                onChange={(e) => handleFieldChange('price', e.target.value)}
+                onBlur={() => handleFieldBlur('price')}
                 placeholder="250000"
-                required
                 min="0"
-                className="form-input"
+                className={`form-input ${touched.price && errors.price ? 'error' : ''}`}
               />
+              {touched.price && errors.price && (
+                <span className="error-message">{errors.price}</span>
+              )}
             </div>
           </div>
 
@@ -675,10 +716,10 @@ const PropertyCreatePage = () => {
             </button>
           )}
           
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn btn-primary"
-            disabled={isCreating || !formData.name || !formData.price}
+            disabled={isCreating}
           >
             {isCreating ? (
               <>
