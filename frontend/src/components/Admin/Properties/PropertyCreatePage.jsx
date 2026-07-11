@@ -1,44 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useCreateViviendaSimple } from '../../../hooks/useCreateViviendaSimple.js';
 import { useImageManager } from '../../../hooks/useImageManager.js';
-import { 
-  TipoInmueble, 
-  TipoVivienda, 
-  Estado, 
-  Planta, 
-  TipoAnuncio, 
-  EstadoVenta
-} from '../../../types/vivienda.types.js';
 import { ValidationRules, FormValidator } from '../../../types/viviendaForm.types.js';
 import CharacteristicsSelector from '../../CharacteristicsSelector/index.js';
-import DraggableImageGrid from '../../DraggableImageGrid/index.js';
-import DraggablePendingGrid from '../../DraggablePendingGrid/index.js';
 import SuccessPopup from '../../SuccessPopup/index.js';
 import LoadingPopup from '../../LoadingPopup/index.js';
-import RichTextEditor from '../../RichTextEditor/index.js';
 import ImageUploadManager from './ImageUploadManager/ImageUploadManager.jsx';
-import CustomSelect from '../../CustomSelect/CustomSelect.jsx';
 import Button from '../../common/Button';
+import BasicInfoSection from './sections/BasicInfoSection.jsx';
+import FeaturesSection from './sections/FeaturesSection.jsx';
+import LocationSection from './sections/LocationSection.jsx';
+import ClassificationSection from './sections/ClassificationSection.jsx';
 import './PropertyCreatePage.css';
-
-// Convierte un enum { CLAVE: 'Etiqueta' } en opciones para CustomSelect
-const toOptions = (enumObj) => Object.values(enumObj).map((v) => ({ value: v, label: v }));
 
 // Clave de autoguardado, namespaced por id de vivienda (o 'nuevo')
 const draftKey = (id) => `vivienda-autosave-${id || 'nuevo'}`;
 
 // Campos que NO se autoguardan/recuperan (los ficheros de imagen no son serializables)
 const NON_PERSISTED_FIELDS = new Set(['images', 'imagesToDelete']);
-
-// Extrae el texto plano de un fragmento HTML (para contar caracteres)
-const getPlainTextFromHtml = (html) => {
-  if (!html) return '';
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  return tempDiv.textContent || tempDiv.innerText || '';
-};
 
 const PropertyCreatePage = () => {
   const navigate = useNavigate();
@@ -167,12 +148,6 @@ const PropertyCreatePage = () => {
       loadData();
     }
   }, [isEditing, id, hasLoadedData, loadProperty, loadPropertyImages]);
-
-  // Longitud del texto plano de la descripción (memoizada: evita crear un <div> en cada render)
-  const descriptionLength = useMemo(
-    () => getPlainTextFromHtml(formData.description).length,
-    [formData.description]
-  );
 
   // Detectar un borrador local previo (al montar / cambiar de id)
   useEffect(() => {
@@ -384,294 +359,21 @@ const PropertyCreatePage = () => {
       )}
 
       <form onSubmit={handleSubmit} className="property-form">
-        <div className="form-section">
-          <h2 className="section-title">📋 Información Básica</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="name">Nombre de la vivienda *</label>
-              <input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleFieldChange('name', e.target.value)}
-                onBlur={() => handleFieldBlur('name')}
-                placeholder="Ej: Piso céntrico con terraza en el centro"
-                className={`form-input ${touched.name && errors.name ? 'error' : ''}`}
-              />
-              {touched.name && errors.name && (
-                <span className="error-message">{errors.name}</span>
-              )}
-            </div>
+        <BasicInfoSection
+          formData={formData}
+          updateField={updateField}
+          handleFieldChange={handleFieldChange}
+          handleFieldBlur={handleFieldBlur}
+          errors={errors}
+          touched={touched}
+          isCreating={isCreating}
+        />
 
-            <div className="form-group">
-              <label htmlFor="price">Precio *</label>
-              <input
-                id="price"
-                type="number"
-                value={formData.price}
-                onChange={(e) => handleFieldChange('price', e.target.value)}
-                onBlur={() => handleFieldBlur('price')}
-                placeholder="250000"
-                min="0"
-                className={`form-input ${touched.price && errors.price ? 'error' : ''}`}
-              />
-              {touched.price && errors.price && (
-                <span className="error-message">{errors.price}</span>
-              )}
-            </div>
-          </div>
+        <FeaturesSection formData={formData} updateField={updateField} />
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="shortDescription">Descripción breve</label>
-              <textarea
-                id="shortDescription"
-                value={formData.shortDescription}
-                onChange={(e) => updateField('shortDescription', e.target.value)}
-                placeholder="Amplio y luminoso piso en zona céntrica"
-                maxLength="300"
-                rows="2"
-                className="form-textarea"
-              />
-              <small className="form-help">
-                Máximo 300 caracteres ({formData.shortDescription.length}/300)
-              </small>
-            </div>
-          </div>
+        <LocationSection formData={formData} updateField={updateField} />
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="description">Descripción completa</label>
-              <RichTextEditor
-                value={formData.description}
-                onChange={(content) => {
-                  const plainText = getPlainTextFromHtml(content);
-                  if (plainText.length <= 2000) {
-                    updateField('description', content);
-                  }
-                }}
-                placeholder="Describe en detalle las características de la vivienda, su estado, orientación, servicios cercanos..."
-                disabled={isCreating}
-                height="250px"
-                error={descriptionLength > 2000
-                  ? 'La descripción no puede exceder 2000 caracteres'
-                  : null
-                }
-              />
-              <small className="form-help">
-                Editor de texto enriquecido - Máximo 2000 caracteres ({descriptionLength}/2000)
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h2 className="section-title">🏠 Características</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="rooms">Habitaciones</label>
-              <input
-                id="rooms"
-                type="number"
-                value={formData.rooms}
-                onChange={(e) => updateField('rooms', e.target.value)}
-                min="0"
-                max="50"
-                placeholder="3"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="bathRooms">Baños</label>
-              <input
-                id="bathRooms"
-                type="number"
-                value={formData.bathRooms}
-                onChange={(e) => updateField('bathRooms', e.target.value)}
-                min="0"
-                max="20"
-                placeholder="2"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="garage">Garajes</label>
-              <input
-                id="garage"
-                type="number"
-                value={formData.garage}
-                onChange={(e) => updateField('garage', e.target.value)}
-                min="0"
-                max="10"
-                placeholder="1"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="squaredMeters">Metros cuadrados</label>
-              <input
-                id="squaredMeters"
-                type="number"
-                value={formData.squaredMeters}
-                onChange={(e) => updateField('squaredMeters', e.target.value)}
-                min="0"
-                max="10000"
-                placeholder="120"
-                className="form-input"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h2 className="section-title">📍 Ubicación</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="provincia">Provincia</label>
-              <input
-                id="provincia"
-                type="text"
-                value={formData.provincia}
-                onChange={(e) => updateField('provincia', e.target.value)}
-                placeholder="Ej: Barcelona"
-                maxLength="100"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="poblacion">Población</label>
-              <input
-                id="poblacion"
-                type="text"
-                value={formData.poblacion}
-                onChange={(e) => updateField('poblacion', e.target.value)}
-                placeholder="Ej: Sitges"
-                maxLength="100"
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <details className="form-accordion">
-            <summary className="form-accordion__summary">Dirección exacta (opcional)</summary>
-            <div className="form-accordion__body">
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="calle">Calle</label>
-                  <input
-                    id="calle"
-                    type="text"
-                    value={formData.calle}
-                    onChange={(e) => updateField('calle', e.target.value)}
-                    placeholder="Ej: Carrer del Mar"
-                    maxLength="100"
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="numero">Número</label>
-                  <input
-                    id="numero"
-                    type="text"
-                    value={formData.numero}
-                    onChange={(e) => updateField('numero', e.target.value)}
-                    placeholder="Ej: 123 A"
-                    maxLength="20"
-                    className="form-input"
-                  />
-                </div>
-              </div>
-            </div>
-          </details>
-        </div>
-
-        <div className="form-section">
-          <h2 className="section-title">🏷️ Clasificación</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="tipoInmueble">Tipo de Inmueble</label>
-              <CustomSelect
-                value={formData.tipoInmueble}
-                onChange={(v) => updateField('tipoInmueble', v)}
-                options={toOptions(TipoInmueble)}
-                placeholder="Seleccionar tipo de inmueble"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="tipoVivienda">Tipo de Vivienda</label>
-              <CustomSelect
-                value={formData.tipoVivienda}
-                onChange={(v) => updateField('tipoVivienda', v)}
-                options={toOptions(TipoVivienda)}
-                placeholder="Seleccionar tipo de vivienda"
-              />
-            </div>
-          </div>
-
-          <details className="form-accordion">
-            <summary className="form-accordion__summary">Clasificación avanzada (estado, planta, tipo de anuncio…)</summary>
-            <div className="form-accordion__body">
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="estado">Estado</label>
-              <CustomSelect
-                value={formData.estado}
-                onChange={(v) => updateField('estado', v)}
-                options={toOptions(Estado)}
-                placeholder="Seleccionar estado"
-              />
-            </div>
-
-            {/* Solo mostrar selector de Planta para Piso, Ático o Dúplex */}
-            {(formData.tipoVivienda === 'Piso' || 
-              formData.tipoVivienda === 'Ático' || 
-              formData.tipoVivienda === 'Dúplex') && (
-              <div className="form-group">
-                <label htmlFor="planta">Planta</label>
-                <CustomSelect
-                  value={formData.planta}
-                  onChange={(v) => updateField('planta', v)}
-                  options={toOptions(Planta)}
-                  placeholder="Seleccionar planta"
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="tipoAnuncio">Tipo de Anuncio</label>
-              <CustomSelect
-                value={formData.tipoAnuncio}
-                onChange={(v) => updateField('tipoAnuncio', v)}
-                options={toOptions(TipoAnuncio)}
-                placeholder="Seleccionar tipo de anuncio"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="estadoVenta">Estado de Venta</label>
-              <CustomSelect
-                value={formData.estadoVenta}
-                onChange={(v) => updateField('estadoVenta', v)}
-                options={toOptions(EstadoVenta)}
-                placeholder="Seleccionar estado de venta"
-              />
-            </div>
-          </div>
-            </div>
-          </details>
-        </div>
+        <ClassificationSection formData={formData} updateField={updateField} />
 
         <div className="form-section">
           <details className="form-accordion">
