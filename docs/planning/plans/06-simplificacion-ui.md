@@ -1,6 +1,6 @@
 # Plan 06 — Simplificación de la UI del admin
 
-> Fase: 6 | Status: 🔄 In Progress | Started: 2026-07-11
+> Fase: 6 | Status: ✅ Completa a nivel de código (28/28) — pendiente recorrido manual en entorno real | Started: 2026-07-11
 > Milestone: Formulario de crear/editar vivienda mucho más fácil y rápido; gestión de mensajes y dashboard simples, honestos y sin ruido.
 
 ## Objetivo
@@ -32,9 +32,9 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 | F3 | Validación inline por campo cableando `useFormValidation` + `ValidationRules` (quitar la ad-hoc de submit) | alto/medio/bajo | ✅ |
 | F4 | Reemplazar los 6 `<select>` nativos por `CustomSelect` | medio/bajo/bajo | ✅ |
 | F5 | Feedback honesto del flujo de imágenes en 2 fases (no mostrar éxito si fallan; reintento con el id ya creado) | alto/bajo/bajo | ✅ |
-| F6 | Deduplicar y adelgazar el CSS del form (un solo sistema de botones, clases muertas, mover reglas de imágenes) | medio/medio/medio | ⬜ |
-| F7 | Autoguardado de borrador en localStorage con recuperación (namespaced por id) | alto/medio/medio | ⬜ |
-| F8 | Trocear el monolito en subcomponentes de sección (`sections/`) | medio/medio/bajo | ⬜ |
+| F6 | Deduplicar y adelgazar el CSS del form (un solo sistema de botones, clases muertas, mover reglas de imágenes) | medio/medio/medio | ✅ |
+| F7 | Autoguardado de borrador en localStorage con recuperación (namespaced por id) | alto/medio/medio | ✅ |
+| F8 | Trocear el monolito en subcomponentes de sección (`sections/`) | medio/medio/bajo | ✅ |
 | F9 | Defaults inteligentes + contador de descripción eficiente + toolbar Quill reducida | bajo/bajo/bajo | ✅ |
 
 ### Mensajes
@@ -61,12 +61,12 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 |---|-------|-------|--------|
 | X1 | Aliases de compatibilidad de tokens en `index.css` (repara ~25 CSS sin tocar componentes) | alto/bajo/bajo | ✅ |
 | X2 | Eliminar ficheros muertos del design system (`Icon.jsx/css` 0 bytes, `ContactForm.module.css` 0 bytes) | bajo/bajo/bajo | ✅ |
-| X3 | Ampliar tokens que faltan (sombras, focus-ring, overlay, success-strong) | medio/bajo/bajo | ⬜ |
-| X4 | Componente `Button` unificado con variantes | alto/medio/medio | ⬜ |
-| X5 | Componente `FormField` compartido (label + control + error) | alto/medio/medio | ⬜ |
-| X6 | Modal/Overlay base + spinner único | medio/medio/medio | ⬜ |
-| X7 | Migrar componentes legacy a `--color-*` y retirar los aliases de X1 | medio/alto/bajo | ⬜ |
-| X8 | Arreglar los `<i className="fas">` del admin que no pintan (el proyecto no carga el webfont FA, solo el SVG core): convertir a `<FontAwesomeIcon>` o activar `dom.watch()`. Descubierto en M6; requiere verificación visual | medio/medio/medio | ⬜ |
+| X3 | Ampliar tokens que faltan (sombras, focus-ring, overlay, success-strong) | medio/bajo/bajo | ✅ |
+| X4 | Componente `Button` unificado con variantes | alto/medio/medio | ✅ |
+| X5 | Componente `FormField` compartido (label + control + error) | alto/medio/medio | ✅ |
+| X6 | Modal/Overlay base + spinner único | medio/medio/medio | ✅ |
+| X7 | Migrar componentes legacy a `--color-*` y retirar los aliases de X1 | medio/alto/bajo | ✅ |
+| X8 | Arreglar los `<i className="fas">` del admin que no pintan (el proyecto no carga el webfont FA, solo el SVG core): convertir a `<FontAwesomeIcon>` o activar `dom.watch()`. Descubierto en M6; requiere verificación visual | medio/medio/medio | ✅ |
 
 ## Primera tanda (alto impacto / bajo riesgo — implementar ya)
 
@@ -96,4 +96,9 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 | 2026-07-11 | M3/M4/M5/M6 | `MessagesPage` reescrita a bandeja lista/detalle: leído/no leído reversible + leído al abrir, Responder (mailto), iconos FontAwesome + tokens. `9537caf` |
 | 2026-07-11 | X2/D5/D4 | Muertos design-system/dashboard borrados; `useAdminStats` con conteo real de mensajes pendientes (badge + MetricCard clicable) vía useApi. `94d9363` |
 | 2026-07-11 | F4/F9 | 6 selects → CustomSelect; toolbar Quill mínima; default tipoAnuncio='Venta'; contador de descripción memoizado. `84bc48d` |
-| — | Pendiente | 8 tareas: F6, F7, F8, X3, X4, X5, X6, X7, más la nueva X8 (iconos FA). Recorrido manual en entorno real sigue pendiente |
+| 2026-07-11 | X3/F7 | Tokens shadow-modal/overlay/focus-ring/success-strong; autoguardado del form en localStorage con recuperación. `9d7c103` |
+| 2026-07-11 | X4/X5/X6/F6 | Componentes compartidos Button/FormField/Modal; popups sobre Modal; purga de ~326 líneas de CSS muerto del form. `30fce2f` |
+| 2026-07-11 | X8 | `<i class="fas">` del admin → `<FontAwesomeIcon>` (no hay webfont FA); iconos registrados. `45a5744` |
+| 2026-07-11 | X7 | 46 CSS migrados legacy→`--color-*` (visualmente idéntico); alias sin uso retirados; verificado sin tokens indefinidos. `2a8d03b` |
+| 2026-07-11 | F8/X5 | Form troceado en `sections/` (BasicInfo/Features/Location/Classification) adoptando FormField; PropertyCreatePage 800→508 líneas. `44ed228` |
+| — | Estado | **28/28 tareas completas a nivel de código.** Pendiente: recorrido manual en entorno real (Auth0+Turso) que no pude ejecutar; toda la verificación fue build + lógica |
