@@ -11,20 +11,11 @@ const AdminLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth0();
   const location = useLocation();
-  const { isAdmin, isSeller, isCaptador, roles } = useUserRoles();
-  const { draftsCount, messagesCount } = useAdminStats();
+  const { isAdmin } = useUserRoles();
+  const { messagesCount } = useAdminStats();
 
-  // Log para debugging
-  console.log('🔐 AdminLayout - Verificación de roles:', { 
-    isAdmin, 
-    isSeller,
-    isCaptador,
-    roles,
-    user 
-  });
-
-  // Si no es Admin, Seller ni Captador, redirigir
-  if (!isAdmin && !isSeller && !isCaptador) {
+  // Solo AdminTrimar tiene acceso al panel de administración
+  if (!isAdmin) {
     console.warn('❌ Acceso denegado al panel de administración');
     return <Navigate to="/" replace />;
   }
@@ -44,11 +35,10 @@ const AdminLayout = () => {
   return (
     <div className={`admin-layout ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Sidebar */}
-      <AdminSidebar 
+      <AdminSidebar
         collapsed={sidebarCollapsed}
         onToggle={handleSidebarToggle}
         currentPath={location.pathname}
-        draftsCount={draftsCount}
         messagesCount={messagesCount}
       />
       

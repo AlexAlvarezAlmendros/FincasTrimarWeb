@@ -288,6 +288,18 @@
   color: #3730A3;
 }
 
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+
+.status-draft {
+  background: var(--neutral-200, #E5E7EB);
+  color: var(--neutral-600, #475569);
+}
+
 .stats-info {
   display: flex;
   flex-direction: column;
@@ -351,6 +363,11 @@
 .action-btn--unpublish {
   background: #FEE2E2;
   color: #DC2626;
+}
+
+.action-btn--publish {
+  background: #DCFCE7;
+  color: #16A34A;
 }
 
 .action-btn--delete {
