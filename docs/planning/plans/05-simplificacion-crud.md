@@ -19,7 +19,7 @@ Hacer que el CRUD de viviendas sea **mucho más simple**: un panel con una lista
 ## Dependencias
 - **Requiere:** ninguna (se puede empezar ya).
 - **Desbloquea:** simplifica la Fase 3 (menos superficie que lintar/testear) y absorbe parte de la Fase 2 (borrado de código muerto).
-- **Nota backend (fuera de scope frontend):** al eliminar `JsonImportButton` + `JsonBulkImport`, la API `/api/v1/json/*` (`jsonImportService.js`, con cambios sin commitear en el working tree original) queda **sin consumidor en el front**. Igual ocurre con `/api/v1/csv/*` y `/api/v1/duplicates/*` (ya muertos en front). Decidir en una tarea aparte si se retiran también del backend. Este plan solo toca frontend.
+- **Backend (hecho en seguimiento):** ✅ retiradas las rutas huérfanas `/api/v1/json`, `/api/v1/csv`, `/api/v1/duplicates`, `GET /viviendas/captacion`, `GET /viviendas/drafts` y `PATCH /viviendas/:id/captacion`, con sus cadenas routes→controller→service→repo y los schemas asociados. Se reconcilió la visibilidad de borradores (`IsDraft=1`) cableando `includeDrafts` en el listado. Commit `b8a2972`.
 
 ---
 
@@ -98,3 +98,4 @@ Hacer que el CRUD de viviendas sea **mucho más simple**: un panel con una lista
 | 2026-07-11 | A + B + C + D | Captación eliminada; panel a AdminTrimar; borradores como toggle en el listado; import JSON quitado del alta. Commit `c6c12a3` |
 | 2026-07-11 | E | Código muerto borrado (6 componentes + 3 hooks). Commit `9b6569b` |
 | 2026-07-11 | F.1 | `vite build` verde (356 módulos, 0 errores). Sin referencias colgantes |
+| 2026-07-11 | Backend | Rutas huérfanas (json/csv/duplicates/captación/drafts) retiradas + fix visibilidad de borradores (`includeDrafts`). `node --check` OK en 6 ficheros, build frontend verde. Commit `b8a2972` |
