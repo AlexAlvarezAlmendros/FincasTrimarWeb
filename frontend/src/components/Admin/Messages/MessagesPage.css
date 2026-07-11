@@ -4,7 +4,7 @@
 
 .messages-page {
   padding: 2rem;
-  background: var(--neutral-50, #F8FAFC);
+  background: var(--color-neutral-50, #F8FAFC);
   min-height: 100vh;
 }
 
@@ -33,7 +33,7 @@
   gap: 0.75rem;
   font-size: 2rem;
   font-weight: 600;
-  color: var(--neutral-800, #1F2937);
+  color: var(--color-neutral-800, #1F2937);
   margin: 0 0 0.5rem 0;
 }
 
@@ -43,7 +43,7 @@
 
 .page-subtitle {
   font-size: 1.1rem;
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   margin: 0;
 }
 
@@ -67,13 +67,13 @@
 }
 
 .btn--secondary {
-  background: var(--neutral-100, #F3F4F6);
-  color: var(--neutral-700, #374151);
-  border: 1px solid var(--neutral-300, #D1D5DB);
+  background: var(--color-neutral-100, #F3F4F6);
+  color: var(--color-neutral-700, #374151);
+  border: 1px solid var(--color-neutral-300, #D1D5DB);
 }
 
 .btn--secondary:hover:not(:disabled) {
-  background: var(--neutral-200, #E5E7EB);
+  background: var(--color-neutral-200, #E5E7EB);
 }
 
 .btn:disabled {
@@ -132,13 +132,13 @@
 .stat-number {
   font-size: 1.875rem;
   font-weight: 700;
-  color: var(--neutral-900, #111827);
+  color: var(--color-neutral-900, #111827);
   line-height: 1;
 }
 
 .stat-label {
   font-size: 0.875rem;
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   font-weight: 500;
 }
 
@@ -173,7 +173,7 @@
 .search-input,
 .filter-select {
   padding: 0.75rem 1rem;
-  border: 1px solid var(--neutral-300, #D1D5DB);
+  border: 1px solid var(--color-neutral-300, #D1D5DB);
   border-radius: 8px;
   font-size: 0.875rem;
   transition: border-color 0.2s ease;
@@ -182,7 +182,7 @@
 .search-input:focus,
 .filter-select:focus {
   outline: none;
-  border-color: var(--primary, #3B82F6);
+  border-color: var(--color-primary, #3B82F6);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -199,13 +199,13 @@
 
 .results-header {
   padding: 1.5rem;
-  border-bottom: 1px solid var(--neutral-200, #E5E7EB);
-  background: var(--neutral-50, #F8FAFC);
+  border-bottom: 1px solid var(--color-neutral-200, #E5E7EB);
+  background: var(--color-neutral-50, #F8FAFC);
 }
 
 .results-count {
   font-size: 0.875rem;
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   font-weight: 500;
 }
 
@@ -224,12 +224,12 @@
 }
 
 .messages-table th {
-  background: var(--neutral-50, #F8FAFC);
+  background: var(--color-neutral-50, #F8FAFC);
   padding: 1rem 0.75rem;
   text-align: left;
   font-weight: 600;
-  color: var(--neutral-700, #374151);
-  border-bottom: 2px solid var(--neutral-200, #E5E7EB);
+  color: var(--color-neutral-700, #374151);
+  border-bottom: 2px solid var(--color-neutral-200, #E5E7EB);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -237,7 +237,7 @@
 
 .messages-table td {
   padding: 1rem 0.75rem;
-  border-bottom: 1px solid var(--neutral-200, #E5E7EB);
+  border-bottom: 1px solid var(--color-neutral-200, #E5E7EB);
   vertical-align: top;
 }
 
@@ -246,7 +246,7 @@
 }
 
 .message-row:hover {
-  background: var(--neutral-50, #F8FAFC);
+  background: var(--color-neutral-50, #F8FAFC);
 }
 
 .message-row--new {
@@ -325,7 +325,7 @@
 
 .contact-name {
   font-weight: 600;
-  color: var(--neutral-900, #111827);
+  color: var(--color-neutral-900, #111827);
 }
 
 .contact-email,
@@ -335,7 +335,7 @@
 
 .contact-email a,
 .contact-phone a {
-  color: var(--primary, #3B82F6);
+  color: var(--color-primary, #3B82F6);
   text-decoration: none;
 }
 
@@ -346,7 +346,7 @@
 
 .subject-content {
   font-weight: 500;
-  color: var(--neutral-700, #374151);
+  color: var(--color-neutral-700, #374151);
   line-height: 1.4;
 }
 
@@ -356,14 +356,14 @@
 
 .message-text {
   line-height: 1.4;
-  color: var(--neutral-700, #374151);
+  color: var(--color-neutral-700, #374151);
   margin-bottom: 0.5rem;
 }
 
 .expand-btn {
   background: none;
   border: none;
-  color: var(--primary, #3B82F6);
+  color: var(--color-primary, #3B82F6);
   font-size: 0.75rem;
   cursor: pointer;
   text-decoration: underline;
@@ -373,7 +373,7 @@
 .message-expanded {
   margin-top: 0.5rem;
   padding: 0.75rem;
-  background: var(--neutral-50, #F8FAFC);
+  background: var(--color-neutral-50, #F8FAFC);
   border-radius: 6px;
   font-size: 0.75rem;
   line-height: 1.4;
@@ -381,7 +381,7 @@
 }
 
 .property-link {
-  color: var(--primary, #3B82F6);
+  color: var(--color-primary, #3B82F6);
   text-decoration: none;
   font-size: 0.75rem;
   display: flex;
@@ -394,14 +394,14 @@
 }
 
 .no-property {
-  color: var(--neutral-500, #6B7280);
+  color: var(--color-neutral-500, #6B7280);
   font-size: 0.75rem;
   font-style: italic;
 }
 
 .date-info {
   font-size: 0.75rem;
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   white-space: nowrap;
 }
 
@@ -427,7 +427,7 @@
   cursor: pointer;
   font-size: 0.875rem;
   transition: all 0.2s ease;
-  background: var(--neutral-100, #F3F4F6);
+  background: var(--color-neutral-100, #F3F4F6);
 }
 
 .action-btn:hover {
@@ -474,8 +474,8 @@
 }
 
 .action-btn--cancel {
-  background: var(--neutral-300, #D1D5DB);
-  color: var(--neutral-700, #374151);
+  background: var(--color-neutral-300, #D1D5DB);
+  color: var(--color-neutral-700, #374151);
 }
 
 /* ============================
@@ -488,7 +488,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 1.5rem;
-  border-top: 1px solid var(--neutral-200, #E5E7EB);
+  border-top: 1px solid var(--color-neutral-200, #E5E7EB);
 }
 
 .pagination-btn {
@@ -498,9 +498,9 @@
   min-width: 2.5rem;
   height: 2.5rem;
   padding: 0 0.75rem;
-  border: 1px solid var(--neutral-300, #D1D5DB);
+  border: 1px solid var(--color-neutral-300, #D1D5DB);
   background: white;
-  color: var(--neutral-700, #374151);
+  color: var(--color-neutral-700, #374151);
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.875rem;
@@ -509,8 +509,8 @@
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: var(--neutral-50, #F8FAFC);
-  border-color: var(--neutral-400, #9CA3AF);
+  background: var(--color-neutral-50, #F8FAFC);
+  border-color: var(--color-neutral-400, #9CA3AF);
 }
 
 .pagination-btn:disabled {
@@ -519,14 +519,14 @@
 }
 
 .pagination-btn--active {
-  background: var(--primary, #3B82F6);
+  background: var(--color-primary, #3B82F6);
   color: white;
-  border-color: var(--primary, #3B82F6);
+  border-color: var(--color-primary, #3B82F6);
 }
 
 .pagination-dots {
   padding: 0 0.5rem;
-  color: var(--neutral-400, #9CA3AF);
+  color: var(--color-neutral-400, #9CA3AF);
 }
 
 /* ============================
@@ -544,8 +544,8 @@
 .loading-spinner {
   width: 2rem;
   height: 2rem;
-  border: 3px solid var(--neutral-200, #E5E7EB);
-  border-top-color: var(--primary, #3B82F6);
+  border: 3px solid var(--color-neutral-200, #E5E7EB);
+  border-top-color: var(--color-primary, #3B82F6);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -575,12 +575,12 @@
 .no-results h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--neutral-800, #1F2937);
+  color: var(--color-neutral-800, #1F2937);
   margin: 0 0 0.5rem 0;
 }
 
 .no-results p {
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   max-width: 400px;
   line-height: 1.5;
   margin: 0;

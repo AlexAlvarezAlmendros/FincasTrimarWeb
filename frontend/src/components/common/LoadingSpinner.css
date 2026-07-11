@@ -8,8 +8,8 @@
 }
 
 .loading-spinner__spinner {
-  border: 3px solid var(--neutral-100);
-  border-top: 3px solid var(--brand-primary);
+  border: 3px solid var(--color-neutral-100);
+  border-top: 3px solid var(--color-brand-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -32,7 +32,7 @@
 }
 
 .loading-spinner__message {
-  color: var(--neutral-600);
+  color: var(--color-neutral-600);
   font-size: 0.875rem;
   margin: 0;
   text-align: center;

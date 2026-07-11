@@ -9,7 +9,7 @@
   transition: all 0.2s ease;
   border-radius: var(--radius-md, 16px);
   overflow: hidden;
-  background: var(--neutral-0, #FFFFFF);
+  background: var(--color-neutral-0, #FFFFFF);
   border: 2px solid transparent;
 }
 
@@ -27,8 +27,8 @@
 }
 
 .draggable-image-item.drag-over {
-  border-color: var(--brand-primary, #3A8DFF);
-  background: var(--brand-primary, #3A8DFF);
+  border-color: var(--color-brand-primary, #3A8DFF);
+  background: var(--color-brand-primary, #3A8DFF);
   transform: scale(1.05);
 }
 
@@ -82,8 +82,8 @@
 }
 
 .btn-remove {
-  background: var(--semantic-danger, #EF4444);
-  color: var(--neutral-0, #FFFFFF);
+  background: var(--color-danger, #EF4444);
+  color: var(--color-neutral-0, #FFFFFF);
   border: none;
   padding: 8px;
   border-radius: 50%;
@@ -102,8 +102,8 @@
 }
 
 .drag-handle {
-  background: var(--neutral-800, #1F2937);
-  color: var(--neutral-0, #FFFFFF);
+  background: var(--color-neutral-800, #1F2937);
+  color: var(--color-neutral-0, #FFFFFF);
   border: none;
   padding: 8px;
   border-radius: var(--radius-xs, 8px);
@@ -115,7 +115,7 @@
 }
 
 .drag-handle:hover {
-  background: var(--neutral-600, #475569);
+  background: var(--color-neutral-600, #475569);
   transform: scale(1.1);
 }
 
@@ -127,8 +127,8 @@
   position: absolute;
   top: 8px;
   left: 8px;
-  background: var(--brand-primary, #3A8DFF);
-  color: var(--neutral-0, #FFFFFF);
+  background: var(--color-brand-primary, #3A8DFF);
+  color: var(--color-neutral-0, #FFFFFF);
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -184,14 +184,14 @@
 .image-title {
   font-size: var(--font-size-sm, 14px);
   font-weight: var(--font-weight-medium, 500);
-  color: var(--neutral-800, #1F2937);
+  color: var(--color-neutral-800, #1F2937);
   display: block;
   margin-bottom: 4px;
 }
 
 .drag-hint {
   font-size: 12px;
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   font-style: italic;
 }
 
@@ -257,7 +257,7 @@
 
 /* Mejoras de accesibilidad */
 .draggable-image-item:focus-within {
-  outline: 2px solid var(--brand-primary, #3A8DFF);
+  outline: 2px solid var(--color-brand-primary, #3A8DFF);
   outline-offset: 2px;
 }
 

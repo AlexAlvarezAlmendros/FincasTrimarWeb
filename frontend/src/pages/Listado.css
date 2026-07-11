@@ -593,12 +593,12 @@
   padding: var(--spacing-3xl);
   background: var(--color-neutral-0);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-semantic-danger);
+  border: 1px solid var(--color-danger);
   margin: var(--spacing-lg) 0;
 }
 
 .error-state h3 {
-  color: var(--color-semantic-danger);
+  color: var(--color-danger);
   margin-bottom: var(--spacing-md);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
@@ -610,7 +610,7 @@
 }
 
 .retry-button {
-  background: var(--color-semantic-danger);
+  background: var(--color-danger);
   color: var(--color-neutral-0);
   border: none;
   border-radius: var(--radius-sm);
