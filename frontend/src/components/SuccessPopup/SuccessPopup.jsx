@@ -5,6 +5,9 @@
  * mostrar un botón de acción (p.ej. reintentar la subida).
  */
 import { useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import Modal from '../common/Modal';
+import Button from '../common/Button';
 import './SuccessPopup.css';
 
 const SuccessPopup = ({
@@ -33,58 +36,44 @@ const SuccessPopup = ({
     }
   }, [isVisible, effectiveAutoClose, autoCloseDelay, onClose]);
 
-  if (!isVisible) {
-    return null;
-  }
-
   return (
-    <div className="success-popup-overlay" onClick={onClose}>
-      <div
-        className={`success-popup${isWarning ? ' success-popup--warning' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="success-icon">
-          <i className={`fas ${isWarning ? 'fa-triangle-exclamation' : 'fa-check-circle'}`}></i>
-        </div>
-
-        <div className="success-content">
-          <h3 className="success-title">{title}</h3>
-          <p className="success-message">{message}</p>
-        </div>
-
-        <div className="success-actions">
-          {actionLabel && onAction && (
-            <button
-              type="button"
-              className="btn-success-action"
-              onClick={onAction}
-            >
-              <i className="fas fa-rotate-right"></i>
-              {actionLabel}
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-success-close"
-            onClick={onClose}
-          >
-            {!isWarning && <i className="fas fa-plus"></i>}
-            {isWarning ? 'Cerrar' : closeLabel}
-          </button>
-        </div>
-
-        {effectiveAutoClose && (
-          <div className="success-progress">
-            <div
-              className="success-progress-bar"
-              style={{
-                animation: `progressFill ${autoCloseDelay}ms linear forwards`,
-              }}
-            ></div>
-          </div>
-        )}
+    <Modal
+      isOpen={isVisible}
+      onClose={onClose}
+      className={`success-popup${isWarning ? ' success-popup--warning' : ''}`}
+      ariaLabel={title}
+    >
+      <div className="success-icon">
+        <FontAwesomeIcon icon={isWarning ? 'triangle-exclamation' : 'circle-check'} />
       </div>
-    </div>
+
+      <div className="success-content">
+        <h3 className="success-title">{title}</h3>
+        <p className="success-message">{message}</p>
+      </div>
+
+      <div className="success-actions">
+        {actionLabel && onAction && (
+          <Button variant="draft" icon="rotate-right" onClick={onAction}>
+            {actionLabel}
+          </Button>
+        )}
+        <Button variant="primary" icon={isWarning ? undefined : 'plus'} onClick={onClose}>
+          {isWarning ? 'Cerrar' : closeLabel}
+        </Button>
+      </div>
+
+      {effectiveAutoClose && (
+        <div className="success-progress">
+          <div
+            className="success-progress-bar"
+            style={{
+              animation: `progressFill ${autoCloseDelay}ms linear forwards`,
+            }}
+          ></div>
+        </div>
+      )}
+    </Modal>
   );
 };
 

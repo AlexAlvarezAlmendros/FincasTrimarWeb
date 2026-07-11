@@ -19,6 +19,7 @@ import LoadingPopup from '../../LoadingPopup/index.js';
 import RichTextEditor from '../../RichTextEditor/index.js';
 import ImageUploadManager from './ImageUploadManager/ImageUploadManager.jsx';
 import CustomSelect from '../../CustomSelect/CustomSelect.jsx';
+import Button from '../../common/Button';
 import './PropertyCreatePage.css';
 
 // Convierte un enum { CLAVE: 'Etiqueta' } en opciones para CustomSelect
@@ -355,14 +356,13 @@ const PropertyCreatePage = () => {
           </p>
         </div>
         <div className="header-actions">
-          <button 
-            type="button" 
+          <Button
+            variant="secondary"
+            icon="arrow-left"
             onClick={() => navigate('/admin/viviendas')}
-            className="btn--secondary"
           >
-            <i className="fas fa-arrow-left"></i>
             Volver al listado
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -372,12 +372,12 @@ const PropertyCreatePage = () => {
             Tienes cambios sin guardar de una sesión anterior.
           </span>
           <span className="draft-recovery-banner__actions">
-            <button type="button" className="btn btn-primary" onClick={recoverDraft}>
+            <Button variant="primary" size="sm" onClick={recoverDraft}>
               Recuperar
-            </button>
-            <button type="button" className="btn btn-outline" onClick={discardDraft}>
+            </Button>
+            <Button variant="outline" size="sm" onClick={discardDraft}>
               Descartar
-            </button>
+            </Button>
           </span>
         </div>
       )}
@@ -731,55 +731,33 @@ const PropertyCreatePage = () => {
         )}
 
         <div className="form-actions">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            icon="xmark"
             onClick={() => navigate('/admin/viviendas')}
-            className="btn btn-secondary"
             disabled={isCreating}
           >
-            <i className="fas fa-times"></i>
             Cancelar
-          </button>
-          
-          <button 
-            type="button"
-            onClick={handleReset}
-            className="btn btn-outline"
-            disabled={isCreating}
-          >
-            <i className="fas fa-redo"></i>
+          </Button>
+
+          <Button variant="outline" icon="rotate-right" onClick={handleReset} disabled={isCreating}>
             Resetear
-          </button>
+          </Button>
 
           {!id && (
-            <button 
-              type="button"
+            <Button
+              variant="draft"
+              icon="floppy-disk"
               onClick={handleSaveDraft}
-              className="btn btn-secondary"
               disabled={isCreating || !formData.name}
             >
-              <i className="fas fa-save"></i>
               Guardar Borrador
-            </button>
+            </Button>
           )}
-          
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={isCreating}
-          >
-            {isCreating ? (
-              <>
-                <i className="fas fa-spinner fa-spin"></i>
-                Creando...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-save"></i>
-                {id ? 'Actualizar Vivienda' : 'Crear Vivienda'}
-              </>
-            )}
-          </button>
+
+          <Button type="submit" variant="primary" icon="floppy-disk" loading={isCreating}>
+            {isCreating ? 'Creando…' : id ? 'Actualizar Vivienda' : 'Crear Vivienda'}
+          </Button>
         </div>
       </form>
 

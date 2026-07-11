@@ -29,7 +29,13 @@ import {
   faEyeSlash,
   faHouse,
   faInbox,
-  faRotateLeft
+  faRotateLeft,
+  faSpinner,
+  faXmark,
+  faFloppyDisk,
+  faRotateRight,
+  faCircleCheck,
+  faTriangleExclamation
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -62,5 +68,11 @@ library.add(
   faEyeSlash,
   faHouse,
   faInbox,
-  faRotateLeft
+  faRotateLeft,
+  faSpinner,
+  faXmark,
+  faFloppyDisk,
+  faRotateRight,
+  faCircleCheck,
+  faTriangleExclamation
 )
