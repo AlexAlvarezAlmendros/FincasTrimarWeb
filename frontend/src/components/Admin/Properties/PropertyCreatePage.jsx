@@ -24,6 +24,12 @@ import './PropertyCreatePage.css';
 // Convierte un enum { CLAVE: 'Etiqueta' } en opciones para CustomSelect
 const toOptions = (enumObj) => Object.values(enumObj).map((v) => ({ value: v, label: v }));
 
+// Clave de autoguardado, namespaced por id de vivienda (o 'nuevo')
+const draftKey = (id) => `vivienda-autosave-${id || 'nuevo'}`;
+
+// Campos que NO se autoguardan/recuperan (los ficheros de imagen no son serializables)
+const NON_PERSISTED_FIELDS = new Set(['images', 'imagesToDelete']);
+
 // Extrae el texto plano de un fragmento HTML (para contar caracteres)
 const getPlainTextFromHtml = (html) => {
   if (!html) return '';
@@ -49,6 +55,10 @@ const PropertyCreatePage = () => {
   // Validación inline por campo (errores + campos tocados)
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+
+  // Autoguardado en localStorage (recuperación de trabajo sin guardar)
+  const [recoverableDraft, setRecoverableDraft] = useState(null);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
 
   // Estado para el popup de carga
   const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
@@ -91,6 +101,9 @@ const PropertyCreatePage = () => {
       setImageUploadFailed(imgFailed);
       setSuccessData(data);
       setShowSuccessPopup(true);
+
+      // El trabajo ya está guardado en servidor: descartar el autoguardado local.
+      try { localStorage.removeItem(draftKey(data?.id || id)); } catch { /* noop */ }
     },
     onError: (err) => {
       console.error('Error creando vivienda:', err);
@@ -159,6 +172,51 @@ const PropertyCreatePage = () => {
     [formData.description]
   );
 
+  // Detectar un borrador local previo (al montar / cambiar de id)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey(id));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.data) setRecoverableDraft(parsed);
+      }
+    } catch { /* localStorage no disponible */ }
+  }, [id]);
+
+  // Autoguardar formData (con debounce) mientras el formulario tenga contenido
+  useEffect(() => {
+    if (!formData?.name) return undefined;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          draftKey(id),
+          JSON.stringify({ savedAt: Date.now(), data: formData })
+        );
+        setLastSavedAt(Date.now());
+      } catch { /* cuota/privado: ignorar */ }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [formData, id]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(draftKey(id)); } catch { /* noop */ }
+    setLastSavedAt(null);
+  };
+
+  const recoverDraft = () => {
+    if (recoverableDraft?.data) {
+      Object.entries(recoverableDraft.data).forEach(([k, v]) => {
+        if (!NON_PERSISTED_FIELDS.has(k)) updateField(k, v);
+      });
+    }
+    setRecoverableDraft(null);
+  };
+
+  const discardDraft = () => {
+    clearDraft();
+    setRecoverableDraft(null);
+  };
+
   // Valida un campo con las ValidationRules compartidas; devuelve el mensaje o null
   const runFieldValidation = (field, value) =>
     ValidationRules[field] ? ValidationRules[field].validate(value) : null;
@@ -218,6 +276,7 @@ const PropertyCreatePage = () => {
       if (window.confirm('¿Estás seguro de que quieres resetear el formulario?')) {
         resetForm();
         clearAllImages();
+        clearDraft();
       }
     }
   };
@@ -306,6 +365,22 @@ const PropertyCreatePage = () => {
           </button>
         </div>
       </div>
+
+      {recoverableDraft && (
+        <div className="draft-recovery-banner">
+          <span className="draft-recovery-banner__text">
+            Tienes cambios sin guardar de una sesión anterior.
+          </span>
+          <span className="draft-recovery-banner__actions">
+            <button type="button" className="btn btn-primary" onClick={recoverDraft}>
+              Recuperar
+            </button>
+            <button type="button" className="btn btn-outline" onClick={discardDraft}>
+              Descartar
+            </button>
+          </span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="property-form">
         <div className="form-section">
@@ -651,8 +726,12 @@ const PropertyCreatePage = () => {
           </div>
         )}
 
+        {lastSavedAt && (
+          <p className="autosave-indicator">Autoguardado localmente ✓</p>
+        )}
+
         <div className="form-actions">
-          <button 
+          <button
             type="button"
             onClick={() => navigate('/admin/viviendas')}
             className="btn btn-secondary"

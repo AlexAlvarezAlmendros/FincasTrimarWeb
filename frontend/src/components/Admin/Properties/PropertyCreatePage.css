@@ -146,6 +146,34 @@
   padding: 0 var(--spacing-lg) var(--spacing-md);
 }
 
+/* Banner de recuperación de autoguardado */
+.draft-recovery-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin: 0 0 var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--brand-primary-light);
+  border: 1px solid var(--color-brand-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+}
+
+.draft-recovery-banner__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* Indicador discreto de autoguardado */
+.autosave-indicator {
+  margin: 0 var(--spacing-lg) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  text-align: right;
+}
+
 .section-title {
   font-size: 1.25rem;
   font-weight: 600;

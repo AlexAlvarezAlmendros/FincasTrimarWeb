@@ -73,6 +73,12 @@
 
   /* Sombra grande (modales/popups) */
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.2);
+  --shadow-modal: var(--shadow-lg);
+
+  /* Overlay de modales, anillo de foco y verde de éxito fuerte */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --focus-ring: 0 0 0 3px rgba(58, 141, 255, 0.15);
+  --color-success-strong: #16A34A;
 
   /* ---------------------------------------------------------------------
      Alias de compatibilidad: nombres legacy usados por ~25 CSS que no
