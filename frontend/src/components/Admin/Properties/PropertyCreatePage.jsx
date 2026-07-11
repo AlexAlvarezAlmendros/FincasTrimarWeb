@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useCreateViviendaSimple } from '../../../hooks/useCreateViviendaSimple.js';
 import { useImageManager } from '../../../hooks/useImageManager.js';
 import { 
@@ -338,12 +339,12 @@ const PropertyCreatePage = () => {
           <h1 className="page-title">
             {id ? (
               <>
-                <i className="fas fa-edit"></i>
+                <FontAwesomeIcon icon="edit" />
                 Editar Vivienda
               </>
             ) : (
               <>
-                <i className="fas fa-plus-circle"></i>
+                <FontAwesomeIcon icon="circle-plus" />
                 Crear Nueva Vivienda
               </>
             )}

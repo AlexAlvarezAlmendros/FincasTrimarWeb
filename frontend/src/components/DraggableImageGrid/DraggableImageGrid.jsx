@@ -2,6 +2,7 @@
  * Grid de imágenes con funcionalidad de drag and drop para reordenar
  */
 import React, { useState, useCallback } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import DraggableImageItem from '../DraggableImageItem';
 import './DraggableImageGrid.css';
 
@@ -91,7 +92,7 @@ const DraggableImageGrid = ({
       {/* Indicador visual de reordenamiento */}
       {draggedIndex !== null && (
         <div className="drag-feedback">
-          <i className="fas fa-arrows-alt"></i>
+          <FontAwesomeIcon icon="up-down-left-right" />
           <span>Reordenando imagen {draggedIndex + 1}</span>
         </div>
       )}

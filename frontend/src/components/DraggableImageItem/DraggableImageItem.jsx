@@ -2,6 +2,7 @@
  * Componente de imagen individual con capacidad de drag and drop
  */
 import React, { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import './DraggableImageItem.css';
 
 const DraggableImageItem = ({
@@ -76,11 +77,11 @@ const DraggableImageItem = ({
                 className="btn-remove"
                 title="Eliminar imagen"
               >
-                <i className="fas fa-trash"></i>
+                <FontAwesomeIcon icon="trash" />
               </button>
               
               <div className="drag-handle" title="Arrastra para reordenar">
-                <i className="fas fa-grip-vertical"></i>
+                <FontAwesomeIcon icon="grip-vertical" />
               </div>
             </>
           )}
@@ -89,7 +90,7 @@ const DraggableImageItem = ({
         {/* Indicador de imagen principal (primera imagen) */}
         {index === 0 && (
           <div className="main-image-badge" title="Imagen principal">
-            <i className="fas fa-star"></i>
+            <FontAwesomeIcon icon="star" />
           </div>
         )}
         

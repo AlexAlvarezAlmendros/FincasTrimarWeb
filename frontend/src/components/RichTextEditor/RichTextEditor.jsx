@@ -2,6 +2,7 @@
  * Componente de editor de texto enriquecido usando React Quill
  */
 import { useMemo } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './RichTextEditor.css';
@@ -50,7 +51,7 @@ const RichTextEditor = ({
       />
       {error && (
         <div className="rich-text-error">
-          <i className="fas fa-exclamation-circle"></i>
+          <FontAwesomeIcon icon="circle-exclamation" />
           {error}
         </div>
       )}

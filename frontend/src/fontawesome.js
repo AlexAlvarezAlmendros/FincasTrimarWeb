@@ -35,7 +35,14 @@ import {
   faFloppyDisk,
   faRotateRight,
   faCircleCheck,
-  faTriangleExclamation
+  faTriangleExclamation,
+  faCirclePlus,
+  faCloudArrowUp,
+  faImages,
+  faCircleExclamation,
+  faUpDownLeftRight,
+  faGripVertical,
+  faHandBackFist
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -74,5 +81,12 @@ library.add(
   faFloppyDisk,
   faRotateRight,
   faCircleCheck,
-  faTriangleExclamation
+  faTriangleExclamation,
+  faCirclePlus,
+  faCloudArrowUp,
+  faImages,
+  faCircleExclamation,
+  faUpDownLeftRight,
+  faGripVertical,
+  faHandBackFist
 )
