@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCreateViviendaSimple } from '../../../hooks/useCreateViviendaSimple.js';
 import { useImageManager } from '../../../hooks/useImageManager.js';
@@ -18,7 +18,19 @@ import SuccessPopup from '../../SuccessPopup/index.js';
 import LoadingPopup from '../../LoadingPopup/index.js';
 import RichTextEditor from '../../RichTextEditor/index.js';
 import ImageUploadManager from './ImageUploadManager/ImageUploadManager.jsx';
+import CustomSelect from '../../CustomSelect/CustomSelect.jsx';
 import './PropertyCreatePage.css';
+
+// Convierte un enum { CLAVE: 'Etiqueta' } en opciones para CustomSelect
+const toOptions = (enumObj) => Object.values(enumObj).map((v) => ({ value: v, label: v }));
+
+// Extrae el texto plano de un fragmento HTML (para contar caracteres)
+const getPlainTextFromHtml = (html) => {
+  if (!html) return '';
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  return tempDiv.textContent || tempDiv.innerText || '';
+};
 
 const PropertyCreatePage = () => {
   const navigate = useNavigate();
@@ -44,18 +56,9 @@ const PropertyCreatePage = () => {
   // Estado para evitar múltiples cargas
   const [hasLoadedData, setHasLoadedData] = useState(false);
   
-  // Función helper para obtener texto plano del HTML
-  const getPlainTextFromHtml = (html) => {
-    if (!html) return '';
-    // Crear un elemento temporal para extraer solo el texto
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    return tempDiv.textContent || tempDiv.innerText || '';
-  };
-  
   // Determinar si estamos en modo edición
   const isEditing = Boolean(id);
-  
+
   // Hook para crear/editar vivienda
   const {
     formData,
@@ -149,6 +152,12 @@ const PropertyCreatePage = () => {
       loadData();
     }
   }, [isEditing, id, hasLoadedData, loadProperty, loadPropertyImages]);
+
+  // Longitud del texto plano de la descripción (memoizada: evita crear un <div> en cada render)
+  const descriptionLength = useMemo(
+    () => getPlainTextFromHtml(formData.description).length,
+    [formData.description]
+  );
 
   // Valida un campo con las ValidationRules compartidas; devuelve el mensaje o null
   const runFieldValidation = (field, value) =>
@@ -369,12 +378,13 @@ const PropertyCreatePage = () => {
                 placeholder="Describe en detalle las características de la vivienda, su estado, orientación, servicios cercanos..."
                 disabled={isCreating}
                 height="250px"
-                error={getPlainTextFromHtml(formData.description).length > 2000 ? 
-                  'La descripción no puede exceder 2000 caracteres' : null
+                error={descriptionLength > 2000
+                  ? 'La descripción no puede exceder 2000 caracteres'
+                  : null
                 }
               />
               <small className="form-help">
-                Editor de texto enriquecido - Máximo 2000 caracteres ({getPlainTextFromHtml(formData.description).length}/2000)
+                Editor de texto enriquecido - Máximo 2000 caracteres ({descriptionLength}/2000)
               </small>
             </div>
           </div>
@@ -513,36 +523,22 @@ const PropertyCreatePage = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="tipoInmueble">Tipo de Inmueble</label>
-              <select
-                id="tipoInmueble"
+              <CustomSelect
                 value={formData.tipoInmueble}
-                onChange={(e) => updateField('tipoInmueble', e.target.value)}
-                className="form-select"
-              >
-                <option value="">🏢 Seleccionar tipo de inmueble...</option>
-                {Object.entries(TipoInmueble).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => updateField('tipoInmueble', v)}
+                options={toOptions(TipoInmueble)}
+                placeholder="Seleccionar tipo de inmueble"
+              />
             </div>
 
             <div className="form-group">
               <label htmlFor="tipoVivienda">Tipo de Vivienda</label>
-              <select
-                id="tipoVivienda"
+              <CustomSelect
                 value={formData.tipoVivienda}
-                onChange={(e) => updateField('tipoVivienda', e.target.value)}
-                className="form-select"
-              >
-                <option value="">🏠 Seleccionar tipo de vivienda...</option>
-                {Object.entries(TipoVivienda).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => updateField('tipoVivienda', v)}
+                options={toOptions(TipoVivienda)}
+                placeholder="Seleccionar tipo de vivienda"
+              />
             </div>
           </div>
 
@@ -552,19 +548,12 @@ const PropertyCreatePage = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="estado">Estado</label>
-              <select
-                id="estado"
+              <CustomSelect
                 value={formData.estado}
-                onChange={(e) => updateField('estado', e.target.value)}
-                className="form-select"
-              >
-                <option value="">🔧 Seleccionar estado...</option>
-                {Object.entries(Estado).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => updateField('estado', v)}
+                options={toOptions(Estado)}
+                placeholder="Seleccionar estado"
+              />
             </div>
 
             {/* Solo mostrar selector de Planta para Piso, Ático o Dúplex */}
@@ -573,19 +562,12 @@ const PropertyCreatePage = () => {
               formData.tipoVivienda === 'Dúplex') && (
               <div className="form-group">
                 <label htmlFor="planta">Planta</label>
-                <select
-                  id="planta"
+                <CustomSelect
                   value={formData.planta}
-                  onChange={(e) => updateField('planta', e.target.value)}
-                  className="form-select"
-                >
-                  <option value="">🏢 Seleccionar planta...</option>
-                  {Object.entries(Planta).map(([key, value]) => (
-                    <option key={key} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => updateField('planta', v)}
+                  options={toOptions(Planta)}
+                  placeholder="Seleccionar planta"
+                />
               </div>
             )}
           </div>
@@ -593,36 +575,22 @@ const PropertyCreatePage = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="tipoAnuncio">Tipo de Anuncio</label>
-              <select
-                id="tipoAnuncio"
+              <CustomSelect
                 value={formData.tipoAnuncio}
-                onChange={(e) => updateField('tipoAnuncio', e.target.value)}
-                className="form-select"
-              >
-                <option value="">💰 Seleccionar tipo de anuncio...</option>
-                {Object.entries(TipoAnuncio).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => updateField('tipoAnuncio', v)}
+                options={toOptions(TipoAnuncio)}
+                placeholder="Seleccionar tipo de anuncio"
+              />
             </div>
 
             <div className="form-group">
               <label htmlFor="estadoVenta">Estado de Venta</label>
-              <select
-                id="estadoVenta"
+              <CustomSelect
                 value={formData.estadoVenta}
-                onChange={(e) => updateField('estadoVenta', e.target.value)}
-                className="form-select"
-              >
-                <option value="">📊 Seleccionar estado de venta...</option>
-                {Object.entries(EstadoVenta).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => updateField('estadoVenta', v)}
+                options={toOptions(EstadoVenta)}
+                placeholder="Seleccionar estado de venta"
+              />
             </div>
           </div>
             </div>

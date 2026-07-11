@@ -60,7 +60,7 @@ export const ViviendaFormModel = {
       tipoVivienda: '',
       estado: '',
       planta: '',
-      tipoAnuncio: '',
+      tipoAnuncio: TipoAnuncio.VENTA,
       estadoVenta: EstadoVenta.DISPONIBLE,
       caracteristicas: [],
       published: false,
