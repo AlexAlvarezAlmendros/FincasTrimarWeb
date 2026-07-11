@@ -28,6 +28,20 @@ const PropertyFilters = ({ filters, onFiltersChange }) => {
         
         <div className="filter-group">
           <select
+            value={filters.published === false ? 'false' : 'true'}
+            onChange={(e) => onFiltersChange({
+              published: e.target.value === 'true',
+              includeDrafts: e.target.value === 'false'
+            })}
+            className="filter-select"
+          >
+            <option value="true">Publicadas</option>
+            <option value="false">Borradores</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <select
             value={filters.estadoVenta || ''}
             onChange={(e) => handleFilterChange('estadoVenta', e.target.value)}
             className="filter-select"
@@ -57,13 +71,14 @@ const PropertyFilters = ({ filters, onFiltersChange }) => {
 };
 
 // Componente de la tabla de propiedades
-const PropertiesTable = ({ 
-  properties, 
-  loading, 
+const PropertiesTable = ({
+  properties,
+  loading,
   onToggleReserve,
-  onMarkAsSold, 
+  onMarkAsSold,
+  onPublish,
   onUnpublish,
-  onDelete 
+  onDelete
 }) => {
   const [actionConfirm, setActionConfirm] = useState(null);
 
@@ -74,12 +89,19 @@ const PropertiesTable = ({
       'Vendida': { label: 'Vendida', class: 'status-sold' }
     };
 
-    const config = statusConfig[property.estadoVenta] || { 
-      label: property.estadoVenta, 
-      class: 'status-default' 
+    const config = statusConfig[property.estadoVenta] || {
+      label: property.estadoVenta,
+      class: 'status-default'
     };
 
-    return <span className={`status-badge ${config.class}`}>{config.label}</span>;
+    return (
+      <div className="status-cell">
+        <span className={`status-badge ${config.class}`}>{config.label}</span>
+        {property.published === false && (
+          <span className="status-badge status-draft">Borrador</span>
+        )}
+      </div>
+    );
   };
 
   const formatDate = (dateString) => {
@@ -112,6 +134,9 @@ const PropertiesTable = ({
       case 'unpublish':
         onUnpublish(propertyId);
         break;
+      case 'publish':
+        onPublish(propertyId);
+        break;
       case 'delete':
         onDelete(propertyId);
         break;
@@ -139,12 +164,9 @@ const PropertiesTable = ({
     return (
       <div className="no-results">
         <div className="no-results-icon">🏠</div>
-        <h3>No se encontraron propiedades publicadas</h3>
-        <p>Las propiedades publicadas aparecerán aquí una vez que estén disponibles.</p>
+        <h3>No se encontraron viviendas</h3>
+        <p>Ajusta los filtros o crea una nueva vivienda para empezar.</p>
         <div className="no-results-actions">
-          <Link to="/admin/viviendas/borradores" className="btn btn--secondary">
-            📝 Ver borradores
-          </Link>
           <Link to="/admin/viviendas/crear" className="btn btn--primary">
             ➕ Crear nueva vivienda
           </Link>
@@ -285,7 +307,15 @@ const PropertiesTable = ({
                     </>
                   )}
 
-                  {actionConfirm?.propertyId === property.id && actionConfirm?.action === 'unpublish' ? (
+                  {property.published === false ? (
+                    <button
+                      onClick={() => onPublish(property.id)}
+                      className="action-btn action-btn--publish"
+                      title="Publicar"
+                    >
+                      📢
+                    </button>
+                  ) : actionConfirm?.propertyId === property.id && actionConfirm?.action === 'unpublish' ? (
                     <div className="action-confirm">
                       <button
                         onClick={handleActionConfirm}
@@ -424,6 +454,19 @@ const PropertiesListPage = () => {
     }
   }, [refreshViviendas, getAccessTokenSilently]);
 
+  const publishProperty = useCallback(async (propertyId) => {
+    try {
+      await propertyService.updateProperty(propertyId, {
+        published: true
+      }, getAccessTokenSilently);
+
+      // Refrescar la lista después del cambio
+      refreshViviendas();
+    } catch (error) {
+      console.error('Error publishing property:', error);
+    }
+  }, [refreshViviendas, getAccessTokenSilently]);
+
   const deleteProperty = useCallback(async (propertyId) => {
     try {
       console.log('🗑️ Eliminando vivienda:', propertyId);
@@ -449,15 +492,12 @@ const PropertiesListPage = () => {
     <div className="properties-list-page">
       <div className="page-header">
         <div className="header-content">
-          <h1 className="page-title">Viviendas Publicadas</h1>
+          <h1 className="page-title">Viviendas</h1>
           <p className="page-subtitle">
-            Gestiona las propiedades que están actualmente en el mercado
+            Gestiona tus propiedades: publicadas y borradores
           </p>
         </div>
         <div className="header-actions">
-          <Link to="/admin/viviendas/borradores" className="btn btn--secondary">
-            📝 Ver borradores
-          </Link>
           <Link to="/admin/viviendas/crear" className="btn btn--primary">
             ➕ Nueva vivienda
           </Link>
@@ -482,7 +522,8 @@ const PropertiesListPage = () => {
               <span>Cargando...</span>
             ) : (
               <span>
-                {pagination.totalItems} {pagination.totalItems === 1 ? 'propiedad publicada' : 'propiedades publicadas'}
+                {pagination.totalItems} {pagination.totalItems === 1 ? 'vivienda' : 'viviendas'}
+                {filters.published === false ? ' en borrador' : ' publicadas'}
                 {filters.search && ` para "${filters.search}"`}
               </span>
             )}
@@ -494,6 +535,7 @@ const PropertiesListPage = () => {
           loading={loading}
           onToggleReserve={toggleReserveProperty}
           onMarkAsSold={markAsSold}
+          onPublish={publishProperty}
           onUnpublish={unpublishProperty}
           onDelete={deleteProperty}
         />

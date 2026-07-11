@@ -45,21 +45,15 @@ export const useUserRoles = () => {
   const hasAllRoles = (requiredRoles) =>
     requiredRoles.every(role => roles.includes(role));
 
-  // Shortcuts para roles comunes con los nombres correctos de Auth0
+  // El panel de administración es exclusivo de AdminTrimar
   const isAdmin = hasRole('AdminTrimar');
-  const isSeller = hasRole('SellerTrimar') || isAdmin;
-  const isCaptador = hasRole('CaptadorTrimar') || isSeller;
-  const isUser = hasRole('UserTrimar') || isCaptador;
 
   return {
     roles,
     hasRole,
     hasAnyRole,
     hasAllRoles,
-    isAdmin,
-    isSeller,
-    isCaptador,
-    isUser
+    isAdmin
   };
 };
 

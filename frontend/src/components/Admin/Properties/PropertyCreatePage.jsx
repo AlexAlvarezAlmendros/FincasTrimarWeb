@@ -10,7 +10,6 @@ import {
   TipoAnuncio, 
   EstadoVenta
 } from '../../../types/vivienda.types.js';
-import JsonBulkImport from './JsonBulkImport/JsonBulkImport.jsx';
 import CharacteristicsSelector from '../../CharacteristicsSelector/index.js';
 import DraggableImageGrid from '../../DraggableImageGrid/index.js';
 import DraggablePendingGrid from '../../DraggablePendingGrid/index.js';
@@ -28,10 +27,7 @@ const PropertyCreatePage = () => {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successData, setSuccessData] = useState(null);
   const [wasSavedAsDraft, setWasSavedAsDraft] = useState(false);
-  
-  // Estado para resetear el JsonBulkImport
-  const [jsonImportReset, setJsonImportReset] = useState(0);
-  
+
   // Estado para el popup de carga
   const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
   
@@ -174,7 +170,6 @@ const PropertyCreatePage = () => {
       if (window.confirm('¿Estás seguro de que quieres resetear el formulario?')) {
         resetForm();
         clearAllImages();
-        setJsonImportReset(prev => prev + 1);
       }
     }
   };
@@ -194,10 +189,7 @@ const PropertyCreatePage = () => {
       
       // Limpiar todas las imágenes (pendientes y guardadas)
       clearAllImages();
-      
-      // Resetear el componente JsonBulkImport
-      setJsonImportReset(prev => prev + 1);
-      
+
       // Scroll hacia arriba para mejor UX
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -252,19 +244,6 @@ const PropertyCreatePage = () => {
           </button>
         </div>
       </div>
-
-      {/* Componente temporal de debug para Auth0 */}
-      {/* <Auth0Debug /> */}
-
-      {/* Importación masiva de inmuebles desde JSON */}
-      {!id && (
-        <JsonBulkImport 
-          onImportComplete={(results) => {
-            console.log('Importación JSON completada:', results);
-          }}
-          resetTrigger={jsonImportReset}
-        />
-      )}
 
       <form onSubmit={handleSubmit} className="property-form">
         <div className="form-section">
@@ -709,7 +688,7 @@ const PropertyCreatePage = () => {
         }
         message={
           wasSavedAsDraft
-            ? `El borrador "${successData?.name || 'Nueva vivienda'}" ha sido guardado correctamente. Puedes encontrarlo en la sección de borradores para continuar editándolo más tarde.`
+            ? `El borrador "${successData?.name || 'Nueva vivienda'}" ha sido guardado correctamente. Puedes encontrarlo filtrando por "Borradores" en el listado de viviendas.`
             : `La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'publicada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`
         }
         autoClose={true}

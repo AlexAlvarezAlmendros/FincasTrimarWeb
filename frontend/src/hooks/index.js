@@ -5,8 +5,6 @@
 
 // Hooks principales
 export { default as useViviendas, useVivienda, useSimilarViviendas } from './useViviendas.js';
-export { default as useCreateVivienda, useDuplicateVivienda } from './useCreateVivienda.js';
-export { default as useViviendaManager, OperationModes } from './useViviendaManager.js';
 
 // Hooks especializados
 export { default as useImageManager, ImageStates } from './useImageManager.js';
@@ -85,27 +83,6 @@ export const useViviendaDetailPage = (viviendaId, options = {}) => {
     refresh: refetch,
     hasSimilar: similar && similar.length > 0
   };
-};
-
-/**
- * Hook compuesto para formularios de creación/edición
- */
-export const useViviendaForm = (mode = 'create', viviendaId = null, options = {}) => {
-  const {
-    autoSave = false,
-    maxImages = 20,
-    onSuccess,
-    onError
-  } = options;
-
-  return useViviendaManager({
-    mode,
-    viviendaId,
-    autoSave,
-    maxImages,
-    onSuccess,
-    onError
-  });
 };
 
 /**

@@ -13,8 +13,6 @@ import { publicRoutes as messagePublicRoutes, privateRoutes as messagePrivateRou
 import { imagePublicRoutes, imagePrivateRoutes } from './routes/imageRoutes.js';
 import htmlParserRoutes from './routes/htmlParserRoutes.js';
 import { privateRoutes as dashboardPrivateRoutes } from './routes/dashboardRoutes.js';
-import csvImportRoutes from './routes/csvImportRoutes.js';
-import jsonImportRoutes from './routes/jsonImportRoutes.js';
 import sitemapRoutes from './routes/sitemapRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
 
@@ -63,16 +61,11 @@ app.use('/api/', (req, res, next) => {
 });
 
 // Middleware de autenticación (configurado en authMiddleware.js)
-import { checkJwt, requireAdmin, requireCaptador } from './middlewares/authMiddleware.js';
-import propertyController from './controllers/propertyController.js';
+import { checkJwt } from './middlewares/authMiddleware.js';
 
 // Rutas públicas (sin autenticación)
 app.use('/api', healthRoutes);
 app.use('/', sitemapRoutes); // Sitemap en raíz para SEO
-
-// IMPORTANTE: Registrar rutas específicas de captación ANTES de las rutas públicas generales
-// para evitar que /viviendas/:id capture "captacion" como un ID
-app.get('/api/v1/viviendas/captacion', checkJwt, requireCaptador, propertyController.getCaptacionProperties);
 
 // Rutas públicas generales
 app.use('/api/v1', propertyPublicRoutes);
@@ -80,18 +73,12 @@ app.use('/api/v1', messagePublicRoutes);
 app.use('/api/v1', imagePublicRoutes);
 app.use('/api/v1/parse', htmlParserRoutes);
 
-// Sincronización JSON: accesible desde integraciones externas.
-// Trae su propia auth dual (API key X-API-Key o JWT Admin), por lo que se
-// registra ANTES del gate global de JWT para permitir el acceso por API key.
-app.use('/api/v1/json', jsonImportRoutes);
-
 // Rutas protegidas (requieren JWT)
 app.use('/api/v1', checkJwt);
 app.use('/api/v1', propertyPrivateRoutes);
 app.use('/api/v1', messagePrivateRoutes);
 app.use('/api/v1', imagePrivateRoutes);
 app.use('/api/v1', dashboardPrivateRoutes);
-app.use('/api/v1/csv', csvImportRoutes);
 app.use('/api/v1', agentRoutes);
 
 // Manejo de rutas no encontradas
