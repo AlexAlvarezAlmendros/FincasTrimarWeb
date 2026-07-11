@@ -410,13 +410,8 @@ class JsonImportService {
     const planta = this.inferirPlanta(inmueble.caracteristicas);
     const caracteristicas = this.matchCaracteristicas(inmueble.caracteristicas || []);
 
-    // Convertir descripción a HTML
-    const htmlDescription = description
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => `<p>${line}</p>`)
-      .join('');
+    // Convertir descripción (Markdown/texto) a HTML seguro para el renderizador
+    const htmlDescription = this.convertDescriptionToHtml(description);
 
     return {
       name: inmueble.titulo?.trim(),
@@ -456,12 +451,56 @@ class JsonImportService {
   }
 
   /**
+   * Elimina marcadores Markdown de un texto para mostrarlo como texto plano.
+   * Quita negritas/cursivas (**, __, *, _), encabezados (#), viñetas y enlaces.
+   */
+  stripMarkdown(text) {
+    if (!text) return '';
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '$1')      // **negrita**
+      .replace(/__(.+?)__/g, '$1')           // __negrita__
+      .replace(/\*(.+?)\*/g, '$1')           // *cursiva*
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')// [texto](url) → texto
+      .replace(/^\s{0,3}#{1,6}\s+/gm, '')     // # encabezados
+      .replace(/^\s*[-*+]\s+/gm, '')          // viñetas
+      .replace(/[*_`]/g, '')                  // marcadores sueltos restantes
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Convierte una descripción en Markdown/texto plano a HTML seguro para el
+   * renderizador del frontend (SafeHtmlRenderer). Convierte negritas y cursivas,
+   * limpia los marcadores sueltos y agrupa el texto en párrafos <p>.
+   */
+  convertDescriptionToHtml(description) {
+    if (!description) return '';
+
+    let html = description
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')  // **negrita**
+      .replace(/__(.+?)__/g, '<strong>$1</strong>')       // __negrita__
+      .replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>') // *cursiva*
+      .replace(/\*+/g, '');                                // marcadores sueltos restantes
+
+    // Agrupar en párrafos: por saltos de línea; si no hay, todo un párrafo
+    const paragraphs = html
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => `<p>${line}</p>`)
+      .join('');
+
+    return paragraphs;
+  }
+
+  /**
    * Extrae una descripción corta (máx 300 chars) de la descripción completa
    */
   extractShortDescription(description, maxLength = 300) {
     if (!description) return '';
-    // Tomar la primera frase significativa (hasta punto, o primeros N chars)
-    const clean = description.replace(/\s+/g, ' ').trim();
+    // Tomar la primera frase significativa (hasta punto, o primeros N chars).
+    // Se eliminan los marcadores Markdown porque el lead se muestra como texto plano.
+    const clean = this.stripMarkdown(description);
     // Buscar el primer punto seguido de espacio o fin
     const firstSentenceEnd = clean.search(/\.\s|\.$/);
     if (firstSentenceEnd > 0 && firstSentenceEnd <= maxLength) {
@@ -601,7 +640,7 @@ class JsonImportService {
     return {
       // Mapeo de campos del JSON a la estructura de la BD que espera el repositorio
       name: jsonVivienda.titulo?.trim(),
-      description: jsonVivienda.descripcion?.trim(),
+      description: this.convertDescriptionToHtml(jsonVivienda.descripcion?.trim()),
       price: precioNumerico,
       rooms: this.parseHabitaciones(jsonVivienda.habitaciones),
       bathRooms: 0, // No viene en el JSON, valor por defecto
