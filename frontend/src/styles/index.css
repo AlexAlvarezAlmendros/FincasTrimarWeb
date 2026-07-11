@@ -69,6 +69,48 @@
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Sombra grande (modales/popups) */
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.2);
+
+  /* ---------------------------------------------------------------------
+     Alias de compatibilidad: nombres legacy usados por ~25 CSS que no
+     existían en el contrato canónico (rompían color/tipografía sin
+     fallback). Mapean al esquema --color-*. Ver Plan 06 · X1 (X7 los
+     retirará tras migrar los componentes a los nombres canónicos).
+     --------------------------------------------------------------------- */
+  --brand-primary: var(--color-brand-primary);
+  --brand-primary-hover: var(--color-brand-primary-hover);
+  --brand-primary-focus: var(--color-brand-primary-focus);
+  --brand-primary-light: #EAF3FF;
+  --primary: var(--color-primary);
+  --color-accent: var(--color-primary);
+
+  --neutral-0: var(--color-neutral-0);
+  --neutral-25: var(--color-neutral-50);
+  --neutral-50: var(--color-neutral-50);
+  --neutral-100: var(--color-neutral-100);
+  --neutral-200: var(--color-neutral-200);
+  --neutral-300: var(--color-neutral-300);
+  --neutral-400: var(--color-neutral-400);
+  --neutral-500: var(--color-neutral-500);
+  --neutral-600: var(--color-neutral-600);
+  --neutral-700: var(--color-neutral-700);
+  --neutral-800: var(--color-neutral-800);
+  --neutral-900: var(--color-neutral-900);
+
+  --color-text-primary: var(--color-neutral-800);
+  --color-text-secondary: var(--color-neutral-600);
+  --color-text-tertiary: var(--color-neutral-400);
+
+  --semantic-danger: var(--color-danger);
+  --semantic-success: var(--color-success);
+  --semantic-warning: var(--color-warning);
+  --semantic-info: var(--color-info);
+  --color-semantic-danger: var(--color-danger);
+
+  --font-family-base: var(--font-family-body);
 }
 
 /* Reset básico */

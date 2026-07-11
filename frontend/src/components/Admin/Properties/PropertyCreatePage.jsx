@@ -59,7 +59,6 @@ const PropertyCreatePage = () => {
     loadProperty
   } = useCreateViviendaSimple({
     onSuccess: async (data) => {
-      console.log(`Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente:`, data);
       
       // Si hay imágenes pendientes, subirlas después de crear/actualizar la vivienda
       const propertyId = data?.id || id;
@@ -67,7 +66,6 @@ const PropertyCreatePage = () => {
         try {
           setLoadingMessage('Subiendo imágenes...');
           await uploadPendingFiles(propertyId);
-          console.log('Imágenes subidas exitosamente');
         } catch (imgError) {
           console.error('Error subiendo imágenes:', imgError);
         }
@@ -118,7 +116,6 @@ const PropertyCreatePage = () => {
   // Cargar datos si estamos en modo edición
   useEffect(() => {
     if (isEditing && id && !hasLoadedData) {
-      console.log('Cargando datos para edición, ID:', id);
       setHasLoadedData(true);
       
       const loadData = async () => {
@@ -129,7 +126,6 @@ const PropertyCreatePage = () => {
           // Cargar imágenes de la propiedad
           await loadPropertyImages(id);
           
-          console.log('✅ Datos y imágenes cargados correctamente');
         } catch (err) {
           console.error('Error cargando datos para edición:', err);
           setHasLoadedData(false); // Resetear en caso de error para permitir reintento
@@ -160,7 +156,6 @@ const PropertyCreatePage = () => {
           await loadPropertyImages(id);
           // Limpiar archivos pendientes
           clearPendingFiles();
-          console.log('✅ Datos e imágenes recargados correctamente');
         } catch (error) {
           console.error('Error recargando datos:', error);
         }
@@ -656,12 +651,6 @@ const PropertyCreatePage = () => {
           </button>
         </div>
       </form>
-
-      {/* Debug Info */}
-      {/* <details className="debug-info">
-        <summary>Información de Debug</summary>
-        <pre>{JSON.stringify(formData, null, 2)}</pre>
-      </details> */}
 
       {/* Popup de carga */}
       <LoadingPopup
