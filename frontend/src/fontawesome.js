@@ -21,7 +21,15 @@ import {
   faAngleRight,
   faAnglesLeft,
   faAnglesRight,
-  faStar
+  faStar,
+  faReply,
+  faCheck,
+  faCircle,
+  faEye,
+  faEyeSlash,
+  faHouse,
+  faInbox,
+  faRotateLeft
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -46,5 +54,13 @@ library.add(
   faAngleRight,
   faAnglesLeft,
   faAnglesRight,
-  faStar
+  faStar,
+  faReply,
+  faCheck,
+  faCircle,
+  faEye,
+  faEyeSlash,
+  faHouse,
+  faInbox,
+  faRotateLeft
 )
