@@ -27,11 +27,11 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 ### Formulario de viviendas
 | # | Tarea | I/E/R | Status |
 |---|-------|-------|--------|
-| F1 | Eliminar código muerto del form y sus hooks (debug block, console.log, campos fantasma de captación, SimpleTextEditor 0 bytes) | alto/bajo/bajo | ⬜ |
-| F2 | Divulgación progresiva: colapsar en acordeones las secciones avanzadas (ubicación detallada, clasificación avanzada, características) | alto/medio/bajo | ⬜ |
-| F3 | Validación inline por campo cableando `useFormValidation` + `ValidationRules` (quitar la ad-hoc de submit) | alto/medio/bajo | ⬜ |
+| F1 | Eliminar código muerto del form y sus hooks (debug block, console.log, campos fantasma de captación, SimpleTextEditor 0 bytes) | alto/bajo/bajo | ✅ |
+| F2 | Divulgación progresiva: colapsar en acordeones las secciones avanzadas (ubicación detallada, clasificación avanzada, características) | alto/medio/bajo | ✅ |
+| F3 | Validación inline por campo cableando `useFormValidation` + `ValidationRules` (quitar la ad-hoc de submit) | alto/medio/bajo | ✅ |
 | F4 | Reemplazar los 6 `<select>` nativos por `CustomSelect` | medio/bajo/bajo | ⬜ |
-| F5 | Feedback honesto del flujo de imágenes en 2 fases (no mostrar éxito si fallan; reintento con el id ya creado) | alto/bajo/bajo | ⬜ |
+| F5 | Feedback honesto del flujo de imágenes en 2 fases (no mostrar éxito si fallan; reintento con el id ya creado) | alto/bajo/bajo | ✅ |
 | F6 | Deduplicar y adelgazar el CSS del form (un solo sistema de botones, clases muertas, mover reglas de imágenes) | medio/medio/medio | ⬜ |
 | F7 | Autoguardado de borrador en localStorage con recuperación (namespaced por id) | alto/medio/medio | ⬜ |
 | F8 | Trocear el monolito en subcomponentes de sección (`sections/`) | medio/medio/bajo | ⬜ |
@@ -50,16 +50,16 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 ### Dashboard
 | # | Tarea | I/E/R | Status |
 |---|-------|-------|--------|
-| D1 | Borrar el dashboard duplicado muerto y su cadena (`pages/admin/Dashboard.jsx`, `components/dashboard/StatCard`+`MonthlyChart`, `SalesSummary/`) | alto/bajo/bajo | ⬜ |
-| D2 | Reducir a 3-4 métricas reales; quitar las de dinero falsas | alto/bajo/bajo | ⬜ |
-| D3 | Arreglar enlaces rotos de quick actions y tabla (rutas reales de Admin.jsx) | medio/bajo/bajo | ⬜ |
+| D1 | Borrar el dashboard duplicado muerto y su cadena (`pages/admin/Dashboard.jsx`, `components/dashboard/StatCard`+`MonthlyChart`, `SalesSummary/`) | alto/bajo/bajo | ✅ |
+| D2 | Reducir a 3-4 métricas reales; quitar las de dinero falsas | alto/bajo/bajo | ✅ |
+| D3 | Arreglar enlaces rotos de quick actions y tabla (rutas reales de Admin.jsx) | medio/bajo/bajo | ✅ |
 | D4 | Cablear el contador real de mensajes pendientes (`useAdminStats` vía messageService) | alto/medio/bajo | ⬜ |
 | D5 | Purgar hooks/métodos de servicio/CSS muertos del dashboard | medio/bajo/bajo | ⬜ |
 
 ### Design system / compartidos
 | # | Tarea | I/E/R | Status |
 |---|-------|-------|--------|
-| X1 | Aliases de compatibilidad de tokens en `index.css` (repara ~25 CSS sin tocar componentes) | alto/bajo/bajo | ⬜ |
+| X1 | Aliases de compatibilidad de tokens en `index.css` (repara ~25 CSS sin tocar componentes) | alto/bajo/bajo | ✅ |
 | X2 | Eliminar ficheros muertos del design system (`Icon.jsx/css` 0 bytes, `ContactForm.module.css` 0 bytes) | bajo/bajo/bajo | ⬜ |
 | X3 | Ampliar tokens que faltan (sombras, focus-ring, overlay, success-strong) | medio/bajo/bajo | ⬜ |
 | X4 | Componente `Button` unificado con variantes | alto/medio/medio | ⬜ |
@@ -85,3 +85,10 @@ Lo que más reduce complejidad de golpe: **aliases de tokens** (arregla ~25 fich
 | Date | Task | Notes |
 |------|------|-------|
 | 2026-07-11 | Plan creado | Análisis vía Workflow `analisis-simplificacion-ui` (4 lectores + síntesis). 27 tareas priorizadas |
+| 2026-07-11 | X1 | Aliases legacy→`--color-*` en index.css (29 tokens rotos reparados). `9afcf72` |
+| 2026-07-11 | D1/F1 | Dashboard duplicado + SimpleTextEditor borrados; 26 console.log y campos fantasma fuera. `9afcf72` |
+| 2026-07-11 | D2/D3 | Dashboard con 4 métricas reales (sin dinero falso); enlaces rotos arreglados. `38c93fc` |
+| 2026-07-11 | F5 | Feedback honesto de imágenes (variante warning + reintento). `cabd97f` |
+| 2026-07-11 | F2 | Divulgación progresiva con acordeones `<details>`. `c8c0524` |
+| 2026-07-11 | F3 | Validación inline (ValidationRules/FormValidator); lógica verificada por test node. `41c0833` |
+| — | Pendiente | 19 tareas restantes (F4,F6–F9, M1–M6, D4–D5, X2–X7). Recorrido manual F.2 en entorno real sigue pendiente |
