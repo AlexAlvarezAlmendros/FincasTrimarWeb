@@ -2,6 +2,7 @@
  * Componente de editor de texto enriquecido usando React Quill
  */
 import { useMemo } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './RichTextEditor.css';
@@ -15,19 +16,14 @@ const RichTextEditor = ({
   height = "200px"
 }) => {
   
-  // Configuración de la barra de herramientas
+  // Barra de herramientas mínima: lo justo para un anuncio inmobiliario
   const modules = useMemo(() => ({
     toolbar: {
       container: [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        ['blockquote', 'code-block'],
+        ['bold', 'italic'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
         ['link'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        ['clean']
+        ['clean'],
       ],
     },
     clipboard: {
@@ -37,15 +33,7 @@ const RichTextEditor = ({
   }), []);
 
   // Formatos permitidos
-  const formats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet', 'indent',
-    'blockquote', 'code-block',
-    'link',
-    'color', 'background',
-    'align'
-  ];
+  const formats = ['bold', 'italic', 'list', 'bullet', 'link'];
 
   return (
     <div className={`rich-text-editor ${error ? 'error' : ''} ${disabled ? 'disabled' : ''}`}>
@@ -63,7 +51,7 @@ const RichTextEditor = ({
       />
       {error && (
         <div className="rich-text-error">
-          <i className="fas fa-exclamation-circle"></i>
+          <FontAwesomeIcon icon="circle-exclamation" />
           {error}
         </div>
       )}

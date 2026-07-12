@@ -61,7 +61,41 @@
 
 .success-actions {
   padding: 0 var(--spacing-lg) var(--spacing-lg);
-  text-align: center;
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Variante de éxito parcial (p.ej. la vivienda se guardó pero fallaron imágenes) */
+.success-popup--warning .success-icon {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.btn-success-action {
+  background: var(--color-warning);
+  color: var(--color-neutral-0);
+  border: none;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: all 0.2s ease;
+  min-width: 160px;
+  justify-content: center;
+}
+
+.btn-success-action:hover {
+  filter: brightness(0.94);
+  transform: translateY(-2px);
+}
+
+.btn-success-action:active {
+  transform: translateY(0);
 }
 
 .btn-success-close {

@@ -9,13 +9,13 @@
 .page-title {
   font-size: 2rem;
   font-weight: 600;
-  color: var(--neutral-800, #1F2937);
+  color: var(--color-neutral-800, #1F2937);
   margin: 0 0 0.5rem 0;
 }
 
 .page-subtitle {
   font-size: 1.1rem;
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   margin: 0;
 }
 
@@ -27,7 +27,7 @@
   padding: 4rem 2rem;
   text-align: center;
   background: white;
-  border: 1px solid var(--neutral-200, #E5E7EB);
+  border: 1px solid var(--color-neutral-200, #E5E7EB);
   border-radius: 12px;
 }
 
@@ -39,12 +39,12 @@
 .content-placeholder h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--neutral-800, #1F2937);
+  color: var(--color-neutral-800, #1F2937);
   margin: 0 0 1rem 0;
 }
 
 .content-placeholder p {
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   max-width: 500px;
   line-height: 1.5;
   margin: 0;

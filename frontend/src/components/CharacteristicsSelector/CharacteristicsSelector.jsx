@@ -128,7 +128,9 @@ const CharacteristicsSelector = ({
     <div className={`characteristics-selector ${className}`}>
       <div className="characteristics-selector__header">
         <div className="characteristics-selector__title-section">
-          <h3 className="characteristics-selector__title">{title}</h3>
+          {title && (
+            <h3 className="characteristics-selector__title">{title}</h3>
+          )}
           {subtitle && (
             <p className="characteristics-selector__subtitle">{subtitle}</p>
           )}

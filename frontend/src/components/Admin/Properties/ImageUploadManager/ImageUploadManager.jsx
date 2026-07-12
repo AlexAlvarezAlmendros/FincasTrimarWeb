@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import DraggableImageGrid from '../../../DraggableImageGrid/DraggableImageGrid';
 import DraggablePendingGrid from '../../../DraggablePendingGrid/DraggablePendingGrid';
 import './ImageUploadManager.css';
@@ -88,7 +89,7 @@ const ImageUploadManager = ({
           onClick={triggerFileSelect}
         >
           <div className="upload-icon">
-            <i className="fas fa-cloud-upload-alt"></i>
+            <FontAwesomeIcon icon="cloud-arrow-up" />
           </div>
           <p>Arrastra imágenes aquí o <span className="link">haz clic para seleccionar</span></p>
           <p className="upload-help">
@@ -143,7 +144,7 @@ const ImageUploadManager = ({
       {/* Mensaje cuando no hay imágenes */}
       {images.length === 0 && pendingFiles.length === 0 && !isReadOnly && (
         <div className="no-images-message">
-          <i className="fas fa-images"></i>
+          <FontAwesomeIcon icon="images" />
           <p>Aún no has añadido ninguna imagen</p>
           <p className="help-text">Las imágenes ayudan a que tu vivienda destaque</p>
         </div>

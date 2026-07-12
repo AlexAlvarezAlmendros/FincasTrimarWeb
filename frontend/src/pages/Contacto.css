@@ -521,12 +521,12 @@
 .form-group-contacto input.error,
 .form-group-contacto select.error,
 .form-group-contacto textarea.error {
-  border-color: var(--color-semantic-danger, #EF4444);
+  border-color: var(--color-danger, #EF4444);
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
 }
 
 .contacto-field-error {
-  color: var(--color-semantic-danger, #EF4444);
+  color: var(--color-danger, #EF4444);
   font-size: var(--font-size-xs);
   margin-top: var(--spacing-xs);
   display: block;
@@ -1099,7 +1099,7 @@
 }
 
 .contacto-checkbox-label.error .contacto-checkmark {
-  border-color: var(--color-semantic-danger);
+  border-color: var(--color-danger);
 }
 
 .contacto-checkbox-label a {

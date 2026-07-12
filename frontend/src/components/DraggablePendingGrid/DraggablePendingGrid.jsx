@@ -2,6 +2,7 @@
  * Componente para reordenar archivos pendientes (no subidos aún) mediante drag & drop
  */
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import './DraggablePendingGrid.css';
 
 const DraggablePendingItem = ({ file, index, onRemove, onDragStart, onDragEnd, onDragOver, onDrop, isDragging }) => {
@@ -27,14 +28,14 @@ const DraggablePendingItem = ({ file, index, onRemove, onDragStart, onDragEnd, o
             className="btn-remove-pending"
             title="Eliminar archivo"
           >
-            <i className="fas fa-trash"></i>
+            <FontAwesomeIcon icon="trash" />
           </button>
         </div>
         
         {/* Indicador de imagen principal (primera imagen) */}
         {index === 0 && (
           <div className="main-image-badge" title="Imagen principal">
-            <i className="fas fa-star"></i>
+            <FontAwesomeIcon icon="star" />
           </div>
         )}
         
@@ -101,7 +102,7 @@ const DraggablePendingGrid = ({
     <div className="draggable-pending-grid">
       <div className="pending-header">
         <h4 className="pending-title">
-          <i className="fas fa-images"></i>
+          <FontAwesomeIcon icon="images" />
           {title}
         </h4>
         <span className="pending-count">
@@ -110,7 +111,7 @@ const DraggablePendingGrid = ({
       </div>
       
       <div className="pending-hint">
-        <i className="fas fa-hand-rock"></i>
+        <FontAwesomeIcon icon="hand-back-fist" />
         Arrastra las imágenes para reordenarlas antes de subirlas
       </div>
       

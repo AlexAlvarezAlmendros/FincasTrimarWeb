@@ -72,7 +72,6 @@ export const useImageManager = (propertyId = null, options = {}) => {
 
     try {
       setIsReordering(true);
-      console.log('Iniciando reordenamiento de imagenes:', reorderedImages);
 
       setImages(reorderedImages);
 
@@ -81,18 +80,15 @@ export const useImageManager = (propertyId = null, options = {}) => {
         orden: index + 1
       }));
 
-      console.log('Enviando orden al backend:', imageOrders);
 
       const response = await propertyService.reorderPropertyImages(propId, imageOrders, getAccessTokenSilently);
       
-      console.log('Respuesta del backend:', response);
 
       if (!response.success) {
         setImages(originalImages);
         throw new Error(response.error?.message || 'Error al reordenar imagenes');
       }
 
-      console.log('Imagenes reordenadas correctamente');
       return response;
     } catch (error) {
       console.error('Error reordering images:', error);
@@ -110,7 +106,6 @@ export const useImageManager = (propertyId = null, options = {}) => {
     const validFiles = files.filter(file => {
       const validationError = ImageUtils.validateImageFile(file);
       if (validationError) {
-        console.log('Archivo rechazado:', file.name, 'Error:', validationError);
         return false;
       }
       return true;
@@ -192,7 +187,6 @@ export const useImageManager = (propertyId = null, options = {}) => {
 
   const uploadPendingFiles = useCallback(async (propId = propertyId) => {
     if (pendingFiles.length === 0) {
-      console.log('⚠️ No hay archivos pendientes para subir');
       return { success: true, data: [] };
     }
 
@@ -204,7 +198,6 @@ export const useImageManager = (propertyId = null, options = {}) => {
     }
 
     try {
-      console.log(`📤 Iniciando subida de ${pendingFiles.length} archivos para vivienda ${propId}`);
       
       setUploadState(ImageStates.UPLOADING);
       setUploadProgress(0);
@@ -218,14 +211,12 @@ export const useImageManager = (propertyId = null, options = {}) => {
         getAccessTokenSilently,
         (progress) => {
           if (isMountedRef.current) {
-            console.log(`📊 Progreso de subida: ${progress}%`);
             setUploadProgress(progress);
             onUploadProgress?.(progress);
           }
         }
       );
 
-      console.log('✅ Respuesta de subida:', response);
 
       if (isMountedRef.current) {
         if (response.success && response.data) {
@@ -235,7 +226,6 @@ export const useImageManager = (propertyId = null, options = {}) => {
             orden: img.orden || 0
           }));
 
-          console.log(`✅ ${newImages.length} imágenes procesadas correctamente`);
 
           setImages(prev => [...prev, ...newImages].sort((a, b) => a.orden - b.orden));
           clearPendingFiles();

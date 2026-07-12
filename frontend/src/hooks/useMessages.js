@@ -1,551 +1,232 @@
 /**
- * Hook personalizado para gestión de mensajes
- * Incluye filtrado, paginación y acciones CRUD
+ * Hook para la gestión de mensajes del admin: listado, filtros, paginación,
+ * estadísticas y acciones con actualización optimista.
+ *
+ * Un buzón de admin no necesita caché ni máquina de estados: usa fetch directo
+ * con AbortController para descartar respuestas obsoletas y update optimista
+ * local para evitar refetches y parpadeos tras cada acción.
  */
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApi } from './useApi.js';
 
-/**
- * Estados posibles del hook
- */
-const HookStates = {
-  IDLE: 'idle',
-  LOADING: 'loading',
-  SUCCESS: 'success',
-  ERROR: 'error'
-};
-
-/**
- * Filtros por defecto para mensajes
- */
 const createDefaultFilters = () => ({
   q: '',
   estado: '', // '', 'Nuevo', 'EnCurso', 'Cerrado'
   page: 1,
   pageSize: 20,
-  sortBy: 'fecha_desc' // fecha_desc, fecha_asc, estado_asc
+  sortBy: 'fecha_desc', // fecha_desc, fecha_asc, estado_asc
 });
 
-/**
- * Modelo de paginación por defecto
- */
 const createDefaultPagination = () => ({
   page: 1,
   pageSize: 20,
   totalPages: 1,
-  totalItems: 0
+  totalItems: 0,
 });
 
-/**
- * Cache simple para mensajes con TTL
- */
-class MessageCache {
-  constructor(ttl = 300000) { // 5 minutos
-    this.cache = new Map();
-    this.ttl = ttl;
-  }
-
-  set(key, data) {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now()
-    });
-  }
-
-  get(key) {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-    
-    if (Date.now() - entry.timestamp > this.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return entry.data;
-  }
-
-  clear() {
-    this.cache.clear();
-  }
-
-  generateKey(filters) {
-    return `messages_${JSON.stringify(filters)}`;
-  }
-}
-
-// Instancia global del cache
-const messageCache = new MessageCache();
-
-/**
- * Hook principal para gestionar mensajes
- */
 export const useMessages = (initialFilters = {}, options = {}) => {
-  // Hook de API para autenticación
   const api = useApi();
+  const { debounceMs = 500, autoFetch = true, onError, onSuccess } = options;
 
-  // Opciones del hook
-  const {
-    enableCache = true,
-    debounceMs = 500,
-    autoFetch = true,
-    onError,
-    onSuccess
-  } = options;
-
-  // Estados principales
-  const [state, setState] = useState(HookStates.IDLE);
   const [messages, setMessages] = useState([]);
   const [pagination, setPagination] = useState(createDefaultPagination());
+  const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
-  
-  // Estado de filtros con valores por defecto
+  const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState(() => ({
     ...createDefaultFilters(),
-    ...initialFilters
+    ...initialFilters,
   }));
 
-  // Referencias para prevenir memory leaks y almacenar la función api
-  const abortControllerRef = useRef(null);
-  const debounceTimeoutRef = useRef(null);
-  const isMountedRef = useRef(true);
   const apiRef = useRef(api);
+  const abortRef = useRef(null);
+  const debounceRef = useRef(null);
 
-  // Actualizar la referencia de api cuando cambie
   useEffect(() => {
     apiRef.current = api;
   }, [api]);
 
-  // Limpiar referencias al desmontar
   useEffect(() => {
-    isMountedRef.current = true;
     return () => {
-      isMountedRef.current = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
+      if (abortRef.current) abortRef.current.abort();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
 
-  /**
-   * Funciones para actualizar el estado de forma segura
-   */
-  const safeSetState = useCallback((newState) => {
-    if (isMountedRef.current) {
-      setState(newState);
-    }
-  }, []);
+  const fetchMessages = useCallback(
+    async (searchFilters = filters) => {
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-  const safeSetMessages = useCallback((newMessages) => {
-    if (isMountedRef.current) {
-      setMessages(newMessages);
-    }
-  }, []);
+      setIsLoading(true);
+      setError(null);
 
-  const safeSetPagination = useCallback((newPagination) => {
-    if (isMountedRef.current) {
-      setPagination(newPagination);
-    }
-  }, []);
+      try {
+        const qp = new URLSearchParams();
+        if (searchFilters.estado) qp.append('estado', searchFilters.estado);
+        if (searchFilters.q) qp.append('q', searchFilters.q);
+        if (searchFilters.page) qp.append('page', searchFilters.page);
+        if (searchFilters.pageSize) qp.append('pageSize', searchFilters.pageSize);
+        if (searchFilters.sortBy) qp.append('sortBy', searchFilters.sortBy);
+        const qs = qp.toString();
 
-  const safeSetError = useCallback((newError) => {
-    if (isMountedRef.current) {
-      setError(newError);
-    }
-  }, []);
+        const response = await apiRef.current(
+          `/api/v1/messages${qs ? `?${qs}` : ''}`,
+          { method: 'GET', signal: controller.signal }
+        );
 
-  /**
-   * Función principal para obtener mensajes
-   */
-  const fetchMessages = useCallback(async (searchFilters = filters) => {
-    // Cancelar petición anterior si existe
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+        setMessages(response.data || []);
+        setPagination(response.pagination || createDefaultPagination());
+        if (onSuccess) onSuccess(response);
+        return response;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        console.error('Error fetching messages:', err);
+        setError(err.error?.message || err.message || 'Error al obtener mensajes');
+        if (onError) onError(err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [filters, onError, onSuccess]
+  );
 
+  const fetchStats = useCallback(async () => {
     try {
-      safeSetState(HookStates.LOADING);
-      safeSetError(null);
-
-      // Verificar cache si está habilitado
-      const cacheKey = messageCache.generateKey(searchFilters);
-      
-      if (enableCache) {
-        const cachedData = messageCache.get(cacheKey);
-        if (cachedData) {
-          safeSetMessages(cachedData.data);
-          safeSetPagination(cachedData.pagination);
-          safeSetState(HookStates.SUCCESS);
-          
-          if (onSuccess) {
-            onSuccess(cachedData);
-          }
-          
-          return cachedData;
-        }
-      }
-
-      // Construir query params solo con valores válidos
-      const queryParams = new URLSearchParams();
-      
-      if (searchFilters.estado) queryParams.append('estado', searchFilters.estado);
-      if (searchFilters.q) queryParams.append('q', searchFilters.q);
-      if (searchFilters.page) queryParams.append('page', searchFilters.page);
-      if (searchFilters.pageSize) queryParams.append('pageSize', searchFilters.pageSize);
-      if (searchFilters.sortBy) queryParams.append('sortBy', searchFilters.sortBy);
-
-      const queryString = queryParams.toString();
-      const path = `/api/v1/messages${queryString ? `?${queryString}` : ''}`;
-
-      // Realizar petición al API con autenticación usando la ref
-      const response = await apiRef.current(path, { method: 'GET' });
-
-      // Verificar si el componente sigue montado
-      if (!isMountedRef.current) return;
-
-      // Procesar respuesta
-      const messagesData = response.data || [];
-      const paginationData = response.pagination || createDefaultPagination();
-
-      // Guardar en cache
-      if (enableCache) {
-        messageCache.set(cacheKey, {
-          data: messagesData,
-          pagination: paginationData
-        });
-      }
-      
-      safeSetMessages(messagesData);
-      safeSetPagination(paginationData);
-      safeSetState(HookStates.SUCCESS);
-
-      if (onSuccess) {
-        onSuccess({ data: messagesData, pagination: paginationData });
-      }
-
-      return { data: messagesData, pagination: paginationData };
-
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        return; // Petición cancelada, no hacer nada
-      }
-
-      console.error('Error fetching messages:', error);
-      
-      const errorMessage = error.error?.message || error.message || 'Error al obtener mensajes';
-      safeSetError(errorMessage);
-      safeSetState(HookStates.ERROR);
-
-      if (onError) {
-        onError(error);
-      }
-
-      throw error;
-    } finally {
-      abortControllerRef.current = null;
+      const response = await apiRef.current('/api/v1/messages/stats', { method: 'GET' });
+      setStats(response.data);
+      return response.data;
+    } catch (err) {
+      console.error('Error fetching message stats:', err);
     }
-  }, [filters, enableCache, onSuccess, onError, safeSetState, safeSetMessages, safeSetPagination, safeSetError]);
+  }, []);
 
-  /**
-   * Función con debounce para búsquedas en tiempo real
-   */
-  const debouncedFetch = useCallback((searchFilters) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
+  const debouncedFetch = useCallback(
+    (searchFilters) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => fetchMessages(searchFilters), debounceMs);
+    },
+    [fetchMessages, debounceMs]
+  );
 
-    debounceTimeoutRef.current = setTimeout(() => {
-      fetchMessages(searchFilters);
-    }, debounceMs);
-  }, [fetchMessages, debounceMs]);
+  const updateFilters = useCallback(
+    (newFilters, opts = {}) => {
+      const { merge = true, resetPagination = true, debounce = false } = opts;
+      const updated = merge
+        ? { ...filters, ...newFilters }
+        : { ...createDefaultFilters(), ...newFilters };
+      if (resetPagination) updated.page = 1;
 
-  /**
-   * Actualizar filtros y refetch automático si está habilitado
-   */
-  const updateFilters = useCallback((newFilters, options = {}) => {
-    const { 
-      merge = true, 
-      resetPagination = true, 
-      debounce = false
-    } = options;
-
-    const updatedFilters = merge 
-      ? { ...filters, ...newFilters }
-      : { ...createDefaultFilters(), ...newFilters };
-
-    // Reset página si se especifica
-    if (resetPagination) {
-      updatedFilters.page = 1;
-    }
-
-    setFilters(updatedFilters);
-
-    // Auto fetch si está habilitado
-    if (autoFetch) {
-      if (debounce) {
-        debouncedFetch(updatedFilters);
-      } else {
-        fetchMessages(updatedFilters);
+      setFilters(updated);
+      if (autoFetch) {
+        if (debounce) debouncedFetch(updated);
+        else fetchMessages(updated);
       }
-    }
-  }, [filters, autoFetch, debouncedFetch, fetchMessages]);
+    },
+    [filters, autoFetch, debouncedFetch, fetchMessages]
+  );
 
-  /**
-   * Funciones específicas de manipulación de mensajes
-   */
+  // Actualización optimista: cambia el estado local sin refetchear la lista.
   const updateMessage = useCallback(async (messageId, updateData) => {
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === messageId ? { ...msg, ...updateData } : msg))
+    );
     try {
-      const response = await apiRef.current(`/api/v1/messages/${messageId}`, {
+      return await apiRef.current(`/api/v1/messages/${messageId}`, {
         method: 'PATCH',
-        body: JSON.stringify(updateData)
+        body: JSON.stringify(updateData),
       });
-      
-      // Actualizar el mensaje en el estado local
-      safeSetMessages(prevMessages => 
-        prevMessages.map(msg => 
-          msg.id === messageId 
-            ? { ...msg, ...updateData }
-            : msg
-        )
-      );
-
-      return response;
-    } catch (error) {
-      console.error('Error updating message:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error updating message:', err);
+      throw err;
     }
-  }, [safeSetMessages]);
+  }, []);
 
-  const markAsRead = useCallback(async (messageId) => {
-    return updateMessage(messageId, { estado: 'EnCurso' });
-  }, [updateMessage]);
-
-  const markAsClosed = useCallback(async (messageId) => {
-    return updateMessage(messageId, { estado: 'Cerrado' });
-  }, [updateMessage]);
+  const markAsRead = useCallback((id) => updateMessage(id, { estado: 'EnCurso' }), [updateMessage]);
+  const markAsUnread = useCallback((id) => updateMessage(id, { estado: 'Nuevo' }), [updateMessage]);
+  const markAsClosed = useCallback((id) => updateMessage(id, { estado: 'Cerrado' }), [updateMessage]);
+  const reopenMessage = useCallback((id) => updateMessage(id, { estado: 'EnCurso' }), [updateMessage]);
 
   const deleteMessage = useCallback(async (messageId) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    setPagination((prev) => ({
+      ...prev,
+      totalItems: Math.max(0, prev.totalItems - 1),
+    }));
     try {
       await apiRef.current(`/api/v1/messages/${messageId}`, { method: 'DELETE' });
-      
-      // Remover el mensaje del estado local
-      safeSetMessages(prevMessages => 
-        prevMessages.filter(msg => msg.id !== messageId)
-      );
-
-      // Actualizar paginación
-      safeSetPagination(prevPagination => ({
-        ...prevPagination,
-        totalItems: Math.max(0, prevPagination.totalItems - 1)
-      }));
-
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      throw err;
     }
-  }, [safeSetMessages, safeSetPagination]);
+  }, []);
 
-  /**
-   * Funciones de navegación
-   */
-  const goToPage = useCallback((page) => {
-    updateFilters({ page }, { resetPagination: false });
-  }, [updateFilters]);
+  const goToPage = useCallback(
+    (page) => updateFilters({ page }, { resetPagination: false }),
+    [updateFilters]
+  );
 
-  const resetFilters = useCallback(() => {
-    const defaultFilters = createDefaultFilters();
-    updateFilters(defaultFilters, { merge: false });
-  }, [updateFilters]);
+  const resetFilters = useCallback(
+    () => updateFilters(createDefaultFilters(), { merge: false }),
+    [updateFilters]
+  );
 
-  const refreshMessages = useCallback(() => {
-    // Limpiar cache y refetch
-    if (enableCache) {
-      messageCache.clear();
-    }
-    return fetchMessages(filters);
-  }, [enableCache, fetchMessages, filters]);
+  const refreshMessages = useCallback(() => fetchMessages(filters), [fetchMessages, filters]);
 
-  /**
-   * Fetch inicial automático si está habilitado
-   */
+  // Refresca lista + estadísticas (para el botón "Actualizar").
+  const refresh = useCallback(async () => {
+    await Promise.all([fetchMessages(filters), fetchStats()]);
+  }, [fetchMessages, fetchStats, filters]);
+
+  // Fetch inicial (solo en mount).
   useEffect(() => {
-    if (autoFetch && state === HookStates.IDLE) {
-      fetchMessages(filters);
-    }
+    if (autoFetch) fetchMessages(filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Solo en mount inicial - fetchMessages y filters son estables
+  }, []);
 
-  /**
-   * Estados derivados computados
-   */
-  const isLoading = useMemo(() => state === HookStates.LOADING, [state]);
-  const isError = useMemo(() => state === HookStates.ERROR, [state]);
-  const isSuccess = useMemo(() => state === HookStates.SUCCESS, [state]);
-  const isEmpty = useMemo(() => isSuccess && messages.length === 0, [isSuccess, messages.length]);
-  const hasNextPage = useMemo(() => pagination.page < pagination.totalPages, [pagination]);
-  const hasPrevPage = useMemo(() => pagination.page > 1, [pagination]);
+  const isEmpty = !isLoading && !error && messages.length === 0;
+  const isError = Boolean(error);
+  const hasNextPage = pagination.page < pagination.totalPages;
+  const hasPrevPage = pagination.page > 1;
 
   return {
-    // Estados principales
+    // Datos
     messages,
     pagination,
+    stats,
     error,
-    
-    // Estados derivados
+
+    // Estado
     isLoading,
     isError,
-    isSuccess,
     isEmpty,
     hasNextPage,
     hasPrevPage,
-    
-    // Filtros actuales
+
+    // Filtros
     filters,
-    
-    // Funciones de manipulación
-    fetchMessages,
     updateFilters,
-    updateMessage,
-    markAsRead,
-    markAsClosed,
-    deleteMessage,
     goToPage,
     resetFilters,
+
+    // Carga
+    fetchMessages,
+    fetchStats,
     refreshMessages,
-    
+    refresh,
+
+    // Acciones
+    updateMessage,
+    markAsRead,
+    markAsUnread,
+    markAsClosed,
+    reopenMessage,
+    deleteMessage,
+
     // Utilidades
-    clearError: () => safeSetError(null),
-    clearCache: () => messageCache.clear()
-  };
-};
-
-/**
- * Hook específico para obtener un solo mensaje por ID
- */
-export const useMessage = (id, options = {}) => {
-  const api = useApi();
-  const { enableCache = true, autoFetch = true, onError, onSuccess } = options;
-  
-  const [state, setState] = useState(HookStates.IDLE);
-  const [message, setMessage] = useState(null);
-  const [error, setError] = useState(null);
-  
-  const abortControllerRef = useRef(null);
-  const isMountedRef = useRef(true);
-  const apiRef = useRef(api);
-
-  // Actualizar la referencia de api cuando cambie
-  useEffect(() => {
-    apiRef.current = api;
-  }, [api]);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  const fetchMessage = useCallback(async (messageId = id) => {
-    if (!messageId) {
-      setError('ID de mensaje requerido');
-      setState(HookStates.ERROR);
-      return;
-    }
-
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    try {
-      setState(HookStates.LOADING);
-      setError(null);
-
-      // Verificar cache
-      const cacheKey = `message_${messageId}`;
-      if (enableCache) {
-        const cachedData = messageCache.get(cacheKey);
-        if (cachedData) {
-          if (isMountedRef.current) {
-            setMessage(cachedData.data);
-            setState(HookStates.SUCCESS);
-            
-            if (onSuccess) {
-              onSuccess(cachedData.data);
-            }
-          }
-          return cachedData.data;
-        }
-      }
-
-      const response = await apiRef.current(`/api/v1/messages/${messageId}`, { method: 'GET' });
-      
-      if (!isMountedRef.current) return;
-
-      const messageData = response.data;
-
-      // Guardar en cache
-      if (enableCache) {
-        messageCache.set(cacheKey, { data: messageData });
-      }
-
-      setMessage(messageData);
-      setState(HookStates.SUCCESS);
-
-      if (onSuccess) {
-        onSuccess(messageData);
-      }
-
-      return messageData;
-
-    } catch (error) {
-      if (error.name === 'AbortError') return;
-
-      console.error('Error fetching message:', error);
-      
-      if (isMountedRef.current) {
-        const errorMessage = error.error?.message || error.message || 'Error al obtener el mensaje';
-        setError(errorMessage);
-        setState(HookStates.ERROR);
-        
-        if (onError) {
-          onError(error);
-        }
-      }
-
-      throw error;
-    } finally {
-      abortControllerRef.current = null;
-    }
-  }, [id, enableCache, onSuccess, onError]);
-
-  // Fetch inicial
-  useEffect(() => {
-    if (autoFetch && id && state === HookStates.IDLE) {
-      fetchMessage(id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, autoFetch]);
-
-  const isLoading = useMemo(() => state === HookStates.LOADING, [state]);
-  const isError = useMemo(() => state === HookStates.ERROR, [state]);
-  const isSuccess = useMemo(() => state === HookStates.SUCCESS, [state]);
-
-  return {
-    message,
-    error,
-    isLoading,
-    isError,
-    isSuccess,
-    fetchMessage,
-    refetch: () => fetchMessage(id),
-    clearError: () => setError(null)
+    clearError: () => setError(null),
   };
 };
 

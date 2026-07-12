@@ -17,13 +17,13 @@
 .page-title {
   font-size: 2rem;
   font-weight: 600;
-  color: var(--neutral-800, #1F2937);
+  color: var(--color-neutral-800, #1F2937);
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 1.1rem;
-  color: var(--neutral-600, #475569);
+  color: var(--color-neutral-600, #475569);
   margin: 0;
 }
 

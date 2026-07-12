@@ -45,7 +45,7 @@ const RecentPropertiesTable = ({ properties = [] }) => {
                 )}
               </td>
               <td className="property-name-cell">
-                <Link to={`/admin/viviendas/${property.Id}`} className="property-name-link">
+                <Link to={`/admin/viviendas/${property.Id}/edit`} className="property-name-link">
                   {property.Name}
                 </Link>
               </td>
@@ -72,7 +72,7 @@ const RecentPropertiesTable = ({ properties = [] }) => {
                     👁️
                   </Link>
                   <Link 
-                    to={`/admin/viviendas/${property.Id}/editar`} 
+                    to={`/admin/viviendas/${property.Id}/edit`}
                     className="btn-icon"
                     title="Editar"
                   >

@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useCreateViviendaSimple } from '../../../hooks/useCreateViviendaSimple.js';
 import { useImageManager } from '../../../hooks/useImageManager.js';
-import { 
-  TipoInmueble, 
-  TipoVivienda, 
-  Estado, 
-  Planta, 
-  TipoAnuncio, 
-  EstadoVenta
-} from '../../../types/vivienda.types.js';
+import { ValidationRules, FormValidator } from '../../../types/viviendaForm.types.js';
 import CharacteristicsSelector from '../../CharacteristicsSelector/index.js';
-import DraggableImageGrid from '../../DraggableImageGrid/index.js';
-import DraggablePendingGrid from '../../DraggablePendingGrid/index.js';
 import SuccessPopup from '../../SuccessPopup/index.js';
 import LoadingPopup from '../../LoadingPopup/index.js';
-import RichTextEditor from '../../RichTextEditor/index.js';
 import ImageUploadManager from './ImageUploadManager/ImageUploadManager.jsx';
+import Button from '../../common/Button';
+import BasicInfoSection from './sections/BasicInfoSection.jsx';
+import FeaturesSection from './sections/FeaturesSection.jsx';
+import LocationSection from './sections/LocationSection.jsx';
+import ClassificationSection from './sections/ClassificationSection.jsx';
 import './PropertyCreatePage.css';
+
+// Clave de autoguardado, namespaced por id de vivienda (o 'nuevo')
+const draftKey = (id) => `vivienda-autosave-${id || 'nuevo'}`;
+
+// Campos que NO se autoguardan/recuperan (los ficheros de imagen no son serializables)
+const NON_PERSISTED_FIELDS = new Set(['images', 'imagesToDelete']);
 
 const PropertyCreatePage = () => {
   const navigate = useNavigate();
@@ -28,24 +30,28 @@ const PropertyCreatePage = () => {
   const [successData, setSuccessData] = useState(null);
   const [wasSavedAsDraft, setWasSavedAsDraft] = useState(false);
 
+  // Éxito parcial: la vivienda se guardó pero fallaron las imágenes.
+  // Guardamos el id para poder reintentar la subida sin recrear la vivienda.
+  const [imageUploadFailed, setImageUploadFailed] = useState(false);
+  const [savedPropertyId, setSavedPropertyId] = useState(null);
+
+  // Validación inline por campo (errores + campos tocados)
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
+  // Autoguardado en localStorage (recuperación de trabajo sin guardar)
+  const [recoverableDraft, setRecoverableDraft] = useState(null);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+
   // Estado para el popup de carga
   const [loadingMessage, setLoadingMessage] = useState('Subiendo vivienda...');
   
   // Estado para evitar múltiples cargas
   const [hasLoadedData, setHasLoadedData] = useState(false);
   
-  // Función helper para obtener texto plano del HTML
-  const getPlainTextFromHtml = (html) => {
-    if (!html) return '';
-    // Crear un elemento temporal para extraer solo el texto
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    return tempDiv.textContent || tempDiv.innerText || '';
-  };
-  
   // Determinar si estamos en modo edición
   const isEditing = Boolean(id);
-  
+
   // Hook para crear/editar vivienda
   const {
     formData,
@@ -59,23 +65,28 @@ const PropertyCreatePage = () => {
     loadProperty
   } = useCreateViviendaSimple({
     onSuccess: async (data) => {
-      console.log(`Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente:`, data);
-      
-      // Si hay imágenes pendientes, subirlas después de crear/actualizar la vivienda
+      // Si hay imágenes pendientes, subirlas tras crear/actualizar la vivienda.
       const propertyId = data?.id || id;
+      setSavedPropertyId(propertyId);
+
+      let imgFailed = false;
       if (propertyId && pendingFiles.length > 0) {
         try {
           setLoadingMessage('Subiendo imágenes...');
           await uploadPendingFiles(propertyId);
-          console.log('Imágenes subidas exitosamente');
         } catch (imgError) {
           console.error('Error subiendo imágenes:', imgError);
+          imgFailed = true;
         }
       }
-      
-      // Guardar datos de éxito y mostrar popup
+
+      // Feedback honesto: si fallaron las imágenes, el popup lo refleja (no éxito pleno).
+      setImageUploadFailed(imgFailed);
       setSuccessData(data);
       setShowSuccessPopup(true);
+
+      // El trabajo ya está guardado en servidor: descartar el autoguardado local.
+      try { localStorage.removeItem(draftKey(data?.id || id)); } catch { /* noop */ }
     },
     onError: (err) => {
       console.error('Error creando vivienda:', err);
@@ -118,7 +129,6 @@ const PropertyCreatePage = () => {
   // Cargar datos si estamos en modo edición
   useEffect(() => {
     if (isEditing && id && !hasLoadedData) {
-      console.log('Cargando datos para edición, ID:', id);
       setHasLoadedData(true);
       
       const loadData = async () => {
@@ -129,7 +139,6 @@ const PropertyCreatePage = () => {
           // Cargar imágenes de la propiedad
           await loadPropertyImages(id);
           
-          console.log('✅ Datos y imágenes cargados correctamente');
         } catch (err) {
           console.error('Error cargando datos para edición:', err);
           setHasLoadedData(false); // Resetear en caso de error para permitir reintento
@@ -140,8 +149,83 @@ const PropertyCreatePage = () => {
     }
   }, [isEditing, id, hasLoadedData, loadProperty, loadPropertyImages]);
 
+  // Detectar un borrador local previo (al montar / cambiar de id)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey(id));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.data) setRecoverableDraft(parsed);
+      }
+    } catch { /* localStorage no disponible */ }
+  }, [id]);
+
+  // Autoguardar formData (con debounce) mientras el formulario tenga contenido
+  useEffect(() => {
+    if (!formData?.name) return undefined;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          draftKey(id),
+          JSON.stringify({ savedAt: Date.now(), data: formData })
+        );
+        setLastSavedAt(Date.now());
+      } catch { /* cuota/privado: ignorar */ }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [formData, id]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(draftKey(id)); } catch { /* noop */ }
+    setLastSavedAt(null);
+  };
+
+  const recoverDraft = () => {
+    if (recoverableDraft?.data) {
+      Object.entries(recoverableDraft.data).forEach(([k, v]) => {
+        if (!NON_PERSISTED_FIELDS.has(k)) updateField(k, v);
+      });
+    }
+    setRecoverableDraft(null);
+  };
+
+  const discardDraft = () => {
+    clearDraft();
+    setRecoverableDraft(null);
+  };
+
+  // Valida un campo con las ValidationRules compartidas; devuelve el mensaje o null
+  const runFieldValidation = (field, value) =>
+    ValidationRules[field] ? ValidationRules[field].validate(value) : null;
+
+  // Actualiza un campo y, si ya fue tocado, revalida en vivo
+  const handleFieldChange = (field, value) => {
+    updateField(field, value);
+    if (touched[field]) {
+      setErrors((prev) => ({ ...prev, [field]: runFieldValidation(field, value) }));
+    }
+  };
+
+  // Marca el campo como tocado y lo valida al perder el foco
+  const handleFieldBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setErrors((prev) => ({ ...prev, [field]: runFieldValidation(field, formData[field]) }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validación completa antes de enviar (un único camino, reglas compartidas)
+    const { isValid, errors: allErrors } = await FormValidator.validateViviendaForm(formData);
+    if (!isValid) {
+      setErrors(allErrors);
+      setTouched(Object.keys(allErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}));
+      const firstError = Object.keys(allErrors)[0];
+      const el = firstError && document.getElementById(firstError);
+      if (el) el.focus();
+      return;
+    }
+
     try {
       setLoadingMessage(isEditing ? 'Actualizando vivienda...' : 'Creando vivienda...');
       await createVivienda(formData, isEditing ? id : null);
@@ -160,7 +244,6 @@ const PropertyCreatePage = () => {
           await loadPropertyImages(id);
           // Limpiar archivos pendientes
           clearPendingFiles();
-          console.log('✅ Datos e imágenes recargados correctamente');
         } catch (error) {
           console.error('Error recargando datos:', error);
         }
@@ -170,7 +253,21 @@ const PropertyCreatePage = () => {
       if (window.confirm('¿Estás seguro de que quieres resetear el formulario?')) {
         resetForm();
         clearAllImages();
+        clearDraft();
       }
+    }
+  };
+
+  // Reintentar la subida de imágenes usando el id ya creado (sin recrear la vivienda)
+  const handleRetryImages = async () => {
+    if (!savedPropertyId) return;
+    try {
+      setLoadingMessage('Reintentando subida de imágenes...');
+      await uploadPendingFiles(savedPropertyId);
+      setImageUploadFailed(false);
+    } catch (imgError) {
+      console.error('Reintento de subida de imágenes fallido:', imgError);
+      // Permanece en estado de éxito parcial para poder reintentar de nuevo.
     }
   };
 
@@ -179,7 +276,8 @@ const PropertyCreatePage = () => {
     setShowSuccessPopup(false);
     setSuccessData(null);
     setWasSavedAsDraft(false);
-    
+    setImageUploadFailed(false);
+
     if (isEditing) {
       // En modo edición, volver al listado
       navigate('/admin/viviendas');
@@ -216,12 +314,12 @@ const PropertyCreatePage = () => {
           <h1 className="page-title">
             {id ? (
               <>
-                <i className="fas fa-edit"></i>
+                <FontAwesomeIcon icon="edit" />
                 Editar Vivienda
               </>
             ) : (
               <>
-                <i className="fas fa-plus-circle"></i>
+                <FontAwesomeIcon icon="circle-plus" />
                 Crear Nueva Vivienda
               </>
             )}
@@ -234,340 +332,67 @@ const PropertyCreatePage = () => {
           </p>
         </div>
         <div className="header-actions">
-          <button 
-            type="button" 
+          <Button
+            variant="secondary"
+            icon="arrow-left"
             onClick={() => navigate('/admin/viviendas')}
-            className="btn--secondary"
           >
-            <i className="fas fa-arrow-left"></i>
             Volver al listado
-          </button>
+          </Button>
         </div>
       </div>
 
+      {recoverableDraft && (
+        <div className="draft-recovery-banner">
+          <span className="draft-recovery-banner__text">
+            Tienes cambios sin guardar de una sesión anterior.
+          </span>
+          <span className="draft-recovery-banner__actions">
+            <Button variant="primary" size="sm" onClick={recoverDraft}>
+              Recuperar
+            </Button>
+            <Button variant="outline" size="sm" onClick={discardDraft}>
+              Descartar
+            </Button>
+          </span>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="property-form">
+        <BasicInfoSection
+          formData={formData}
+          updateField={updateField}
+          handleFieldChange={handleFieldChange}
+          handleFieldBlur={handleFieldBlur}
+          errors={errors}
+          touched={touched}
+          isCreating={isCreating}
+        />
+
+        <FeaturesSection formData={formData} updateField={updateField} />
+
+        <LocationSection formData={formData} updateField={updateField} />
+
+        <ClassificationSection formData={formData} updateField={updateField} />
+
         <div className="form-section">
-          <h2 className="section-title">📋 Información Básica</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="name">Nombre de la vivienda *</label>
-              <input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => updateField('name', e.target.value)}
-                placeholder="Ej: Piso céntrico con terraza en el centro"
-                required
-                className="form-input"
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="price">Precio *</label>
-              <input
-                id="price"
-                type="number"
-                value={formData.price}
-                onChange={(e) => updateField('price', e.target.value)}
-                placeholder="250000"
-                required
-                min="0"
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="shortDescription">Descripción breve</label>
-              <textarea
-                id="shortDescription"
-                value={formData.shortDescription}
-                onChange={(e) => updateField('shortDescription', e.target.value)}
-                placeholder="Amplio y luminoso piso en zona céntrica"
-                maxLength="300"
-                rows="2"
-                className="form-textarea"
-              />
-              <small className="form-help">
-                Máximo 300 caracteres ({formData.shortDescription.length}/300)
-              </small>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="description">Descripción completa</label>
-              <RichTextEditor
-                value={formData.description}
-                onChange={(content) => {
-                  const plainText = getPlainTextFromHtml(content);
-                  if (plainText.length <= 2000) {
-                    updateField('description', content);
-                  }
-                }}
-                placeholder="Describe en detalle las características de la vivienda, su estado, orientación, servicios cercanos..."
+          <details className="form-accordion">
+            <summary className="form-accordion__summary">
+              ✨ Características adicionales
+              <span className="form-accordion__count">
+                {formData.caracteristicas?.length || 0} seleccionadas
+              </span>
+            </summary>
+            <div className="form-accordion__body">
+              <CharacteristicsSelector
+                selectedCharacteristics={formData.caracteristicas || []}
+                onChange={(characteristics) => updateField('caracteristicas', characteristics)}
                 disabled={isCreating}
-                height="250px"
-                error={getPlainTextFromHtml(formData.description).length > 2000 ? 
-                  'La descripción no puede exceder 2000 caracteres' : null
-                }
-              />
-              <small className="form-help">
-                Editor de texto enriquecido - Máximo 2000 caracteres ({getPlainTextFromHtml(formData.description).length}/2000)
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h2 className="section-title">🏠 Características</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="rooms">Habitaciones</label>
-              <input
-                id="rooms"
-                type="number"
-                value={formData.rooms}
-                onChange={(e) => updateField('rooms', e.target.value)}
-                min="0"
-                max="50"
-                placeholder="3"
-                className="form-input"
+                title=""
+                subtitle="Selecciona todas las características que apliquen a esta vivienda."
               />
             </div>
-
-            <div className="form-group">
-              <label htmlFor="bathRooms">Baños</label>
-              <input
-                id="bathRooms"
-                type="number"
-                value={formData.bathRooms}
-                onChange={(e) => updateField('bathRooms', e.target.value)}
-                min="0"
-                max="20"
-                placeholder="2"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="garage">Garajes</label>
-              <input
-                id="garage"
-                type="number"
-                value={formData.garage}
-                onChange={(e) => updateField('garage', e.target.value)}
-                min="0"
-                max="10"
-                placeholder="1"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="squaredMeters">Metros cuadrados</label>
-              <input
-                id="squaredMeters"
-                type="number"
-                value={formData.squaredMeters}
-                onChange={(e) => updateField('squaredMeters', e.target.value)}
-                min="0"
-                max="10000"
-                placeholder="120"
-                className="form-input"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h2 className="section-title">📍 Ubicación</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="provincia">Provincia</label>
-              <input
-                id="provincia"
-                type="text"
-                value={formData.provincia}
-                onChange={(e) => updateField('provincia', e.target.value)}
-                placeholder="Ej: Barcelona"
-                maxLength="100"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="poblacion">Población</label>
-              <input
-                id="poblacion"
-                type="text"
-                value={formData.poblacion}
-                onChange={(e) => updateField('poblacion', e.target.value)}
-                placeholder="Ej: Sitges"
-                maxLength="100"
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="calle">Calle</label>
-              <input
-                id="calle"
-                type="text"
-                value={formData.calle}
-                onChange={(e) => updateField('calle', e.target.value)}
-                placeholder="Ej: Carrer del Mar"
-                maxLength="100"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="numero">Número</label>
-              <input
-                id="numero"
-                type="text"
-                value={formData.numero}
-                onChange={(e) => updateField('numero', e.target.value)}
-                placeholder="Ej: 123 A"
-                maxLength="20"
-                className="form-input"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h2 className="section-title">🏷️ Clasificación</h2>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="tipoInmueble">Tipo de Inmueble</label>
-              <select
-                id="tipoInmueble"
-                value={formData.tipoInmueble}
-                onChange={(e) => updateField('tipoInmueble', e.target.value)}
-                className="form-select"
-              >
-                <option value="">🏢 Seleccionar tipo de inmueble...</option>
-                {Object.entries(TipoInmueble).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="tipoVivienda">Tipo de Vivienda</label>
-              <select
-                id="tipoVivienda"
-                value={formData.tipoVivienda}
-                onChange={(e) => updateField('tipoVivienda', e.target.value)}
-                className="form-select"
-              >
-                <option value="">🏠 Seleccionar tipo de vivienda...</option>
-                {Object.entries(TipoVivienda).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="estado">Estado</label>
-              <select
-                id="estado"
-                value={formData.estado}
-                onChange={(e) => updateField('estado', e.target.value)}
-                className="form-select"
-              >
-                <option value="">🔧 Seleccionar estado...</option>
-                {Object.entries(Estado).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Solo mostrar selector de Planta para Piso, Ático o Dúplex */}
-            {(formData.tipoVivienda === 'Piso' || 
-              formData.tipoVivienda === 'Ático' || 
-              formData.tipoVivienda === 'Dúplex') && (
-              <div className="form-group">
-                <label htmlFor="planta">Planta</label>
-                <select
-                  id="planta"
-                  value={formData.planta}
-                  onChange={(e) => updateField('planta', e.target.value)}
-                  className="form-select"
-                >
-                  <option value="">🏢 Seleccionar planta...</option>
-                  {Object.entries(Planta).map(([key, value]) => (
-                    <option key={key} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="tipoAnuncio">Tipo de Anuncio</label>
-              <select
-                id="tipoAnuncio"
-                value={formData.tipoAnuncio}
-                onChange={(e) => updateField('tipoAnuncio', e.target.value)}
-                className="form-select"
-              >
-                <option value="">💰 Seleccionar tipo de anuncio...</option>
-                {Object.entries(TipoAnuncio).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="estadoVenta">Estado de Venta</label>
-              <select
-                id="estadoVenta"
-                value={formData.estadoVenta}
-                onChange={(e) => updateField('estadoVenta', e.target.value)}
-                className="form-select"
-              >
-                <option value="">📊 Seleccionar estado de venta...</option>
-                {Object.entries(EstadoVenta).map(([key, value]) => (
-                  <option key={key} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <CharacteristicsSelector
-            selectedCharacteristics={formData.caracteristicas || []}
-            onChange={(characteristics) => updateField('caracteristicas', characteristics)}
-            disabled={isCreating}
-            title="✨ Características Adicionales"
-            subtitle="Selecciona todas las características que apliquen a esta vivienda. Estas aparecerán destacadas en el anuncio para ayudar a los usuarios a encontrar la propiedad perfecta."
-          />
+          </details>
         </div>
 
         <div className="form-section">
@@ -604,64 +429,40 @@ const PropertyCreatePage = () => {
           </div>
         )}
 
+        {lastSavedAt && (
+          <p className="autosave-indicator">Autoguardado localmente ✓</p>
+        )}
+
         <div className="form-actions">
-          <button 
-            type="button"
+          <Button
+            variant="secondary"
+            icon="xmark"
             onClick={() => navigate('/admin/viviendas')}
-            className="btn btn-secondary"
             disabled={isCreating}
           >
-            <i className="fas fa-times"></i>
             Cancelar
-          </button>
-          
-          <button 
-            type="button"
-            onClick={handleReset}
-            className="btn btn-outline"
-            disabled={isCreating}
-          >
-            <i className="fas fa-redo"></i>
+          </Button>
+
+          <Button variant="outline" icon="rotate-right" onClick={handleReset} disabled={isCreating}>
             Resetear
-          </button>
+          </Button>
 
           {!id && (
-            <button 
-              type="button"
+            <Button
+              variant="draft"
+              icon="floppy-disk"
               onClick={handleSaveDraft}
-              className="btn btn-secondary"
               disabled={isCreating || !formData.name}
             >
-              <i className="fas fa-save"></i>
               Guardar Borrador
-            </button>
+            </Button>
           )}
-          
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={isCreating || !formData.name || !formData.price}
-          >
-            {isCreating ? (
-              <>
-                <i className="fas fa-spinner fa-spin"></i>
-                Creando...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-save"></i>
-                {id ? 'Actualizar Vivienda' : 'Crear Vivienda'}
-              </>
-            )}
-          </button>
+
+          <Button type="submit" variant="primary" icon="floppy-disk" loading={isCreating}>
+            {isCreating ? 'Creando…' : id ? 'Actualizar Vivienda' : 'Crear Vivienda'}
+          </Button>
         </div>
       </form>
-
-      {/* Debug Info */}
-      {/* <details className="debug-info">
-        <summary>Información de Debug</summary>
-        <pre>{JSON.stringify(formData, null, 2)}</pre>
-      </details> */}
 
       {/* Popup de carga */}
       <LoadingPopup
@@ -677,21 +478,28 @@ const PropertyCreatePage = () => {
         progress={isProcessing && uploadProgress > 0 ? uploadProgress : null}
       />
 
-      {/* Popup de éxito */}
+      {/* Popup de resultado */}
       <SuccessPopup
         isVisible={showSuccessPopup}
         onClose={handleSuccessPopupClose}
+        variant={imageUploadFailed ? 'warning' : 'success'}
         title={
-          wasSavedAsDraft 
-            ? '¡Borrador guardado exitosamente!'
-            : `¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`
+          imageUploadFailed
+            ? 'Vivienda guardada, pero faltan imágenes'
+            : wasSavedAsDraft
+              ? '¡Borrador guardado exitosamente!'
+              : `¡Vivienda ${isEditing ? 'actualizada' : 'creada'} exitosamente!`
         }
         message={
-          wasSavedAsDraft
-            ? `El borrador "${successData?.name || 'Nueva vivienda'}" ha sido guardado correctamente. Puedes encontrarlo filtrando por "Borradores" en el listado de viviendas.`
-            : `La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'publicada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`
+          imageUploadFailed
+            ? `La vivienda "${successData?.name || 'Nueva vivienda'}" se guardó correctamente, pero algunas imágenes no se subieron. Puedes reintentar la subida sin recrear la vivienda.`
+            : wasSavedAsDraft
+              ? `El borrador "${successData?.name || 'Nueva vivienda'}" ha sido guardado correctamente. Puedes encontrarlo filtrando por "Borradores" en el listado de viviendas.`
+              : `La vivienda "${successData?.name || (isEditing ? 'existente' : 'Nueva vivienda')}" ha sido ${isEditing ? 'actualizada' : 'publicada'} correctamente${pendingFiles?.length > 0 ? ' y las imágenes se han subido' : ''}.`
         }
-        autoClose={true}
+        actionLabel={imageUploadFailed ? 'Reintentar subida' : undefined}
+        onAction={imageUploadFailed ? handleRetryImages : undefined}
+        autoClose={!imageUploadFailed}
         autoCloseDelay={4000}
       />
     </div>

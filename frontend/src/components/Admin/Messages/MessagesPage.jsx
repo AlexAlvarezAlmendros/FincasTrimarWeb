@@ -1,17 +1,83 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useMessages } from '../../../hooks/useMessages.js';
-import { useApi } from '../../../hooks/useApi.js';
 import './MessagesPage.css';
 
-// Componente de filtros
-const MessageFilters = ({ filters, onFiltersChange, stats }) => {
-  const handleFilterChange = (key, value) => {
-    onFiltersChange({
-      [key]: value
-    });
-  };
+const STATUS = {
+  Nuevo: { label: 'Nuevo', class: 'status-new', icon: 'circle' },
+  EnCurso: { label: 'En curso', class: 'status-progress', icon: 'clock' },
+  Cerrado: { label: 'Cerrado', class: 'status-closed', icon: 'check' },
+};
 
+const formatDate = (dateString) =>
+  dateString
+    ? new Date(dateString).toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '';
+
+const truncate = (text, max = 90) => {
+  if (!text) return '';
+  return text.length > max ? `${text.substring(0, max)}…` : text;
+};
+
+// Construye un mailto: prellenado con Re:, saludo y cita del mensaje original
+const buildReplyMailto = (msg) => {
+  const to = msg.email || '';
+  const subject = `Re: ${msg.asunto || 'Su consulta'}`;
+  const fecha = formatDate(msg.fecha);
+  const quoted = (msg.descripcion || '')
+    .split('\n')
+    .map((line) => `> ${line}`)
+    .join('\n');
+  const body = `Hola ${msg.nombre || ''},\n\n\n\n---\nEl ${fecha} escribiste:\n${quoted}`;
+  return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+};
+
+const StatusBadge = ({ estado }) => {
+  const s = STATUS[estado] || { label: estado, class: 'status-default', icon: 'circle' };
+  return (
+    <span className={`status-badge ${s.class}`}>
+      <FontAwesomeIcon icon={s.icon} /> {s.label}
+    </span>
+  );
+};
+
+// --- Estadísticas rápidas ---
+const MessageStats = ({ stats }) => (
+  <div className="message-stats">
+    <div className="stat-card stat-card--new">
+      <div className="stat-icon"><FontAwesomeIcon icon="envelope" /></div>
+      <div className="stat-content">
+        <div className="stat-number">{stats?.nuevo || 0}</div>
+        <div className="stat-label">Nuevos</div>
+      </div>
+    </div>
+    <div className="stat-card stat-card--progress">
+      <div className="stat-icon"><FontAwesomeIcon icon="clock" /></div>
+      <div className="stat-content">
+        <div className="stat-number">{stats?.enCurso || 0}</div>
+        <div className="stat-label">En curso</div>
+      </div>
+    </div>
+    <div className="stat-card stat-card--closed">
+      <div className="stat-icon"><FontAwesomeIcon icon="check" /></div>
+      <div className="stat-content">
+        <div className="stat-number">{stats?.cerrado || 0}</div>
+        <div className="stat-label">Cerrados</div>
+      </div>
+    </div>
+  </div>
+);
+
+// --- Filtros ---
+const MessageFilters = ({ filters, onFiltersChange, stats }) => {
+  const handleFilterChange = (key, value) => onFiltersChange({ [key]: value });
   return (
     <div className="message-filters">
       <div className="filters-row">
@@ -24,7 +90,6 @@ const MessageFilters = ({ filters, onFiltersChange, stats }) => {
             className="search-input"
           />
         </div>
-        
         <div className="filter-group">
           <select
             value={filters.estado || ''}
@@ -32,18 +97,11 @@ const MessageFilters = ({ filters, onFiltersChange, stats }) => {
             className="filter-select"
           >
             <option value="">Todos los estados</option>
-            <option value="Nuevo">
-              Nuevos {stats?.nuevo ? `(${stats.nuevo})` : ''}
-            </option>
-            <option value="EnCurso">
-              En curso {stats?.enCurso ? `(${stats.enCurso})` : ''}
-            </option>
-            <option value="Cerrado">
-              Cerrados {stats?.cerrado ? `(${stats.cerrado})` : ''}
-            </option>
+            <option value="Nuevo">Nuevos {stats?.nuevo ? `(${stats.nuevo})` : ''}</option>
+            <option value="EnCurso">En curso {stats?.enCurso ? `(${stats.enCurso})` : ''}</option>
+            <option value="Cerrado">Cerrados {stats?.cerrado ? `(${stats.cerrado})` : ''}</option>
           </select>
         </div>
-
         <div className="filter-group">
           <select
             value={filters.sortBy || 'fecha_desc'}
@@ -60,344 +118,160 @@ const MessageFilters = ({ filters, onFiltersChange, stats }) => {
   );
 };
 
-// Componente de estadísticas rápidas
-const MessageStats = ({ stats }) => {
-  return (
-    <div className="message-stats">
-      <div className="stat-card stat-card--new">
-        <div className="stat-icon">🆕</div>
-        <div className="stat-content">
-          <div className="stat-number">{stats?.nuevo || 0}</div>
-          <div className="stat-label">Nuevos</div>
-        </div>
-      </div>
-      
-      <div className="stat-card stat-card--progress">
-        <div className="stat-icon">⏳</div>
-        <div className="stat-content">
-          <div className="stat-number">{stats?.enCurso || 0}</div>
-          <div className="stat-label">En curso</div>
-        </div>
-      </div>
-      
-      <div className="stat-card stat-card--closed">
-        <div className="stat-icon">✅</div>
-        <div className="stat-content">
-          <div className="stat-number">{stats?.cerrado || 0}</div>
-          <div className="stat-label">Cerrados</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente de la tabla de mensajes
-const MessagesTable = ({ 
-  messages, 
-  loading, 
-  onMarkAsRead,
-  onMarkAsClosed, 
-  onDelete 
-}) => {
-  const [actionConfirm, setActionConfirm] = useState(null);
-  const [expandedMessage, setExpandedMessage] = useState(null);
-
-  const getStatusBadge = (message) => {
-    const statusConfig = {
-      'Nuevo': { label: 'Nuevo', class: 'status-new', icon: '🆕' },
-      'EnCurso': { label: 'En curso', class: 'status-progress', icon: '⏳' },
-      'Cerrado': { label: 'Cerrado', class: 'status-closed', icon: '✅' }
-    };
-
-    const config = statusConfig[message.estado] || { 
-      label: message.estado, 
-      class: 'status-default',
-      icon: '❓'
-    };
-
-    return (
-      <span className={`status-badge ${config.class}`}>
-        <span className="status-icon">{config.icon}</span>
-        {config.label}
-      </span>
-    );
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const truncateText = (text, maxLength = 100) => {
-    if (!text) return '';
-    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-  };
-
-  const handleActionClick = (messageId, action) => {
-    setActionConfirm({ messageId, action });
-  };
-
-  const handleActionConfirm = () => {
-    const { messageId, action } = actionConfirm;
-    
-    switch (action) {
-      case 'delete':
-        onDelete(messageId);
-        break;
-      case 'close':
-        onMarkAsClosed(messageId);
-        break;
-      default:
-        break;
-    }
-    
-    setActionConfirm(null);
-  };
-
-  const handleActionCancel = () => {
-    setActionConfirm(null);
-  };
-
-  const toggleMessageExpansion = (messageId) => {
-    setExpandedMessage(expandedMessage === messageId ? null : messageId);
-  };
-
+// --- Lista de mensajes (columna izquierda) ---
+const MessageList = ({ messages, loading, selectedId, onSelect }) => {
   if (loading) {
     return (
-      <div className="table-loading">
-        <div className="loading-spinner"></div>
-        <p>Cargando mensajes...</p>
+      <div className="message-list message-list--loading">
+        <p>Cargando mensajes…</p>
       </div>
     );
   }
-
   if (messages.length === 0) {
     return (
-      <div className="no-results">
-        <div className="no-results-icon">💬</div>
-        <h3>No se encontraron mensajes</h3>
-        <p>Los mensajes de contacto aparecerán aquí cuando los clientes envíen consultas.</p>
+      <div className="message-list message-list--empty">
+        <FontAwesomeIcon icon="inbox" />
+        <p>No se encontraron mensajes</p>
+      </div>
+    );
+  }
+  return (
+    <div className="message-list" role="listbox" aria-label="Lista de mensajes">
+      {messages.map((msg) => {
+        const isUnread = msg.estado === 'Nuevo';
+        const isActive = msg.id === selectedId;
+        return (
+          <button
+            key={msg.id}
+            type="button"
+            role="option"
+            aria-selected={isActive}
+            className={`message-list-item${isActive ? ' message-list-item--active' : ''}${
+              isUnread ? ' message-list-item--unread' : ''
+            }`}
+            onClick={() => onSelect(msg)}
+          >
+            <div className="message-list-item__top">
+              {isUnread && <span className="message-unread-dot" aria-label="No leído" />}
+              <span className="message-list-item__from">{msg.nombre || msg.email || 'Anónimo'}</span>
+              <span className="message-list-item__date">{formatDate(msg.fecha)}</span>
+            </div>
+            <div className="message-list-item__subject">{msg.asunto || 'Sin asunto'}</div>
+            <div className="message-list-item__preview">{truncate(msg.descripcion, 90)}</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// --- Panel de lectura (columna derecha) ---
+const MessageDetail = ({ message, onReply, onToggleRead, onClose, onReopen, onDelete }) => {
+  if (!message) {
+    return (
+      <div className="message-detail message-detail--empty">
+        <FontAwesomeIcon icon="inbox" />
+        <p>Selecciona un mensaje para leerlo</p>
       </div>
     );
   }
 
   return (
-    <div className="messages-table-container">
-      <table className="messages-table">
-        <thead>
-          <tr>
-            <th className="col-status">Estado</th>
-            <th className="col-contact">Contacto</th>
-            <th className="col-subject">Asunto</th>
-            <th className="col-message">Mensaje</th>
-            <th className="col-property">Vivienda</th>
-            <th className="col-date">Fecha</th>
-            <th className="col-actions">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {messages.map(message => (
-            <tr 
-              key={message.id} 
-              className={`message-row ${message.estado === 'Nuevo' ? 'message-row--new' : ''}`}
-            >
-              <td className="col-status">
-                <div className="status-content">
-                  {getStatusBadge(message)}
-                </div>
-              </td>
-              
-              <td className="col-contact">
-                <div className="contact-info">
-                  <div className="contact-name">{message.nombre}</div>
-                  <div className="contact-email">
-                    <a href={`mailto:${message.email}`}>{message.email}</a>
-                  </div>
-                  {message.telefono && (
-                    <div className="contact-phone">
-                      <a href={`tel:${message.telefono}`}>{message.telefono}</a>
-                    </div>
-                  )}
-                </div>
-              </td>
-              
-              <td className="col-subject">
-                <div className="subject-content">
-                  {message.asunto || 'Sin asunto'}
-                </div>
-              </td>
-              
-              <td className="col-message">
-                <div className="message-content">
-                  <div className="message-text">
-                    {truncateText(message.descripcion, 80)}
-                  </div>
-                  {message.descripcion && message.descripcion.length > 80 && (
-                    <button
-                      onClick={() => toggleMessageExpansion(message.id)}
-                      className="expand-btn"
-                    >
-                      {expandedMessage === message.id ? 'Ver menos' : 'Ver más'}
-                    </button>
-                  )}
-                  {expandedMessage === message.id && (
-                    <div className="message-expanded">
-                      {message.descripcion}
-                    </div>
-                  )}
-                </div>
-              </td>
-              
-              <td className="col-property">
-                {message.viviendaId ? (
-                  <Link 
-                    to={`/viviendas/${message.viviendaId}`}
-                    target="_blank"
-                    className="property-link"
-                    title="Ver vivienda"
-                  >
-                    🏠 Ver vivienda
-                  </Link>
-                ) : (
-                  <span className="no-property">Consulta general</span>
-                )}
-              </td>
-              
-              <td className="col-date">
-                <div className="date-info">
-                  {formatDate(message.fecha)}
-                </div>
-              </td>
-              
-              <td className="col-actions">
-                <div className="action-buttons">
-                  {message.estado === 'Nuevo' && (
-                    <button
-                      onClick={() => onMarkAsRead(message.id)}
-                      className="action-btn action-btn--read"
-                      title="Marcar como leído"
-                    >
-                      👁️
-                    </button>
-                  )}
+    <div className="message-detail">
+      <div className="message-detail__header">
+        <div className="message-detail__heading">
+          <h2 className="message-detail__title">{message.asunto || 'Sin asunto'}</h2>
+          <div className="message-detail__meta">
+            <StatusBadge estado={message.estado} />
+            <span className="message-detail__date">{formatDate(message.fecha)}</span>
+          </div>
+        </div>
+        <div className="message-detail__actions">
+          <a
+            href={buildReplyMailto(message)}
+            onClick={() => onReply(message)}
+            className="msg-action-btn msg-action-btn--primary"
+          >
+            <FontAwesomeIcon icon="reply" /> Responder
+          </a>
+          {message.estado === 'Nuevo' && (
+            <button type="button" className="msg-action-btn" onClick={() => onToggleRead(message)}>
+              <FontAwesomeIcon icon="eye" /> Marcar leído
+            </button>
+          )}
+          {message.estado === 'EnCurso' && (
+            <button type="button" className="msg-action-btn" onClick={() => onToggleRead(message)}>
+              <FontAwesomeIcon icon="eye-slash" /> Marcar no leído
+            </button>
+          )}
+          {message.estado !== 'Cerrado' ? (
+            <button type="button" className="msg-action-btn" onClick={() => onClose(message)}>
+              <FontAwesomeIcon icon="check" /> Cerrar
+            </button>
+          ) : (
+            <button type="button" className="msg-action-btn" onClick={() => onReopen(message)}>
+              <FontAwesomeIcon icon="rotate-left" /> Reabrir
+            </button>
+          )}
+          <button
+            type="button"
+            className="msg-action-btn msg-action-btn--danger"
+            onClick={() => onDelete(message)}
+          >
+            <FontAwesomeIcon icon="trash" /> Borrar
+          </button>
+        </div>
+      </div>
 
-                  {message.estado !== 'Cerrado' && (
-                    <>
-                      {actionConfirm?.messageId === message.id && actionConfirm?.action === 'close' ? (
-                        <div className="action-confirm">
-                          <button
-                            onClick={handleActionConfirm}
-                            className="action-btn action-btn--confirm-close"
-                            title="Confirmar cerrar"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            onClick={handleActionCancel}
-                            className="action-btn action-btn--cancel"
-                            title="Cancelar"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleActionClick(message.id, 'close')}
-                          className="action-btn action-btn--close"
-                          title="Marcar como cerrado"
-                        >
-                          ✅
-                        </button>
-                      )}
-                    </>
-                  )}
+      <div className="message-detail__contact">
+        <span className="message-detail__from">{message.nombre || 'Anónimo'}</span>
+        <a href={`mailto:${message.email}`}>
+          <FontAwesomeIcon icon="envelope" /> {message.email}
+        </a>
+        {message.telefono && (
+          <a href={`tel:${message.telefono}`}>
+            <FontAwesomeIcon icon="phone" /> {message.telefono}
+          </a>
+        )}
+        {message.viviendaId && (
+          <Link to={`/viviendas/${message.viviendaId}`} target="_blank" rel="noopener noreferrer">
+            <FontAwesomeIcon icon="house" /> Ver vivienda
+          </Link>
+        )}
+      </div>
 
-                  {actionConfirm?.messageId === message.id && actionConfirm?.action === 'delete' ? (
-                    <div className="action-confirm">
-                      <button
-                        onClick={handleActionConfirm}
-                        className="action-btn action-btn--confirm-delete"
-                        title="Confirmar eliminar"
-                      >
-                        ✓
-                      </button>
-                      <button
-                        onClick={handleActionCancel}
-                        className="action-btn action-btn--cancel"
-                        title="Cancelar"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleActionClick(message.id, 'delete')}
-                      className="action-btn action-btn--delete"
-                      title="Eliminar mensaje"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="message-detail__body">{message.descripcion || 'Sin contenido.'}</div>
     </div>
   );
 };
 
-// Componente de paginación
+// --- Paginación ---
 const MessagesPagination = ({ pagination, onPageChange }) => {
   if (pagination.totalPages <= 1) return null;
 
-  const pages = [];
   const maxVisiblePages = 5;
   const currentPage = pagination.page;
   const totalPages = pagination.totalPages;
 
-  // Calcular rango de páginas a mostrar
   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-  // Ajustar si no hay suficientes páginas al final
+  const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
   if (endPage - startPage < maxVisiblePages - 1) {
     startPage = Math.max(1, endPage - maxVisiblePages + 1);
   }
 
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
+  const pages = [];
+  for (let i = startPage; i <= endPage; i++) pages.push(i);
 
   return (
     <div className="pagination">
-      <button 
+      <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         className="pagination-btn pagination-btn--prev"
       >
-        ← Anterior
+        <FontAwesomeIcon icon="angle-left" /> Anterior
       </button>
-
-      {startPage > 1 && (
-        <>
-          <button 
-            onClick={() => onPageChange(1)}
-            className="pagination-btn"
-          >
-            1
-          </button>
-          {startPage > 2 && <span className="pagination-dots">...</span>}
-        </>
-      )}
-
-      {pages.map(page => (
+      {pages.map((page) => (
         <button
           key={page}
           onClick={() => onPageChange(page)}
@@ -406,136 +280,120 @@ const MessagesPagination = ({ pagination, onPageChange }) => {
           {page}
         </button>
       ))}
-
-      {endPage < totalPages && (
-        <>
-          {endPage < totalPages - 1 && <span className="pagination-dots">...</span>}
-          <button 
-            onClick={() => onPageChange(totalPages)}
-            className="pagination-btn"
-          >
-            {totalPages}
-          </button>
-        </>
-      )}
-
-      <button 
+      <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         className="pagination-btn pagination-btn--next"
       >
-        Siguiente →
+        Siguiente <FontAwesomeIcon icon="angle-right" />
       </button>
     </div>
   );
 };
 
-// Componente principal
+// --- Página principal (bandeja de entrada lista/detalle) ---
 const MessagesPage = () => {
-  const [messageStats, setMessageStats] = useState(null);
-  const api = useApi();
-  const apiRef = useRef(api);
-
-  // Actualizar la referencia cuando cambie
-  useEffect(() => {
-    apiRef.current = api;
-  }, [api]);
-
-  // Hook para obtener mensajes
   const {
     messages,
     pagination,
+    stats,
     isLoading: loading,
     error,
     filters,
     updateFilters,
-    markAsRead,
-    markAsClosed,
-    deleteMessage,
     goToPage,
-    refreshMessages
-  } = useMessages({
-    pageSize: 20
-  });
+    refresh,
+    fetchStats,
+    markAsRead,
+    markAsUnread,
+    markAsClosed,
+    reopenMessage,
+    deleteMessage,
+  } = useMessages({ pageSize: 20 });
 
-  // Cargar estadísticas de mensajes
-  const loadMessageStats = useCallback(async () => {
-    try {
-      const response = await apiRef.current('/api/v1/messages/stats', { method: 'GET' });
-      setMessageStats(response.data);
-    } catch (error) {
-      console.error('Error loading message stats:', error);
-    }
-  }, []);
+  const [selectedId, setSelectedId] = useState(null);
 
-  // Funciones para las acciones de la tabla
-  const handleMarkAsRead = useCallback(async (messageId) => {
-    try {
-      await markAsRead(messageId);
-      // Refrescar mensajes y estadísticas
-      await refreshMessages();
-      loadMessageStats();
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  }, [markAsRead, refreshMessages, loadMessageStats]);
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
-  const handleMarkAsClosed = useCallback(async (messageId) => {
-    try {
-      await markAsClosed(messageId);
-      // Refrescar mensajes y estadísticas
-      await refreshMessages();
-      loadMessageStats();
-    } catch (error) {
-      console.error('Error marking message as closed:', error);
-    }
-  }, [markAsClosed, refreshMessages, loadMessageStats]);
+  const selected = messages.find((m) => m.id === selectedId) || null;
 
-  const handleDelete = useCallback(async (messageId) => {
-    try {
-      await deleteMessage(messageId);
-      // Refrescar mensajes y estadísticas
-      await refreshMessages();
-      loadMessageStats();
-    } catch (error) {
-      console.error('Error deleting message:', error);
-    }
-  }, [deleteMessage, refreshMessages, loadMessageStats]);
+  const refreshStats = useCallback(() => {
+    fetchStats().catch(() => {});
+  }, [fetchStats]);
 
-  const handleFiltersChange = useCallback((newFilters) => {
-    updateFilters(newFilters, { debounce: true, resetPagination: true });
-  }, [updateFilters]);
+  // Seleccionar un mensaje lo marca como leído automáticamente si estaba "Nuevo"
+  const handleSelect = useCallback(
+    (msg) => {
+      setSelectedId(msg.id);
+      if (msg.estado === 'Nuevo') {
+        markAsRead(msg.id).then(refreshStats).catch((e) => console.error(e));
+      }
+    },
+    [markAsRead, refreshStats]
+  );
 
-  // Cargar estadísticas al montar el componente
-  React.useEffect(() => {
-    loadMessageStats();
-  }, [loadMessageStats]);
+  const handleToggleRead = useCallback(
+    (msg) => {
+      const action = msg.estado === 'Nuevo' ? markAsRead : markAsUnread;
+      action(msg.id).then(refreshStats).catch((e) => console.error(e));
+    },
+    [markAsRead, markAsUnread, refreshStats]
+  );
+
+  const handleClose = useCallback(
+    (msg) => markAsClosed(msg.id).then(refreshStats).catch((e) => console.error(e)),
+    [markAsClosed, refreshStats]
+  );
+
+  const handleReopen = useCallback(
+    (msg) => reopenMessage(msg.id).then(refreshStats).catch((e) => console.error(e)),
+    [reopenMessage, refreshStats]
+  );
+
+  const handleDelete = useCallback(
+    (msg) => {
+      if (!window.confirm('¿Eliminar este mensaje? Esta acción no se puede deshacer.')) return;
+      if (selectedId === msg.id) setSelectedId(null);
+      deleteMessage(msg.id).then(refreshStats).catch((e) => console.error(e));
+    },
+    [deleteMessage, refreshStats, selectedId]
+  );
+
+  // Al pulsar "Responder" (mailto), marcar como leído si estaba nuevo
+  const handleReply = useCallback(
+    (msg) => {
+      if (msg.estado === 'Nuevo') {
+        markAsRead(msg.id).then(refreshStats).catch((e) => console.error(e));
+      }
+    },
+    [markAsRead, refreshStats]
+  );
+
+  const handleFiltersChange = useCallback(
+    (newFilters) => updateFilters(newFilters, { debounce: true, resetPagination: true }),
+    [updateFilters]
+  );
 
   return (
     <div className="messages-page">
       <div className="page-header">
         <div className="header-content">
           <h1 className="page-title">
-            <span className="title-icon">💬</span>
-            Gestión de Mensajes
+            <span className="title-icon"><FontAwesomeIcon icon="envelope" /></span>
+            Mensajes
           </h1>
-          <p className="page-subtitle">
-            Administra los mensajes de contacto de los clientes
-          </p>
+          <p className="page-subtitle">Bandeja de entrada de los clientes</p>
         </div>
         <div className="header-actions">
-          <button 
-            onClick={refreshMessages}
-            className="btn btn--secondary"
-            disabled={loading}
-          >
-            <span>🔄</span> Actualizar
+          <button onClick={refresh} className="btn btn--secondary" disabled={loading}>
+            <FontAwesomeIcon icon="refresh" /> Actualizar
           </button>
         </div>
       </div>
 
-      {/* Estadísticas */}
-      <MessageStats stats={messageStats} />
+      <MessageStats stats={stats} />
 
       {error && (
         <div className="error-message">
@@ -545,40 +403,43 @@ const MessagesPage = () => {
       )}
 
       <div className="filters-section">
-        <MessageFilters 
-          filters={filters} 
-          onFiltersChange={handleFiltersChange}
-          stats={messageStats}
-        />
+        <MessageFilters filters={filters} onFiltersChange={handleFiltersChange} stats={stats} />
       </div>
 
-      <div className="content-section">
-        <div className="results-header">
-          <div className="results-count">
-            {loading ? (
-              <span>Cargando...</span>
-            ) : (
-              <span>
-                {pagination.totalItems} {pagination.totalItems === 1 ? 'mensaje' : 'mensajes'}
-                {filters.q && ` para "${filters.q}"`}
-                {filters.estado && ` • Estado: ${filters.estado}`}
-              </span>
-            )}
-          </div>
+      <div className="results-header">
+        <div className="results-count">
+          {loading ? (
+            <span>Cargando…</span>
+          ) : (
+            <span>
+              {pagination.totalItems} {pagination.totalItems === 1 ? 'mensaje' : 'mensajes'}
+              {filters.q && ` para "${filters.q}"`}
+              {filters.estado && ` • ${STATUS[filters.estado]?.label || filters.estado}`}
+            </span>
+          )}
         </div>
+      </div>
 
-        <MessagesTable
-          messages={messages}
-          loading={loading}
-          onMarkAsRead={handleMarkAsRead}
-          onMarkAsClosed={handleMarkAsClosed}
-          onDelete={handleDelete}
-        />
-
-        <MessagesPagination
-          pagination={pagination}
-          onPageChange={goToPage}
-        />
+      <div className="messages-inbox">
+        <div className="messages-inbox__list">
+          <MessageList
+            messages={messages}
+            loading={loading}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+          />
+          <MessagesPagination pagination={pagination} onPageChange={goToPage} />
+        </div>
+        <div className="messages-inbox__detail">
+          <MessageDetail
+            message={selected}
+            onReply={handleReply}
+            onToggleRead={handleToggleRead}
+            onClose={handleClose}
+            onReopen={handleReopen}
+            onDelete={handleDelete}
+          />
+        </div>
       </div>
     </div>
   );

@@ -10,17 +10,17 @@
 }
 
 .error-message--error {
-  border-color: var(--semantic-danger);
+  border-color: var(--color-danger);
   background-color: rgba(239, 68, 68, 0.05);
 }
 
 .error-message--warning {
-  border-color: var(--semantic-warning);
+  border-color: var(--color-warning);
   background-color: rgba(245, 158, 11, 0.05);
 }
 
 .error-message--info {
-  border-color: var(--semantic-info);
+  border-color: var(--color-info);
   background-color: rgba(139, 92, 246, 0.05);
 }
 
@@ -37,13 +37,13 @@
 }
 
 .error-message__text {
-  color: var(--neutral-700);
+  color: var(--color-neutral-700);
   margin: 0 0 12px 0;
   line-height: 1.5;
 }
 
 .error-message__retry {
-  background: var(--brand-primary);
+  background: var(--color-brand-primary);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -55,7 +55,7 @@
 }
 
 .error-message__retry:hover {
-  background: var(--brand-primary-hover, #2F78DB);
+  background: var(--color-brand-primary-hover, #2F78DB);
   transform: translateY(-1px);
 }
 

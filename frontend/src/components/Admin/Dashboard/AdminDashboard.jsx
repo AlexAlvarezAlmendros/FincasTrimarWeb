@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useDashboardStats, useRecentProperties, useRecentMessages } from '../../../hooks/useDashboard';
+import { useAdminStats } from '../../../hooks/useAdminStats';
 import MetricCard from './MetricCard';
 import RecentPropertiesTable from './RecentPropertiesTable';
 import RecentMessagesList from './RecentMessagesList';
@@ -18,6 +19,7 @@ const AdminDashboard = () => {
   const { stats, loading, error, refetch } = useDashboardStats();
   const { properties: recentProperties, loading: loadingProperties } = useRecentProperties(4);
   const { messages: recentMessages, loading: loadingMessages } = useRecentMessages(2);
+  const { messagesCount } = useAdminStats();
 
   if (loading) {
     return (
@@ -47,7 +49,7 @@ const AdminDashboard = () => {
     );
   }
 
-  const { propertyStats, monthlySales, summary } = stats;
+  const { propertyStats } = stats;
 
   return (
     <div className="admin-dashboard">
@@ -68,25 +70,14 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Primary Metrics Cards */}
+      {/* Métricas principales — solo datos reales del catálogo */}
       <div className="metrics-grid">
         <MetricCard
-          title="Ventas del Mes"
-          value={summary.bestMonth ? `${(summary.bestMonth.revenue / 1000).toFixed(0)}K€` : '0€'}
-          subtitle={`${summary.bestMonth ? summary.bestMonth.sales : 0} propiedades vendidas`}
-          icon="💰"
-          trend={{ 
-            type: summary.growthRate >= 0 ? 'up' : 'down', 
-            text: `${summary.growthRate.toFixed(1)}% vs mes anterior` 
-          }}
+          title="Disponibles"
+          value={propertyStats.available}
+          subtitle="Listas para vender"
+          icon="🏠"
           color="green"
-        />
-        <MetricCard
-          title="Propiedades Vendidas"
-          value={propertyStats.sold}
-          subtitle="Total vendidas"
-          icon="✅"
-          color="blue"
         />
         <MetricCard
           title="Reservadas"
@@ -96,46 +87,29 @@ const AdminDashboard = () => {
           color="orange"
         />
         <MetricCard
-          title="Disponibles"
-          value={propertyStats.available}
-          subtitle="Listas para vender"
-          icon="🏠"
-          color="purple"
+          title="Vendidas"
+          value={propertyStats.sold}
+          subtitle="Operaciones cerradas"
+          icon="✅"
+          color="blue"
         />
-      </div>
-
-      {/* Secondary Metrics */}
-      <div className="secondary-metrics">
         <MetricCard
-          title="Total Propiedades"
+          title="Total propiedades"
           value={propertyStats.total}
           subtitle="En el sistema"
           icon="📋"
-          color="yellow"
+          color="purple"
         />
-        <MetricCard
-          title="Publicadas"
-          value={propertyStats.published}
-          subtitle="Visibles al público"
-          icon="👁️"
-          color="teal"
-        />
-        <MetricCard
-          title="Cerradas"
-          value={propertyStats.closed}
-          subtitle="Operaciones finalizadas"
-          icon="🔐"
-          color="red"
-        />
-        <MetricCard
-          title="Ingresos Totales"
-          value={`${(summary.totalRevenue / 1000).toFixed(0)}K€`}
-          subtitle="Todos los meses"
-          icon="💵"
-          color="indigo"
-        />
+        <Link to="/admin/mensajes" className="metric-card-link">
+          <MetricCard
+            title="Mensajes pendientes"
+            value={messagesCount}
+            subtitle="Nuevos y en curso"
+            icon="✉️"
+            color="orange"
+          />
+        </Link>
       </div>
-
 
 
       {/* Main Content Grid */}
@@ -184,12 +158,12 @@ const AdminDashboard = () => {
             <h3>Crear Vivienda</h3>
             <p>Añadir nueva propiedad al catálogo</p>
           </Link>
-          <Link to="/admin/mensajes/pendientes" className="quick-action-card">
+          <Link to="/admin/mensajes" className="quick-action-card">
             <div className="action-icon">📬</div>
             <h3>Revisar Mensajes</h3>
             <p>Responder consultas pendientes</p>
           </Link>
-          <Link to="/admin/estadisticas" className="quick-action-card">
+          <Link to="/admin/analiticas" className="quick-action-card">
             <div className="action-icon">📊</div>
             <h3>Ver Estadísticas</h3>
             <p>Análisis detallado de rendimiento</p>

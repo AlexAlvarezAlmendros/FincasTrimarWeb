@@ -1,0 +1,91 @@
+.btn-ui {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-body);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-ui:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-ui:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Tamaños */
+.btn-ui--md {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-md);
+}
+
+.btn-ui--sm {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+/* Variantes */
+.btn-ui--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-neutral-0);
+}
+.btn-ui--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.btn-ui--secondary {
+  background: var(--color-neutral-100);
+  border-color: var(--color-neutral-200);
+  color: var(--color-text-primary);
+}
+.btn-ui--secondary:hover:not(:disabled) {
+  background: var(--color-neutral-200);
+}
+
+.btn-ui--outline {
+  background: transparent;
+  border-color: var(--color-neutral-300);
+  color: var(--color-text-secondary);
+}
+.btn-ui--outline:hover:not(:disabled) {
+  background: var(--color-neutral-50);
+}
+
+.btn-ui--danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-neutral-0);
+}
+.btn-ui--danger:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+.btn-ui--draft {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-neutral-0);
+}
+.btn-ui--draft:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+.btn-ui--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-primary);
+}
+.btn-ui--ghost:hover:not(:disabled) {
+  background: var(--brand-primary-light);
+}

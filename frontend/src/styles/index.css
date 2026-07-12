@@ -69,6 +69,27 @@
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Sombra grande (modales/popups) */
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.2);
+  --shadow-modal: var(--shadow-lg);
+
+  /* Overlay de modales, anillo de foco y verde de éxito fuerte */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --focus-ring: 0 0 0 3px rgba(58, 141, 255, 0.15);
+  --color-success-strong: #16A34A;
+
+  /* ---------------------------------------------------------------------
+     Tokens semánticos/utilidad apoyados en el contrato --color-*.
+     Los alias legacy que introdujo X1 se retiraron en X7: los componentes
+     ya usan los nombres canónicos --color-*.
+     --------------------------------------------------------------------- */
+  --brand-primary-light: #EAF3FF;
+
+  --color-text-primary: var(--color-neutral-800);
+  --color-text-secondary: var(--color-neutral-600);
+  --color-text-tertiary: var(--color-neutral-400);
 }
 
 /* Reset básico */

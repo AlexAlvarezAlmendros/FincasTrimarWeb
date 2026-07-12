@@ -44,10 +44,8 @@ export const useCreateViviendaSimple = (options = {}) => {
       setIsCreating(true);
       setError(null);
 
-      console.log('Cargando propiedad con ID:', propertyId);
       
       const response = await apiRef.current(`/api/v1/viviendas/${propertyId}`);
-      console.log('Respuesta del backend:', response);
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Error cargando la propiedad');
@@ -79,7 +77,6 @@ export const useCreateViviendaSimple = (options = {}) => {
         published: Boolean(property.published)
       };
 
-      console.log('Datos mapeados para el formulario:', formattedData);
       setFormData(formattedData);
 
       return property;
@@ -100,8 +97,6 @@ export const useCreateViviendaSimple = (options = {}) => {
       setIsCreating(true);
       setError(null);
 
-      console.log('Datos a enviar:', data);
-      console.log('ID de propiedad (para edición):', propertyId);
 
       // Validación básica
       if (!data.name || data.name.trim().length < 5) {
@@ -114,7 +109,6 @@ export const useCreateViviendaSimple = (options = {}) => {
 
       // Preparar datos para el backend
       const backendData = ViviendaFormModel.toVivienda(data);
-      console.log('Datos preparados para backend:', backendData);
 
       // Determinar si es creación o actualización
       const isUpdate = Boolean(propertyId);
@@ -126,7 +120,6 @@ export const useCreateViviendaSimple = (options = {}) => {
         method,
         body: JSON.stringify(backendData)
       });
-      console.log('Respuesta del backend:', response);
 
       if (!response.success) {
         throw new Error(response.error?.message || `Error ${isUpdate ? 'actualizando' : 'creando'} vivienda`);
@@ -166,8 +159,6 @@ export const useCreateViviendaSimple = (options = {}) => {
       setIsCreating(true);
       setError(null);
 
-      console.log('Guardando como borrador:', data);
-      console.log('ID de propiedad (para edición):', propertyId);
 
       // Validación básica mínima para borradores
       if (!data.name || data.name.trim().length < 3) {
@@ -177,7 +168,6 @@ export const useCreateViviendaSimple = (options = {}) => {
       // Preparar datos para el backend con flag de borrador
       const backendData = ViviendaFormModel.toVivienda(data);
       backendData.IsDraft = 1; // Forzar como borrador
-      console.log('Datos preparados para backend (borrador):', backendData);
 
       // Determinar si es creación o actualización
       const isUpdate = Boolean(propertyId);
@@ -189,7 +179,6 @@ export const useCreateViviendaSimple = (options = {}) => {
         method,
         body: JSON.stringify(backendData)
       });
-      console.log('Respuesta del backend (borrador):', response);
 
       if (!response.success) {
         throw new Error(response.error?.message || `Error ${isUpdate ? 'actualizando' : 'creando'} borrador`);

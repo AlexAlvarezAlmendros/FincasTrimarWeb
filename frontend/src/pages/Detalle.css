@@ -696,12 +696,12 @@
 /* Error styles for form validation */
 .detalle-form-group input.error,
 .detalle-form-group textarea.error {
-  border-color: var(--color-semantic-danger, #EF4444);
+  border-color: var(--color-danger, #EF4444);
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
 }
 
 .detalle-field-error {
-  color: var(--color-semantic-danger, #EF4444);
+  color: var(--color-danger, #EF4444);
   font-size: var(--font-size-sm, 14px);
   margin-top: 4px;
   display: block;
