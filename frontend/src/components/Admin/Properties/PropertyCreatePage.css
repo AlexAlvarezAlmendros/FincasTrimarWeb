@@ -51,13 +51,14 @@
   border-bottom: none;
 }
 
-/* Acordeón de secciones avanzadas (divulgación progresiva) */
+/* Acordeón de secciones avanzadas (divulgación progresiva).
+   Sin overflow:hidden para no recortar los dropdowns (CustomSelect) que se
+   despliegan por debajo del contenido del acordeón. */
 .form-accordion {
   border: 1px solid var(--color-neutral-200);
   border-radius: var(--radius-md);
   margin-top: var(--spacing-md);
   background: var(--color-neutral-50);
-  overflow: hidden;
 }
 
 .form-accordion__summary {

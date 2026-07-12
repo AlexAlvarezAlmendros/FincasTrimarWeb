@@ -145,7 +145,7 @@ const CustomSelect = ({
         aria-haspopup="listbox"
         aria-disabled={disabled}
       >
-        <span className="custom-select-value">
+        <span className={`custom-select-value${selectedOption ? '' : ' custom-select-value--placeholder'}`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <div className={`custom-select-arrow ${isOpen ? 'rotated' : ''}`}>
