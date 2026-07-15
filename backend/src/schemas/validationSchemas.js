@@ -66,11 +66,14 @@ export const propertySchema = z.object({
   tipoInmueble: z.string()
     .refine(val => val === '' || ['Vivienda', 'Oficina', 'Local', 'Nave', 'Garaje', 'Terreno', 'Trastero', 'Edificio', 'ObraNueva'].includes(val))
     .transform(val => val === '' ? undefined : val)
+    .nullable()
     .optional(),
-  
+
+  // null explícito permitido: los inmuebles no-vivienda (Terreno, Local…) no tienen tipo de vivienda
   tipoVivienda: z.string()
     .refine(val => val === '' || ['Piso', 'Ático', 'Dúplex', 'Casa', 'Chalet', 'Villa', 'Masía', 'Finca', 'Loft'].includes(val))
     .transform(val => val === '' ? undefined : val)
+    .nullable()
     .optional(),
   
   estado: z.string()
