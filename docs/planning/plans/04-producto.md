@@ -19,3 +19,4 @@
 | Date | Task | Notes |
 |------|------|-------|
 | 2026-07-15 | 1.1, 1.2 | Import JSON y CRUD admiten Terreno/Local(Comercio)/Nave/Oficina/Garaje/Trastero/Edificio. Inferencia: título > tipo_inmueble, primera keyword con límite de palabra. mergeForUpdate limpia TipoVivienda al pasar a no-vivienda. Helper legacy inferirTipoVivienda eliminado (sustituido por inferirTiposDesdeInmueble). |
+| 2026-07-15 | 1.1 | API `/api/v1/json` restaurada tras el rebase sobre la Fase 5 (que la había retirado como huérfana del panel): rutas + controller remontados en app.js antes del checkJwt global (auth dual X-API-Key/JWT Admin). Smoke test HTTP: 200 con key, 401 sin key. El import externo va solo por API, sin UI en el panel. |

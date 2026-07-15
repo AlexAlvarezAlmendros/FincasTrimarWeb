@@ -15,6 +15,7 @@ import htmlParserRoutes from './routes/htmlParserRoutes.js';
 import { privateRoutes as dashboardPrivateRoutes } from './routes/dashboardRoutes.js';
 import sitemapRoutes from './routes/sitemapRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
+import jsonImportRoutes from './routes/jsonImportRoutes.js';
 
 const app = express();
 
@@ -72,6 +73,10 @@ app.use('/api/v1', propertyPublicRoutes);
 app.use('/api/v1', messagePublicRoutes);
 app.use('/api/v1', imagePublicRoutes);
 app.use('/api/v1/parse', htmlParserRoutes);
+
+// Sincronización JSON externa: auth dual (X-API-Key o JWT Admin) dentro de sus
+// propias rutas, por eso va montada ANTES del checkJwt global
+app.use('/api/v1/json', jsonImportRoutes);
 
 // Rutas protegidas (requieren JWT)
 app.use('/api/v1', checkJwt);
