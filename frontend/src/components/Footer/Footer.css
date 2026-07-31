@@ -287,6 +287,16 @@
   font-size: var(--font-size-xs);
 }
 
+.footer-author a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-author a:hover {
+  color: var(--color-primary);
+}
+
 .footer-legal {
   display: flex;
   gap: var(--spacing-lg);

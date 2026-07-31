@@ -121,6 +121,16 @@ const Footer = () => {
             <p>
               © {currentYear} Fincas Trimar. Todos los derechos reservados.
             </p>
+            <p className="footer-author">
+              Diseñado y Desarrollado por{' '}
+              <a
+                href="https://www.alexalvarez.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                alexalvarez.dev
+              </a>
+            </p>
           </div>
           
           <div className="footer-legal">
