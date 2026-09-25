@@ -21,6 +21,7 @@ const SuccessPopup = ({
   actionLabel,
   onAction,
   closeLabel = 'Crear otra vivienda',
+  closeIcon = 'plus',
 }) => {
   const isWarning = variant === 'warning';
   // Un éxito parcial nunca se autocierra: el usuario debe poder reaccionar.
@@ -58,7 +59,7 @@ const SuccessPopup = ({
             {actionLabel}
           </Button>
         )}
-        <Button variant="primary" icon={isWarning ? undefined : 'plus'} onClick={onClose}>
+        <Button variant="primary" icon={isWarning ? undefined : closeIcon} onClick={onClose}>
           {isWarning ? 'Cerrar' : closeLabel}
         </Button>
       </div>

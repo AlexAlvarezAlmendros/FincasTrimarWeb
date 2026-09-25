@@ -114,6 +114,24 @@
   box-shadow: 0 0 0 3px rgba(58, 141, 255, 0.1);
 }
 
+/* El contenedor solo recibe foco por código (scroll al error): sin anillo propio */
+.rich-text-editor:focus {
+  outline: none;
+}
+
+/* La altura del editor (prop height) incluye la barra: el área de texto se
+   ajusta dentro en vez de desbordar por debajo y tapar el mensaje de error */
+.rich-text-editor .quill {
+  display: flex;
+  flex-direction: column;
+}
+
+.rich-text-editor .quill .ql-container {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
 /* Estado de error */
 .rich-text-editor.error .ql-container,
 .rich-text-editor.error .ql-toolbar {

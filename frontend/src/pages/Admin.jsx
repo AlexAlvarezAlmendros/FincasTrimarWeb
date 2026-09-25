@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout/AdminLayout';
 import AdminDashboard from '../components/Admin/Dashboard';
 
@@ -13,6 +13,13 @@ import AnalyticsPage from '../components/Admin/Analytics/AnalyticsPage';
 import UsersPage from '../components/Admin/Users/UsersPage';
 import SettingsPage from '../components/Admin/Settings/SettingsPage';
 
+// Una instancia de formulario por vivienda: al pasar de «Editar A» a «Editar B»
+// o a «Crear nueva», React remonta la página en vez de arrastrar datos e imágenes.
+const EditPropertyRoute = () => {
+  const { id } = useParams();
+  return <PropertyCreatePage key={id} />;
+};
+
 // Componente principal que incluye el layout y las rutas.
 // El acceso al área /admin ya está restringido a AdminTrimar en App.jsx.
 export default function Admin() {
@@ -24,8 +31,8 @@ export default function Admin() {
 
         {/* CRUD de viviendas */}
         <Route path="viviendas" element={<PropertiesListPage />} />
-        <Route path="viviendas/crear" element={<PropertyCreatePage />} />
-        <Route path="viviendas/:id/edit" element={<PropertyCreatePage />} />
+        <Route path="viviendas/crear" element={<PropertyCreatePage key="nuevo" />} />
+        <Route path="viviendas/:id/edit" element={<EditPropertyRoute />} />
 
         {/* Mensajes, analíticas, usuarios y configuración */}
         <Route path="mensajes" element={<MessagesPage />} />

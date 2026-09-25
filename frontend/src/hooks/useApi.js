@@ -42,9 +42,17 @@ export function useApi() {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ 
-        message: `HTTP ${response.status}` 
-      }));
+      // Error real (con message) a partir del envelope {success:false,error:{code,message,details}}.
+      // e.error conserva el cuerpo de error para quien lea err.error?.message / code / details.
+      const body = await response.json().catch(() => ({}));
+      const apiError = body?.error;
+      const message =
+        (typeof apiError === 'string' ? apiError : apiError?.message) ||
+        body?.message ||
+        `HTTP ${response.status}`;
+      const error = new Error(message);
+      error.status = response.status;
+      error.error = apiError;
       throw error;
     }
 
