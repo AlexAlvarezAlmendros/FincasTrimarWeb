@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import multer from 'multer';
 import imageController from '../controllers/imageController.js';
-import { requireCaptador, requireSeller } from '../middlewares/authMiddleware.js';
-import { validateImageUpload, validatePropertyImages, validateImageReorder } from '../schemas/imageSchemas.js';
+import { requireCaptador } from '../middlewares/authMiddleware.js';
+import { validateImageUpload } from '../schemas/imageSchemas.js';
 import { logger } from '../utils/logger.js';
 
 // Configurar multer para manejo de archivos
@@ -78,8 +78,9 @@ imagePublicRoutes.get('/images/status', imageController.getServiceStatus);
 // GET /api/v1/images/debug - Debug info (solo desarrollo/staging)
 imagePublicRoutes.get('/images/debug', imageController.getDebugInfo);
 
-// GET /api/v1/viviendas/:id/imagenes - Obtener imágenes de una vivienda
-imagePublicRoutes.get('/viviendas/:id/imagenes', imageController.getPropertyImages);
+// Las rutas de imágenes de una vivienda (GET/POST /viviendas/:id/imagenes,
+// PUT .../reorder y DELETE .../:imageId) viven en propertyRoutes.js: ese router
+// se monta antes en app.js, así que aquí nunca se alcanzaban.
 
 /**
  * Rutas privadas (requieren autenticación)
@@ -93,26 +94,6 @@ imagePrivateRoutes.post('/images',
   handleMulterError,
   validateImageUpload,
   imageController.uploadImages
-);
-
-// POST /api/v1/viviendas/:id/imagenes - Asociar imágenes a vivienda
-imagePrivateRoutes.post('/viviendas/:id/imagenes',
-  requireCaptador, // Permite AdminTrimar, SellerTrimar y CaptadorTrimar
-  validatePropertyImages,
-  imageController.addPropertyImages
-);
-
-// DELETE /api/v1/viviendas/:viviendaId/imagenes/:imagenId - Eliminar imagen
-imagePrivateRoutes.delete('/viviendas/:viviendaId/imagenes/:imagenId',
-  requireSeller, // Permite AdminTrimar y SellerTrimar
-  imageController.deletePropertyImage
-);
-
-// PUT /api/v1/viviendas/:id/imagenes/reorder - Reordenar imágenes
-imagePrivateRoutes.put('/viviendas/:id/imagenes/reorder',
-  requireCaptador, // Permite AdminTrimar, SellerTrimar y CaptadorTrimar
-  validateImageReorder,
-  imageController.reorderPropertyImages
 );
 
 export default { imagePublicRoutes, imagePrivateRoutes };

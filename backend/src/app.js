@@ -19,6 +19,10 @@ import jsonImportRoutes from './routes/jsonImportRoutes.js';
 
 const app = express();
 
+// Detrás del proxy de Vercel: req.ip debe ser la IP del cliente (X-Forwarded-For),
+// no la del proxy, o todos los visitantes compartirían el cupo del rate limiter
+app.set('trust proxy', 1);
+
 // Middleware de seguridad
 app.use(helmet());
 
@@ -41,7 +45,8 @@ app.use(morgan('combined', {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting para rutas públicas
+// Rate limiting: cupo por IP; las peticiones con JWT verificado usan un cupo
+// propio por usuario (ver rateLimiter.js)
 app.use('/api/', rateLimiter);
 
 // Timeout de seguridad para todas las rutas API: 25 segundos máximo

@@ -5,6 +5,7 @@ import {
   validatePropertyUpdate,
   validateUUID
 } from '../middlewares/validationMiddleware.js';
+import { validatePropertyImages, validateImageReorder } from '../schemas/imageSchemas.js';
 
 // Rutas públicas para propiedades
 const publicRoutes = Router();
@@ -93,17 +94,25 @@ privateRoutes.delete('/viviendas/:id', validateUUID('id'), propertyController.de
 
 /**
  * @route POST /api/v1/viviendas/:id/imagenes
- * @desc Añadir imágenes a una propiedad
+ * @desc Añadir imágenes a una propiedad (siempre al final, en el orden recibido)
  * @access Private (Owner, Admin)
  */
-privateRoutes.post('/viviendas/:id/imagenes', validateUUID('id'), propertyController.addPropertyImages);
+privateRoutes.post('/viviendas/:id/imagenes',
+  validateUUID('id'),
+  validatePropertyImages,
+  propertyController.addPropertyImages
+);
 
 /**
  * @route PUT /api/v1/viviendas/:id/imagenes/reorder
  * @desc Reordenar imágenes de una propiedad
  * @access Private (Owner, Admin)
  */
-privateRoutes.put('/viviendas/:id/imagenes/reorder', validateUUID('id'), propertyController.reorderPropertyImages);
+privateRoutes.put('/viviendas/:id/imagenes/reorder',
+  validateUUID('id'),
+  validateImageReorder,
+  propertyController.reorderPropertyImages
+);
 
 /**
  * @route DELETE /api/v1/viviendas/:id/imagenes/:imageId

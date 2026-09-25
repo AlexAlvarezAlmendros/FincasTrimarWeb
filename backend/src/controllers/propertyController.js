@@ -202,6 +202,17 @@ const propertyController = {
       const { id } = req.params;
       const { published } = req.body;
       
+      // Sin booleano explícito no se toca la publicación (antes undefined despublicaba)
+      if (typeof published !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'El campo published debe ser true o false'
+          }
+        });
+      }
+      
       const updatedProperty = await propertyService.togglePublishStatus(id, published);
       
       res.json({

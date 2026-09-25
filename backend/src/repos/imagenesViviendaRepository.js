@@ -1,4 +1,4 @@
-import { executeQuery } from '../db/client.js';
+import { executeQuery, executeTransaction } from '../db/client.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger.js';
 
@@ -11,6 +11,7 @@ class ImagenesViviendaRepository {
    * Obtiene imágenes de una vivienda ordenadas.
    * Usa paginación interna en lotes de 40 para no superar el límite de
    * tamaño de respuesta del WebSocket de Turso (~10 KB por query).
+   * Desempate por rowid (orden de inserción) para que el orden sea determinista.
    */
   async findByViviendaId(viviendaId) {
     try {
@@ -22,7 +23,7 @@ class ImagenesViviendaRepository {
         const result = await executeQuery(
           `SELECT Id, URL, Orden FROM ImagenesVivienda
            WHERE ViviendaId = ?
-           ORDER BY Orden ASC
+           ORDER BY Orden ASC, rowid ASC
            LIMIT ? OFFSET ?`,
           [viviendaId, BATCH, offset]
         );
@@ -212,7 +213,7 @@ class ImagenesViviendaRepository {
       const result = await executeQuery(`
         SELECT * FROM ImagenesVivienda 
         WHERE ViviendaId = ? 
-        ORDER BY Orden ASC 
+        ORDER BY Orden ASC, rowid ASC 
         LIMIT 1
       `, [viviendaId]);
       
@@ -290,23 +291,47 @@ class ImagenesViviendaRepository {
   }
   
   /**
-   * Añade imágenes a una propiedad
+   * Añade imágenes a una propiedad SIEMPRE al final, en el orden del array.
+   * Ignora el `orden` recibido: cada INSERT calcula MAX(Orden)+1 de la vivienda
+   * dentro del mismo batch atómico, así dos asociaciones concurrentes no leen la
+   * misma base ni repiten Orden (SQLite serializa las transacciones de escritura).
+   * La última sentencia del batch lee el MAX final: las N filas nuevas son las N
+   * últimas y consecutivas, así que su orden real sale sin otro viaje a la BD y
+   * sin devolver filas grandes. Devuelve los objetos creados.
    */
   async addImagesToProperty(propertyId, images) {
     try {
       logger.info(`Añadiendo ${images.length} imágenes a propiedad ${propertyId}`);
-      
-      const createdImages = [];
-      
-      for (const imageData of images) {
-        const image = await this.create({
-          viviendaId: propertyId,
-          url: imageData.url,
-          orden: imageData.orden || null
-        });
-        createdImages.push(image);
-      }
-      
+
+      if (images.length === 0) return { images: [] };
+
+      // Mismo formato que CURRENT_TIMESTAMP para que el objeto devuelto coincida con la fila
+      const createdAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      const rows = images.map(imageData => ({ id: uuidv4(), url: imageData.url }));
+
+      const results = await executeTransaction([
+        ...rows.map(img => ({
+          sql: `INSERT INTO ImagenesVivienda (Id, ViviendaId, URL, Orden, CreatedAt)
+                VALUES (?, ?, ?, (SELECT COALESCE(MAX(Orden), 0) + 1 FROM ImagenesVivienda WHERE ViviendaId = ?), ?)`,
+          args: [img.id, propertyId, img.url, propertyId, createdAt]
+        })),
+        {
+          sql: 'SELECT COALESCE(MAX(Orden), 0) AS lastOrden FROM ImagenesVivienda WHERE ViviendaId = ?',
+          args: [propertyId]
+        }
+      ]);
+
+      const lastOrden = Number(results[results.length - 1].rows[0]?.lastOrden) || 0;
+      const firstOrden = lastOrden - rows.length + 1;
+
+      const createdImages = rows.map((img, i) => ({
+        id: img.id,
+        viviendaId: propertyId,
+        url: img.url,
+        orden: firstOrden + i,
+        createdAt
+      }));
+
       return { images: createdImages };
     } catch (error) {
       logger.error('Error en ImagenesViviendaRepository.addImagesToProperty:', error);
@@ -315,24 +340,25 @@ class ImagenesViviendaRepository {
   }
 
   /**
-   * Actualiza el orden de múltiples imágenes
+   * Actualiza el orden de múltiples imágenes en un único batch atómico.
+   * Cada UPDATE va acotado a la vivienda (un id de otra vivienda no se toca).
+   * Devuelve el orden resultante leído de la BD.
    */
   async updateImageOrders(propertyId, imageOrders) {
     try {
-      logger.info(`Actualizando orden de imágenes para propiedad ${propertyId}:`, imageOrders);
-      
-      const updatedImages = [];
-      
-      for (const orderData of imageOrders) {
-        const { id, orden } = orderData;
-        const image = await this.updateOrden(id, orden);
-        if (image) {
-          updatedImages.push(image);
-        }
+      logger.info(`Actualizando orden de ${imageOrders.length} imágenes para propiedad ${propertyId}`);
+
+      const results = await executeTransaction(imageOrders.map(({ id, orden }) => ({
+        sql: 'UPDATE ImagenesVivienda SET Orden = ? WHERE Id = ? AND ViviendaId = ?',
+        args: [orden, id, propertyId]
+      })));
+
+      const updated = results.reduce((total, r) => total + (r.rowsAffected || 0), 0);
+      if (updated < imageOrders.length) {
+        logger.warn(`Reordenación de ${propertyId}: ${imageOrders.length - updated} ids no pertenecen a la vivienda`);
       }
-      
-      logger.info(`Orden actualizado para ${updatedImages.length} imágenes`);
-      return { images: updatedImages };
+
+      return { images: await this.findByViviendaId(propertyId), updated };
     } catch (error) {
       logger.error('Error en ImagenesViviendaRepository.updateImageOrders:', error);
       throw error;
@@ -340,25 +366,24 @@ class ImagenesViviendaRepository {
   }
 
   /**
-   * Elimina una imagen
+   * Elimina una imagen de una vivienda concreta.
+   * Devuelve false si la imagen no existe o no pertenece a esa vivienda.
    */
-  async deleteImage(imageId) {
+  async deleteImage(viviendaId, imageId) {
     try {
-      logger.info(`Eliminando imagen: ${imageId}`);
-      
-      const image = await this.findById(imageId);
-      if (!image) {
+      logger.info(`Eliminando imagen ${imageId} de vivienda ${viviendaId}`);
+
+      const result = await executeQuery(
+        'DELETE FROM ImagenesVivienda WHERE Id = ? AND ViviendaId = ?',
+        [imageId, viviendaId]
+      );
+
+      if (result.rowsAffected === 0) {
         return false;
       }
-      
-      const deleted = await this.delete(imageId);
-      
-      if (deleted) {
-        logger.info(`Imagen eliminada exitosamente: ${imageId}`);
-        return { deleted: true, image };
-      }
-      
-      return false;
+
+      logger.info(`Imagen eliminada exitosamente: ${imageId}`);
+      return { deleted: true, image: { id: imageId, viviendaId } };
     } catch (error) {
       logger.error('Error en ImagenesViviendaRepository.deleteImage:', error);
       throw error;
