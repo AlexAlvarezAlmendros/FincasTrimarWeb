@@ -23,10 +23,14 @@ const propertyController = {
         tipoVivienda: req.query.tipoVivienda,
         provincia: req.query.provincia,
         poblacion: req.query.poblacion,
+        // estadoVenta/sortBy (listas blancas), los demás filtros y la paginación se
+        // sanean en propertyService.searchProperties (también para POST /search)
+        estadoVenta: req.query.estadoVenta,
+        sortBy: req.query.sortBy,
         published: req.query.published !== undefined ? req.query.published === 'true' : true,
         includeDrafts: req.query.includeDrafts === 'true',
-        page: req.query.page ? parseInt(req.query.page) : 1,
-        pageSize: req.query.pageSize ? parseInt(req.query.pageSize) : 20
+        page: req.query.page,
+        pageSize: req.query.pageSize
       };
 
       const result = await propertyService.searchProperties(filters);
