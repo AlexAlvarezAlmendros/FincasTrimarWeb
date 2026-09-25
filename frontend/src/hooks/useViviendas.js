@@ -90,10 +90,16 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
     ...initialFilters
   }));
 
+  // Filtros vigentes: refrescos y actualizaciones lanzados desde un closure
+  // antiguo (p. ej. tras el await de una acción de fila) usan siempre los últimos
+  const filtersRef = useRef(filters);
+
   // Referencias para prevenir memory leaks
   const abortControllerRef = useRef(null);
   const debounceTimeoutRef = useRef(null);
   const isMountedRef = useRef(true);
+  // Identificador de la última petición: solo ella puede actualizar el estado
+  const requestIdRef = useRef(0);
 
   // Limpiar referencias al desmontar
   useEffect(() => {
@@ -140,14 +146,26 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
    * Función principal para obtener viviendas
    */
   const fetchViviendas = useCallback(async (searchFilters, useSearch = false) => {
-    const filtersToUse = searchFilters || filters;
+    const filtersToUse = searchFilters || filtersRef.current;
+
+    // Una petición nueva sustituye a la búsqueda con debounce pendiente: si no,
+    // al vencer el temporizador cargaría los filtros anteriores y pisaría esta
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = null;
+    }
+
     // Cancelar petición anterior si existe
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
     // Crear nuevo controlador de abort
-    abortControllerRef.current = new AbortController();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const requestId = ++requestIdRef.current;
+    // Una respuesta que llega después de otra petición más reciente se descarta
+    const isStale = () => requestId !== requestIdRef.current || !isMountedRef.current;
 
     try {
       safeSetState(HookStates.LOADING);
@@ -176,13 +194,13 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
       // Realizar petición al API
       let response;
       if (useSearch) {
-        response = await propertyService.searchProperties(filtersToUse);
+        response = await propertyService.searchProperties(filtersToUse, { signal: controller.signal });
       } else {
-        response = await propertyService.getProperties(filtersToUse, getAccessTokenRef.current);
+        response = await propertyService.getProperties(filtersToUse, getAccessTokenRef.current, { signal: controller.signal });
       }
 
-      // Verificar si el componente sigue montado
-      if (!isMountedRef.current) return;
+      // Verificar si el componente sigue montado y si es la última petición
+      if (isStale()) return;
 
       // Guardar en cache
       if (enableCache) {
@@ -203,8 +221,8 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
       return transformed;
 
     } catch (error) {
-      if (error.name === 'AbortError') {
-        return; // Petición cancelada, no hacer nada
+      if (error.name === 'AbortError' || isStale()) {
+        return; // Petición cancelada o sustituida por otra, no hacer nada
       }
 
       console.error('Error fetching viviendas:', error);
@@ -218,7 +236,10 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
 
       throw error;
     } finally {
-      abortControllerRef.current = null;
+      // Solo si no ha empezado ya otra petición (su controlador no se toca)
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
     }
   }, [enableCache, onSuccess, onError, safeSetState, safeSetViviendas, safeSetPagination, safeSetError]);
 
@@ -247,7 +268,7 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
     } = options;
 
     const updatedFilters = merge 
-      ? { ...filters, ...newFilters }
+      ? { ...filtersRef.current, ...newFilters }
       : { ...ViviendaFilters.createEmpty(), ...newFilters };
 
     // Reset página si se especifica
@@ -255,6 +276,7 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
       updatedFilters.page = 1;
     }
 
+    filtersRef.current = updatedFilters;
     setFilters(updatedFilters);
 
     // Auto fetch si está habilitado
@@ -265,7 +287,7 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
         fetchViviendas(updatedFilters, useSearch);
       }
     }
-  }, [filters, autoFetch, debouncedFetch, fetchViviendas]);
+  }, [autoFetch, debouncedFetch, fetchViviendas]);
 
   /**
    * Funciones de utilidad específicas
@@ -290,12 +312,13 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
   }, [updateFilters]);
 
   const refreshViviendas = useCallback(() => {
-    // Limpiar cache y refetch
+    // Limpiar cache y refetch con los filtros vigentes (no los del render en que
+    // se creó el callback: si se cambió de página durante la acción, esa página)
     if (enableCache) {
       propertyCache.clear();
     }
-    return fetchViviendas(filters);
-  }, [enableCache, fetchViviendas, filters]);
+    return fetchViviendas(filtersRef.current);
+  }, [enableCache, fetchViviendas]);
 
   /**
    * Fetch inicial automático si está habilitado

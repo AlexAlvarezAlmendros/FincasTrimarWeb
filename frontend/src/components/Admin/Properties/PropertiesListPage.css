@@ -132,6 +132,15 @@
   padding: 1rem 1.5rem;
   background: var(--color-neutral-50, #F7F9FC);
   border-bottom: 1px solid var(--color-neutral-200, #E5E7EB);
+  /* Al cambiar de página se hace scroll hasta aquí: que no quede bajo la cabecera sticky */
+  scroll-margin-top: calc(var(--header-height) + var(--spacing-md));
+}
+
+/* Paginación al pie de la tabla, dentro de la tarjeta */
+.properties-pagination {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--color-neutral-200);
+  background: var(--color-neutral-50);
 }
 
 .results-count {

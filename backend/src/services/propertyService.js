@@ -2,6 +2,44 @@ import viviendaRepository from '../repos/viviendaRepository.js';
 import imagenesViviendaRepository from '../repos/imagenesViviendaRepository.js';
 import { logger } from '../utils/logger.js';
 
+// El repositorio hace una consulta por vivienda de la página: tope al tamaño
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 50;
+// Tope a la página: con valores enormes el OFFSET no cabe en un entero de SQLite
+// (SQLITE_MISMATCH → 500). Una página fuera de rango devuelve data []
+const MAX_PAGE = 100000;
+
+// Valores admitidos en los filtros del listado (lo desconocido se ignora)
+const ESTADOS_VENTA = ['Pendiente', 'Contactada', 'Captada', 'Rechazada', 'Disponible', 'Reservada', 'Vendida', 'Cerrada'];
+const SORT_OPTIONS = [
+  'fechaPublicacion_desc', 'fechaPublicacion_asc', 'price_desc', 'price_asc',
+  'name_asc', 'name_desc', 'fechaCaptacion_desc', 'fechaCaptacion_asc'
+];
+
+/**
+ * Normaliza la paginación recibida (query string o body): enteros, página entre
+ * 1 y MAX_PAGE y tamaño entre 1 y MAX_PAGE_SIZE. Lo no numérico cae en los
+ * valores por defecto.
+ */
+export function normalizePagination(page, pageSize) {
+  const p = Number.parseInt(page, 10);
+  const size = Number.parseInt(pageSize, 10);
+  return {
+    page: Number.isFinite(p) && p >= 1 ? Math.min(p, MAX_PAGE) : 1,
+    pageSize: Number.isFinite(size) && size >= 1 ? Math.min(size, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE
+  };
+}
+
+// Filtros del cliente (query string o body de POST /search): texto solo como
+// string y números solo si son finitos. Un array u objeto llegaría al driver como
+// parámetro SQL (500 con Turso; con SQLite local aborta el proceso)
+const textFilter = (value) => (typeof value === 'string' ? value : undefined);
+const numberFilter = (value) => {
+  if (typeof value !== 'number' && (typeof value !== 'string' || value.trim() === '')) return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
 /**
  * Resuelve published/isDraft de una actualización (función pura).
  * Editar NO cambia la publicación salvo acción explícita:
@@ -51,22 +89,23 @@ class PropertyService {
     try {
       logger.info('Buscando propiedades con filtros:', filters);
       
+      // Saneado en un único sitio, común a GET /viviendas y POST /viviendas/search
       const result = await viviendaRepository.findAll({
-        q: filters.q,
-        minPrice: filters.minPrice,
-        maxPrice: filters.maxPrice,
-        rooms: filters.rooms,
-        bathRooms: filters.bathRooms,
-        tipoInmueble: filters.tipoInmueble,
-        tipoVivienda: filters.tipoVivienda,
-        provincia: filters.provincia,
-        poblacion: filters.poblacion,
-        estadoVenta: filters.estadoVenta,
-        captadoPor: filters.captadoPor,
+        q: textFilter(filters.q),
+        minPrice: numberFilter(filters.minPrice),
+        maxPrice: numberFilter(filters.maxPrice),
+        rooms: numberFilter(filters.rooms),
+        bathRooms: numberFilter(filters.bathRooms),
+        tipoInmueble: textFilter(filters.tipoInmueble),
+        tipoVivienda: textFilter(filters.tipoVivienda),
+        provincia: textFilter(filters.provincia),
+        poblacion: textFilter(filters.poblacion),
+        estadoVenta: ESTADOS_VENTA.includes(filters.estadoVenta) ? filters.estadoVenta : undefined,
+        captadoPor: textFilter(filters.captadoPor),
+        sortBy: SORT_OPTIONS.includes(filters.sortBy) ? filters.sortBy : undefined,
         published: filters.published !== undefined ? filters.published : true,
         includeDrafts: filters.includeDrafts,
-        page: filters.page || 1,
-        pageSize: filters.pageSize || 20
+        ...normalizePagination(filters.page, filters.pageSize)
       });
       
       // Obtener imágenes principales y conteos con consultas optimizadas

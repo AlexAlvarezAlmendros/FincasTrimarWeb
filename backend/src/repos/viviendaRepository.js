@@ -114,6 +114,9 @@ class ViviendaRepository {
       
       if (sortBy) {
         switch (sortBy) {
+          case 'fechaPublicacion_asc':
+            orderByClause = 'ORDER BY FechaPublicacion ASC';
+            break;
           case 'fechaCaptacion_desc':
             orderByClause = 'ORDER BY COALESCE(FechaCaptacion, CreatedAt) DESC';
             break;
@@ -138,6 +141,14 @@ class ViviendaRepository {
         }
       }
       
+      // Desempate para que el orden sea total y la paginación estable: sin él,
+      // las filas empatadas (p.ej. borradores, con FechaPublicacion NULL) pueden
+      // repetirse o saltarse entre páginas. Va en el sentido del orden principal:
+      // así «Más antiguas» es el inverso exacto de «Más recientes» también entre
+      // empatadas (los borradores solo se distinguen por CreatedAt)
+      const tieBreakDirection = orderByClause.endsWith(' ASC') ? 'ASC' : 'DESC';
+      orderByClause += `, CreatedAt ${tieBreakDirection}, Id ${tieBreakDirection}`;
+
       // Calcular offset para paginación
       const offset = (page - 1) * pageSize;
       
