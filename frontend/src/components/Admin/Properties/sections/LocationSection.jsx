@@ -2,67 +2,47 @@ import React from 'react';
 import FormField from '../../../common/FormField';
 
 /** Sección "Ubicación": provincia/población visibles, dirección exacta plegada. */
-const LocationSection = ({ formData, updateField }) => (
-  <div className="form-section">
-    <h2 className="section-title">📍 Ubicación</h2>
+const LocationSection = ({ formData, handleFieldChange, handleFieldBlur, errors, touched }) => {
+  const fieldError = (field) => (touched[field] && errors[field]) || null;
 
-    <div className="form-row">
-      <FormField label="Provincia" htmlFor="provincia">
-        <input
-          id="provincia"
-          type="text"
-          value={formData.provincia}
-          onChange={(e) => updateField('provincia', e.target.value)}
-          placeholder="Ej: Barcelona"
-          maxLength="100"
-          className="form-input"
-        />
-      </FormField>
+  // Campo de texto con validación inline (blur + revalidación en vivo)
+  const renderInput = ({ name, label, placeholder, maxLength }) => (
+    <FormField label={label} htmlFor={name} error={fieldError(name)}>
+      <input
+        id={name}
+        type="text"
+        value={formData[name]}
+        onChange={(e) => handleFieldChange(name, e.target.value)}
+        onBlur={() => handleFieldBlur(name)}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        aria-invalid={Boolean(fieldError(name))}
+        className={`form-input ${fieldError(name) ? 'error' : ''}`}
+      />
+    </FormField>
+  );
 
-      <FormField label="Población" htmlFor="poblacion">
-        <input
-          id="poblacion"
-          type="text"
-          value={formData.poblacion}
-          onChange={(e) => updateField('poblacion', e.target.value)}
-          placeholder="Ej: Sitges"
-          maxLength="100"
-          className="form-input"
-        />
-      </FormField>
-    </div>
+  return (
+    <div className="form-section">
+      <h2 className="section-title">📍 Ubicación</h2>
 
-    <details className="form-accordion">
-      <summary className="form-accordion__summary">Dirección exacta (opcional)</summary>
-      <div className="form-accordion__body">
-        <div className="form-row">
-          <FormField label="Calle" htmlFor="calle">
-            <input
-              id="calle"
-              type="text"
-              value={formData.calle}
-              onChange={(e) => updateField('calle', e.target.value)}
-              placeholder="Ej: Carrer del Mar"
-              maxLength="100"
-              className="form-input"
-            />
-          </FormField>
-
-          <FormField label="Número" htmlFor="numero">
-            <input
-              id="numero"
-              type="text"
-              value={formData.numero}
-              onChange={(e) => updateField('numero', e.target.value)}
-              placeholder="Ej: 123 A"
-              maxLength="20"
-              className="form-input"
-            />
-          </FormField>
-        </div>
+      <div className="form-row">
+        {renderInput({ name: 'provincia', label: 'Provincia', placeholder: 'Ej: Barcelona', maxLength: 100 })}
+        {renderInput({ name: 'poblacion', label: 'Población', placeholder: 'Ej: Sitges', maxLength: 100 })}
       </div>
-    </details>
-  </div>
-);
+
+      {/* Si falla la validación de calle/número, el formulario abre este bloque antes de enfocar */}
+      <details className="form-accordion">
+        <summary className="form-accordion__summary">Dirección exacta (opcional)</summary>
+        <div className="form-accordion__body">
+          <div className="form-row">
+            {renderInput({ name: 'calle', label: 'Calle', placeholder: 'Ej: Carrer del Mar', maxLength: 100 })}
+            {renderInput({ name: 'numero', label: 'Número', placeholder: 'Ej: 123 A', maxLength: 20 })}
+          </div>
+        </div>
+      </details>
+    </div>
+  );
+};
 
 export default LocationSection;

@@ -54,6 +54,12 @@ class PropertyCache {
 const propertyCache = new PropertyCache();
 
 /**
+ * Invalida la caché pública de viviendas (ficha, listados, similares).
+ * Se llama tras guardar desde el admin para que la web no muestre datos viejos.
+ */
+export const invalidatePropertyCache = () => propertyCache.clear();
+
+/**
  * Hook principal para gestionar viviendas
  */
 export const useViviendas = (initialFilters = {}, options = {}) => {
@@ -63,8 +69,14 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
     debounceMs = 500,
     autoFetch = true,
     onError,
-    onSuccess
+    onSuccess,
+    // Solo panel admin: envía el Bearer para usar el cupo del rate limit por
+    // usuario y no el de la IP. Las páginas públicas no lo pasan.
+    getAccessToken = null
   } = options;
+
+  const getAccessTokenRef = useRef(getAccessToken);
+  getAccessTokenRef.current = getAccessToken;
 
   // Estados principales
   const [state, setState] = useState(HookStates.IDLE);
@@ -166,7 +178,7 @@ export const useViviendas = (initialFilters = {}, options = {}) => {
       if (useSearch) {
         response = await propertyService.searchProperties(filtersToUse);
       } else {
-        response = await propertyService.getProperties(filtersToUse);
+        response = await propertyService.getProperties(filtersToUse, getAccessTokenRef.current);
       }
 
       // Verificar si el componente sigue montado

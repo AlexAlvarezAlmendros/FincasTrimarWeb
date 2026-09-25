@@ -5,6 +5,25 @@
 
 import { DataTransformers } from '../types/vivienda.types.js';
 
+/**
+ * Cabeceras de una petición GET pública, con Bearer si hay token.
+ * El panel admin lo envía para usar su cupo del rate limit por usuario y no el
+ * de la IP (compartido con los visitantes). Si no se puede obtener el token,
+ * la petición sigue sin él: la ruta es pública.
+ * @param {Function|null} getAccessToken - Función opcional que devuelve el token de Auth0
+ */
+const publicGetHeaders = async (getAccessToken) => {
+  const headers = { 'Content-Type': 'application/json' };
+  if (!getAccessToken) return headers;
+  try {
+    const token = await getAccessToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  } catch (error) {
+    console.warn('PropertyService: sin token de acceso, se consulta como petición pública:', error?.message);
+  }
+  return headers;
+};
+
 class PropertyService {
   constructor(apiUrl = import.meta.env.VITE_API_BASE_URL) {
     this.apiUrl = apiUrl;
@@ -14,9 +33,10 @@ class PropertyService {
   /**
    * Obtiene lista de propiedades con filtros y paginación
    * @param {Object} filters - Filtros de búsqueda
+   * @param {Function|null} getAccessToken - Opcional (panel admin): envía el Bearer
    * @returns {Promise<Object>} Respuesta con propiedades y paginación
    */
-  async getProperties(filters = {}) {
+  async getProperties(filters = {}, getAccessToken = null) {
     try {
       // Transformar filtros al formato esperado por el backend
       const cleanFilters = DataTransformers.transformFiltersToAPI(filters);
@@ -33,9 +53,7 @@ class PropertyService {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: await publicGetHeaders(getAccessToken)
       });
       
       if (!response.ok) {
@@ -451,9 +469,10 @@ class PropertyService {
   /**
    * Obtiene las imágenes de una propiedad
    * @param {string} propertyId - ID de la propiedad
+   * @param {Function|null} getAccessToken - Opcional (panel admin): envía el Bearer
    * @returns {Promise<Object>} Imágenes de la propiedad
    */
-  async getPropertyImages(propertyId) {
+  async getPropertyImages(propertyId, getAccessToken = null) {
     try {
       if (!propertyId) {
         throw new Error('ID de propiedad requerido');
@@ -461,9 +480,7 @@ class PropertyService {
 
       const response = await fetch(`${this.apiUrl}${this.baseEndpoint}/${propertyId}/imagenes`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: await publicGetHeaders(getAccessToken)
       });
       
       if (!response.ok) {
@@ -627,11 +644,14 @@ class PropertyService {
           }
 
           const uploadResult = await uploadResponse.json();
-          
-          if (uploadResult.success && uploadResult.data.images && uploadResult.data.images.length > 0) {
-            uploadedImages.push(uploadResult.data.images[0]);
-            console.log(`✅ Imagen ${i + 1}/${totalFiles} subida: ${file.name}`);
+
+          // Sin imagen en la respuesta es un fallo: saltarla la perdería en silencio
+          // y desplazaría el orden elegido en el grid de pendientes
+          if (!(uploadResult.success && uploadResult.data?.images?.length > 0)) {
+            throw new Error(uploadResult.error?.message || 'respuesta sin imagen');
           }
+          uploadedImages.push(uploadResult.data.images[0]);
+          console.log(`✅ Imagen ${i + 1}/${totalFiles} subida: ${file.name}`);
           
           // Actualizar progreso (10% inicial + 50% para subidas)
           const uploadProgress = 10 + Math.floor((i + 1) / totalFiles * 50);
@@ -679,6 +699,9 @@ class PropertyService {
       }
 
       const associateResult = await associateResponse.json();
+      if (!associateResult?.success) {
+        throw new Error(associateResult?.error?.message || 'Error al asociar imágenes a la vivienda');
+      }
       console.log('✅ Imágenes asociadas correctamente:', associateResult);
 
       if (onProgress) onProgress(100);

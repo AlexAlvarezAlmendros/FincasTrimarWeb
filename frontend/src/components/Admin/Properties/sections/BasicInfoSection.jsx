@@ -1,25 +1,39 @@
 import React, { useMemo } from 'react';
 import FormField from '../../../common/FormField';
 import RichTextEditor from '../../../RichTextEditor/index.js';
-import { getPlainTextFromHtml } from '../../../../utils/htmlText.js';
+import { htmlToPlainText } from '../../../../utils/htmlText.js';
+import {
+  DESCRIPTION_MAX,
+  SHORT_DESCRIPTION_MAX,
+  ValidationRules,
+} from '../../../../types/viviendaForm.types.js';
 
 /**
  * Sección "Información básica" del formulario de vivienda:
- * nombre, precio (validados inline), descripción breve y descripción completa.
+ * nombre, precio, descripción breve y descripción completa (todos con error inline).
  */
 const BasicInfoSection = ({
   formData,
-  updateField,
   handleFieldChange,
   handleFieldBlur,
   errors,
   touched,
-  isCreating,
+  disabled,
 }) => {
+  // Mismo cálculo (texto plano) que la validación de la descripción
   const descriptionLength = useMemo(
-    () => getPlainTextFromHtml(formData.description).length,
+    () => htmlToPlainText(formData.description).length,
     [formData.description]
   );
+
+  const fieldError = (field) => (touched[field] && errors[field]) || null;
+
+  // La descripción avisa en vivo al pasarse del límite, sin esperar al blur
+  const descriptionError =
+    fieldError('description') ||
+    (descriptionLength > DESCRIPTION_MAX
+      ? ValidationRules.description.validate(formData.description)
+      : null);
 
   return (
     <div className="form-section">
@@ -30,7 +44,7 @@ const BasicInfoSection = ({
           label="Nombre de la vivienda"
           htmlFor="name"
           required
-          error={touched.name && errors.name}
+          error={fieldError('name')}
         >
           <input
             id="name"
@@ -39,7 +53,8 @@ const BasicInfoSection = ({
             onChange={(e) => handleFieldChange('name', e.target.value)}
             onBlur={() => handleFieldBlur('name')}
             placeholder="Ej: Piso céntrico con terraza en el centro"
-            className={`form-input ${touched.name && errors.name ? 'error' : ''}`}
+            aria-invalid={Boolean(fieldError('name'))}
+            className={`form-input ${fieldError('name') ? 'error' : ''}`}
           />
         </FormField>
 
@@ -47,7 +62,7 @@ const BasicInfoSection = ({
           label="Precio"
           htmlFor="price"
           required
-          error={touched.price && errors.price}
+          error={fieldError('price')}
         >
           <input
             id="price"
@@ -57,7 +72,8 @@ const BasicInfoSection = ({
             onBlur={() => handleFieldBlur('price')}
             placeholder="250000"
             min="0"
-            className={`form-input ${touched.price && errors.price ? 'error' : ''}`}
+            aria-invalid={Boolean(fieldError('price'))}
+            className={`form-input ${fieldError('price') ? 'error' : ''}`}
           />
         </FormField>
       </div>
@@ -66,37 +82,44 @@ const BasicInfoSection = ({
         <FormField
           label="Descripción breve"
           htmlFor="shortDescription"
-          help={`Máximo 300 caracteres (${formData.shortDescription.length}/300)`}
+          error={fieldError('shortDescription')}
+          help={`Máximo ${SHORT_DESCRIPTION_MAX} caracteres (${(formData.shortDescription || '').length}/${SHORT_DESCRIPTION_MAX})`}
         >
           <textarea
             id="shortDescription"
             value={formData.shortDescription}
-            onChange={(e) => updateField('shortDescription', e.target.value)}
+            onChange={(e) => handleFieldChange('shortDescription', e.target.value)}
+            onBlur={() => handleFieldBlur('shortDescription')}
             placeholder="Amplio y luminoso piso en zona céntrica"
-            maxLength="300"
+            maxLength={SHORT_DESCRIPTION_MAX}
             rows="2"
-            className="form-textarea"
+            aria-invalid={Boolean(fieldError('shortDescription'))}
+            className={`form-textarea ${fieldError('shortDescription') ? 'error' : ''}`}
           />
         </FormField>
       </div>
 
       <div className="form-row">
+        {/* El error lo pinta el propio editor (así no se duplica); el contador sigue visible */}
         <FormField
           label="Descripción completa"
           htmlFor="description"
-          help={`Editor de texto enriquecido - Máximo 2000 caracteres (${descriptionLength}/2000)`}
+          help={`Editor de texto enriquecido - Máximo ${DESCRIPTION_MAX} caracteres (${descriptionLength}/${DESCRIPTION_MAX})`}
         >
           <RichTextEditor
+            id="description"
             value={formData.description}
-            onChange={(content) => {
-              if (getPlainTextFromHtml(content).length <= 2000) {
-                updateField('description', content);
-              }
-            }}
+            // Siempre se guarda el cambio: descartarlo desincroniza Quill y revierte
+            // lo escrito. Los cambios no hechos por el usuario (Quill normalizando el
+            // HTML cargado) no cuentan como edición.
+            onChange={(content, _delta, source) =>
+              handleFieldChange('description', content, { programmatic: source !== 'user' })
+            }
+            onBlur={() => handleFieldBlur('description')}
             placeholder="Describe en detalle las características de la vivienda, su estado, orientación, servicios cercanos..."
-            disabled={isCreating}
+            disabled={disabled}
             height="250px"
-            error={descriptionLength > 2000 ? 'La descripción no puede exceder 2000 caracteres' : null}
+            error={descriptionError}
           />
         </FormField>
       </div>

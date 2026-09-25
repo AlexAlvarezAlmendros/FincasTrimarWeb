@@ -498,23 +498,25 @@ class JsonImportService {
   }
 
   /**
-   * Extrae una descripción corta (máx 300 chars) de la descripción completa
+   * Extrae una descripción corta (máx 300 chars, nunca más) de la descripción completa
    */
   extractShortDescription(description, maxLength = 300) {
     if (!description) return '';
     // Tomar la primera frase significativa (hasta punto, o primeros N chars).
     // Se eliminan los marcadores Markdown porque el lead se muestra como texto plano.
     const clean = this.stripMarkdown(description);
-    // Buscar el primer punto seguido de espacio o fin
+    // Buscar el primer punto seguido de espacio o fin. La frase incluye el punto
+    // (índice + 1 caracteres), así que el índice debe quedar por debajo del máximo
     const firstSentenceEnd = clean.search(/\.\s|\.$/);
-    if (firstSentenceEnd > 0 && firstSentenceEnd <= maxLength) {
+    if (firstSentenceEnd > 0 && firstSentenceEnd < maxLength) {
       return clean.substring(0, firstSentenceEnd + 1).trim();
     }
-    // Si no hay punto razonable, cortar por palabra
+    // Si no hay punto razonable, cortar por palabra reservando sitio para '...'
     if (clean.length <= maxLength) return clean;
-    const truncated = clean.substring(0, maxLength);
+    const ellipsis = '...';
+    const truncated = clean.substring(0, maxLength - ellipsis.length);
     const lastSpace = truncated.lastIndexOf(' ');
-    return (lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated) + '...';
+    return (lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated).trimEnd() + ellipsis;
   }
 
   /**
@@ -649,13 +651,31 @@ class JsonImportService {
   }
 
   /**
-   * Parse genérico de valor numérico desde string
+   * Extrae el primer número de un texto con formato español.
+   * - Miles con punto o espacio seguidos de grupos de 3 cifras:
+   *   '25.000' → 25000, '1.250 m²' → 1250, '25 000' → 25000.
+   * - Decimales con coma (o punto que no agrupa 3 cifras): se redondean al
+   *   entero más cercano porque las columnas son INTEGER: '85,5 m²' → 86.
+   * Devuelve null si no hay ningún número.
+   */
+  extractNumber(value) {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'number') return Number.isFinite(value) ? Math.round(value) : null;
+    const match = String(value).match(/(\d{1,3}(?:[.\s]\d{3}(?!\d))+(?:,\d+)?)|(\d+(?:[.,]\d+)?)/);
+    if (!match) return null;
+    const [, grouped, plain] = match;
+    const normalized = grouped
+      ? grouped.replace(/[.\s]/g, '').replace(',', '.')
+      : plain.replace(',', '.');
+    const number = Number(normalized);
+    return Number.isFinite(number) ? Math.round(number) : null;
+  }
+
+  /**
+   * Parse genérico de valor numérico desde string (0 si no hay número)
    */
   parseNumeric(value) {
-    if (value === null || value === undefined) return 0;
-    if (typeof value === 'number') return value;
-    const match = String(value).match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
+    return this.extractNumber(value) ?? 0;
   }
 
   /**
@@ -706,19 +726,17 @@ class JsonImportService {
    */
   parseHabitaciones(habitacionesText) {
     if (!habitacionesText) return null;
-    
-    const match = habitacionesText.match(/(\d+)/);
-    return match ? parseInt(match[1]) : null;
+
+    return this.extractNumber(habitacionesText);
   }
 
   /**
-   * Extrae los metros cuadrados del texto
+   * Extrae los metros cuadrados del texto (admite separador de miles: '1.250 m²')
    */
   parseMetrosCuadrados(metrosText) {
     if (!metrosText) return null;
-    
-    const match = metrosText.match(/(\d+)/);
-    return match ? parseInt(match[1]) : null;
+
+    return this.extractNumber(metrosText);
   }
 
   /**

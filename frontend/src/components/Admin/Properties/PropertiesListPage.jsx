@@ -400,6 +400,7 @@ const PropertiesListPage = () => {
     {
       enableCache: false, // Deshabilitamos cache para el admin para tener datos frescos
       autoFetch: true,
+      getAccessToken: getAccessTokenSilently, // cupo del rate limit por usuario, no por IP
       onError: (error) => {
         console.error('Error loading properties in admin:', error);
       },

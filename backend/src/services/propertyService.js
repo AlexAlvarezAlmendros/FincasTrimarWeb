@@ -3,6 +3,42 @@ import imagenesViviendaRepository from '../repos/imagenesViviendaRepository.js';
 import { logger } from '../utils/logger.js';
 
 /**
+ * Resuelve published/isDraft de una actualización (función pura).
+ * Editar NO cambia la publicación salvo acción explícita:
+ *   - isDraft: el recibido o, si no viene, el existente.
+ *   - published === true  → publicada y fuera de borrador.
+ *   - published === false → despublicada.
+ *   - Sin published explícito: se conserva el existente, salvo que estadoVenta
+ *     CAMBIE A 'Disponible'; solo en esa transición se aplica la regla automática
+ *     (publicada si no es borrador). Pasar a otro estado (Reservada, Vendida…)
+ *     conserva la publicación: una vivienda publicada sigue visible con su
+ *     insignia y en los contadores del panel.
+ *   - Un borrador nunca queda publicado.
+ * @param {Object} existing - Vivienda actual (transformRow)
+ * @param {Object} incoming - Cuerpo validado del PUT (parcial)
+ * @returns {{ published: boolean, isDraft: boolean }}
+ */
+export function resolvePublicationState(existing, incoming) {
+  let isDraft = Boolean(incoming.isDraft ?? existing.isDraft);
+  let published;
+
+  if (incoming.published === true) {
+    published = true;
+    isDraft = false;
+  } else if (incoming.published === false) {
+    published = false;
+  } else if (incoming.estadoVenta === 'Disponible' && existing.estadoVenta !== 'Disponible') {
+    published = !isDraft;
+  } else {
+    published = Boolean(existing.published);
+  }
+
+  if (isDraft) published = false;
+
+  return { published, isDraft };
+}
+
+/**
  * Servicio para gestión de viviendas
  * Implementa la lógica de negocio para las operaciones de propiedades
  */
@@ -169,13 +205,17 @@ class PropertyService {
         throw error;
       }
       
-      // Merge con datos existentes y procesar
+      // Merge con datos existentes y procesar. Las claves que llegan vacías ('')
+      // salen de Zod como undefined pero presentes, así que pisan el valor previo
+      // y processPropertyData las guarda como NULL (vaciar un campo sí se guarda)
       const mergedData = {
         ...existingProperty,
         ...propertyData
       };
-      
+
       const cleanedData = this.processPropertyData(mergedData);
+      // El repositorio persiste published/isDraft tal cual: se resuelven aquí
+      Object.assign(cleanedData, resolvePublicationState(existingProperty, propertyData));
       const updatedProperty = await viviendaRepository.update(id, cleanedData);
       
       logger.info(`Propiedad actualizada exitosamente: ${id}`);
@@ -415,7 +455,16 @@ class PropertyService {
   async addPropertyImages(propertyId, images) {
     try {
       logger.info(`Añadiendo imágenes a propiedad: ${propertyId}`, images);
-      
+
+      const property = await viviendaRepository.findByIdLight(propertyId);
+      if (!property) {
+        const error = new Error('Propiedad no encontrada');
+        error.statusCode = 404;
+        error.code = 'PROPERTY_NOT_FOUND';
+        throw error;
+      }
+
+      // Se añaden siempre al final, en el orden del array recibido
       const result = await imagenesViviendaRepository.addImagesToProperty(propertyId, images);
       
       logger.info(`Imágenes añadidas exitosamente a propiedad: ${propertyId}`);
@@ -433,15 +482,16 @@ class PropertyService {
     try {
       logger.info(`Reordenando imágenes para propiedad: ${propertyId}`, imageOrders);
       
-      // Verificar que la propiedad existe
-      const property = await viviendaRepository.findById(propertyId);
+      // Verificar que la propiedad existe (sin cargar imágenes)
+      const property = await viviendaRepository.findByIdLight(propertyId);
       if (!property) {
         const error = new Error('Propiedad no encontrada');
         error.statusCode = 404;
+        error.code = 'PROPERTY_NOT_FOUND';
         throw error;
       }
 
-      // Actualizar orden de las imágenes
+      // Actualizar orden de las imágenes (un solo batch atómico, acotado a la vivienda)
       const result = await imagenesViviendaRepository.updateImageOrders(propertyId, imageOrders);
       
       logger.info(`Imágenes reordenadas exitosamente para propiedad: ${propertyId}`);
@@ -458,12 +508,14 @@ class PropertyService {
   async deletePropertyImage(propertyId, imageId) {
     try {
       logger.info(`Eliminando imagen ${imageId} de propiedad: ${propertyId}`);
-      
-      const result = await imagenesViviendaRepository.deleteImage(imageId);
-      
+
+      // Acotado a la vivienda de la ruta: una imagen de otra vivienda da 404
+      const result = await imagenesViviendaRepository.deleteImage(propertyId, imageId);
+
       if (!result) {
         const error = new Error('Imagen no encontrada');
         error.statusCode = 404;
+        error.code = 'IMAGE_NOT_FOUND';
         throw error;
       }
 

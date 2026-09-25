@@ -1,16 +1,35 @@
 /**
- * Hook simplificado para crear viviendas - versión de debugging
+ * Hook simplificado para crear y editar viviendas
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ViviendaFormModel } from '../types/viviendaForm.types.js';
 import { useApi } from './useApi.js';
 
+/**
+ * Mensaje legible de un error de la API. useApi lanza un Error con
+ * `status` y `error` (el envelope {code, message, details} del backend).
+ */
+const describeApiError = (err, action) => {
+  if (err?.status === 401) return 'Tu sesión ha caducado o no es válida. Inicia sesión de nuevo.';
+  if (err?.status === 403) return `No tienes los permisos necesarios para ${action}.`;
+
+  let message = err?.message || 'Error inesperado';
+  // Errores de validación de Zod: indicar qué campo falla
+  const details = err?.error?.details;
+  if (Array.isArray(details) && details.length > 0) {
+    message += ': ' + details
+      .map((d) => (d.field ? `${d.field}: ${d.message}` : d.message))
+      .join('; ');
+  }
+  return message;
+};
+
 export const useCreateViviendaSimple = (options = {}) => {
   const api = useApi();
   const apiRef = useRef(api);
   const { onSuccess, onError } = options;
-  
+
   // Actualizar la referencia cuando cambie api
   useEffect(() => {
     apiRef.current = api;
@@ -18,7 +37,8 @@ export const useCreateViviendaSimple = (options = {}) => {
 
   // Estados básicos
   const [formData, setFormData] = useState(() => ViviendaFormModel.create());
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false); // guardando (crear/actualizar)
+  const [isLoading, setIsLoading] = useState(false);   // cargando la vivienda a editar
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
@@ -30,21 +50,23 @@ export const useCreateViviendaSimple = (options = {}) => {
       ...prev,
       [fieldName]: value
     }));
-    
+
     // Limpiar mensajes al hacer cambios
     if (error) setError(null);
     if (success) setSuccess(false);
   }, [error, success]);
 
   /**
-   * Cargar datos de una propiedad para edición
+   * Cargar datos de una propiedad para edición.
+   * Devuelve { baseline, property }: baseline es el formulario tal como vino
+   * del servidor (línea base para detectar cambios sin guardar).
    */
   const loadProperty = useCallback(async (propertyId) => {
     try {
-      setIsCreating(true);
+      setIsLoading(true);
       setError(null);
+      setSuccess(false);
 
-      
       const response = await apiRef.current(`/api/v1/viviendas/${propertyId}`);
 
       if (!response.success) {
@@ -52,66 +74,67 @@ export const useCreateViviendaSimple = (options = {}) => {
       }
 
       const property = response.data;
-      
-      // Mapear datos de la propiedad al formato del formulario
-      const formattedData = {
-        name: property.name || '',
-        shortDescription: property.shortDescription || '',
-        description: property.description || '',
-        price: property.price?.toString() || '',
-        rooms: property.rooms?.toString() || '',
-        bathRooms: property.bathRooms?.toString() || '',
-        garage: property.garage?.toString() || '',
-        squaredMeters: property.squaredMeters?.toString() || '',
-        provincia: property.provincia || '',
-        poblacion: property.poblacion || '',
-        calle: property.calle || '',
-        numero: property.numero || '',
-        tipoInmueble: property.tipoInmueble || 'Vivienda',
-        tipoVivienda: property.tipoVivienda || 'Piso',
-        estado: property.estado || 'BuenEstado',
-        planta: property.planta || 'PlantaIntermedia',
-        tipoAnuncio: property.tipoAnuncio || 'Venta',
-        estadoVenta: property.estadoVenta || 'Disponible',
-        caracteristicas: Array.isArray(property.caracteristicas) ? property.caracteristicas : [],
-        published: Boolean(property.published)
-      };
+
+      // Sin valores inventados: lo vacío en BD se carga como '' (ver fromVivienda).
+      // Las imágenes las gestiona useImageManager, no el formulario.
+      const formattedData = ViviendaFormModel.fromVivienda(property);
+      ['images', 'imagesToDelete', 'newImages'].forEach((field) => delete formattedData[field]);
 
       setFormData(formattedData);
 
-      return property;
+      return { baseline: formattedData, property };
     } catch (err) {
       console.error('Error cargando propiedad:', err);
-      setError(err.message || 'Error cargando la propiedad');
+      setError(describeApiError(err, 'ver esta vivienda'));
       throw err;
     } finally {
-      setIsCreating(false);
+      setIsLoading(false);
     }
   }, []); // Remover api de las dependencias para evitar recreaciones
 
   /**
-   * Crear o actualizar vivienda
+   * Guardar la vivienda (crear o actualizar).
+   * action:
+   * - 'save': crear (el backend autopublica si estadoVenta es 'Disponible') o
+   *   actualizar conservando el estado de publicación.
+   * - 'draft': guardar como borrador (no publicado).
+   * - 'publish': publicar un borrador existente.
    */
-  const createVivienda = useCallback(async (data = formData, propertyId = null) => {
+  const saveVivienda = useCallback(async (data, propertyId = null, action = 'save') => {
+    const isUpdate = Boolean(propertyId);
+    const actionLabel = action === 'draft'
+      ? 'guardar borradores'
+      : isUpdate ? 'editar viviendas' : 'crear viviendas';
+
     try {
       setIsCreating(true);
       setError(null);
 
-
-      // Validación básica
+      // Validación básica (la completa la hace FormValidator en la página)
       if (!data.name || data.name.trim().length < 5) {
         throw new Error('El nombre debe tener al menos 5 caracteres');
       }
-      
+
       if (!data.price || parseFloat(data.price) <= 0) {
         throw new Error('El precio debe ser mayor que 0');
       }
 
-      // Preparar datos para el backend
-      const backendData = ViviendaFormModel.toVivienda(data);
+      // Estado de publicación según la acción (en edición no se envía
+      // `published` salvo al publicar explícitamente)
+      const toBackendOptions = { isEdit: isUpdate };
+      if (action === 'draft') {
+        toBackendOptions.isDraft = true;
+        if (!isUpdate) toBackendOptions.published = false;
+      } else if (action === 'publish') {
+        toBackendOptions.isDraft = false;
+        toBackendOptions.published = true;
+      } else if (!isUpdate) {
+        toBackendOptions.isDraft = false;
+      }
 
-      // Determinar si es creación o actualización
-      const isUpdate = Boolean(propertyId);
+      // Preparar datos para el backend
+      const backendData = ViviendaFormModel.toVivienda(data, toBackendOptions);
+
       const url = isUpdate ? `/api/v1/viviendas/${propertyId}` : '/api/v1/viviendas';
       const method = isUpdate ? 'PUT' : 'POST';
 
@@ -130,85 +153,30 @@ export const useCreateViviendaSimple = (options = {}) => {
 
       return response;
     } catch (err) {
-      console.error('Error en createVivienda:', err);
-      
-      // Manejo específico de errores de autenticación
-      let errorMessage = err.message || 'Error inesperado';
-      
-      if (err.message?.includes('Unauthorized') || err.message?.includes('401')) {
-        errorMessage = 'No tienes permisos para crear viviendas. Inicia sesión primero.';
-      } else if (err.message?.includes('Forbidden') || err.message?.includes('403')) {
-        errorMessage = 'No tienes los permisos necesarios para crear viviendas.';
-      } else if (err.message?.includes('Token')) {
-        errorMessage = 'Sesión expirada. Inicia sesión nuevamente.';
-      }
-      
-      setError(errorMessage);
+      console.error('Error guardando vivienda:', err);
+      setError(describeApiError(err, actionLabel));
       if (onError) onError(err);
       throw err;
     } finally {
       setIsCreating(false);
     }
-  }, [formData, onSuccess, onError]);
+  }, [onSuccess, onError]);
+
+  /**
+   * Crear o actualizar vivienda (conserva el estado de publicación al editar)
+   */
+  const createVivienda = useCallback(
+    (data = formData, propertyId = null) => saveVivienda(data, propertyId, 'save'),
+    [formData, saveVivienda]
+  );
 
   /**
    * Crear o actualizar vivienda como borrador
    */
-  const createDraft = useCallback(async (data = formData, propertyId = null) => {
-    try {
-      setIsCreating(true);
-      setError(null);
-
-
-      // Validación básica mínima para borradores
-      if (!data.name || data.name.trim().length < 3) {
-        throw new Error('El nombre debe tener al menos 3 caracteres para guardar como borrador');
-      }
-
-      // Preparar datos para el backend con flag de borrador
-      const backendData = ViviendaFormModel.toVivienda(data);
-      backendData.IsDraft = 1; // Forzar como borrador
-
-      // Determinar si es creación o actualización
-      const isUpdate = Boolean(propertyId);
-      const url = isUpdate ? `/api/v1/viviendas/${propertyId}` : '/api/v1/viviendas';
-      const method = isUpdate ? 'PUT' : 'POST';
-
-      // Enviar al backend usando useApi (con autenticación)
-      const response = await apiRef.current(url, {
-        method,
-        body: JSON.stringify(backendData)
-      });
-
-      if (!response.success) {
-        throw new Error(response.error?.message || `Error ${isUpdate ? 'actualizando' : 'creando'} borrador`);
-      }
-
-      setSuccess(true);
-      if (onSuccess) onSuccess(response.data);
-
-      return response;
-    } catch (err) {
-      console.error('Error en createDraft:', err);
-      
-      // Manejo específico de errores de autenticación
-      let errorMessage = err.message || 'Error inesperado';
-      
-      if (err.message?.includes('Unauthorized') || err.message?.includes('401')) {
-        errorMessage = 'No tienes permisos para guardar borradores. Inicia sesión primero.';
-      } else if (err.message?.includes('Forbidden') || err.message?.includes('403')) {
-        errorMessage = 'No tienes los permisos necesarios para guardar borradores.';
-      } else if (err.message?.includes('Token')) {
-        errorMessage = 'Sesión expirada. Inicia sesión nuevamente.';
-      }
-      
-      setError(errorMessage);
-      if (onError) onError(err);
-      throw err;
-    } finally {
-      setIsCreating(false);
-    }
-  }, [formData, onSuccess, onError]);
+  const createDraft = useCallback(
+    (data = formData, propertyId = null) => saveVivienda(data, propertyId, 'draft'),
+    [formData, saveVivienda]
+  );
 
   /**
    * Resetear formulario
@@ -222,14 +190,16 @@ export const useCreateViviendaSimple = (options = {}) => {
   return {
     // Datos
     formData,
-    
+
     // Estados
     isCreating,
+    isLoading,
     error,
     success,
 
     // Acciones
     updateField,
+    saveVivienda,
     createVivienda,
     createDraft,
     loadProperty,

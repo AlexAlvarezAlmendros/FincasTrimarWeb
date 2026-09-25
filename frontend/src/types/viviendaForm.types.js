@@ -12,6 +12,33 @@ import {
   EstadoVenta,
   Caracteristica
 } from './vivienda.types.js';
+import { htmlToPlainText, isRichTextEmpty } from '../utils/htmlText.js';
+
+/**
+ * Límites de texto del formulario. La descripción se mide en TEXTO PLANO
+ * (no en HTML): es la única fuente para validación, contador y editor.
+ */
+export const DESCRIPTION_MAX = 5000;
+export const SHORT_DESCRIPTION_MAX = 300;
+
+/**
+ * Nombres legibles de los campos validados, en el orden en que aparecen en el
+ * formulario (se usa para el resumen de errores junto a los botones).
+ */
+export const ViviendaFieldLabels = {
+  name: 'Nombre',
+  price: 'Precio',
+  shortDescription: 'Descripción breve',
+  description: 'Descripción completa',
+  rooms: 'Habitaciones',
+  bathRooms: 'Baños',
+  garage: 'Garajes',
+  squaredMeters: 'Metros cuadrados',
+  provincia: 'Provincia',
+  poblacion: 'Población',
+  calle: 'Calle',
+  numero: 'Número'
+};
 
 /**
  * Estados del proceso de creación/edición
@@ -79,7 +106,9 @@ export const ViviendaFormModel = {
   },
 
   /**
-   * Crea formulario desde una vivienda existente
+   * Crea formulario desde una vivienda existente.
+   * No inventa valores: lo que viene vacío de BD se carga como '' (el
+   * formulario muestra «Sin especificar» o el placeholder).
    */
   fromVivienda(vivienda) {
     if (!vivienda) {
@@ -98,8 +127,8 @@ export const ViviendaFormModel = {
       provincia: vivienda.provincia || '',
       poblacion: vivienda.poblacion || '',
       calle: vivienda.calle || '',
-      numero: vivienda.numero || '',
-      tipoInmueble: vivienda.tipoInmueble || TipoInmueble.VIVIENDA,
+      numero: vivienda.numero?.toString() || '',
+      tipoInmueble: vivienda.tipoInmueble || '',
       tipoVivienda: vivienda.tipoVivienda || '',
       estado: vivienda.estado || '',
       planta: vivienda.planta || '',
@@ -115,41 +144,63 @@ export const ViviendaFormModel = {
   },
 
   /**
-   * Convierte datos del formulario al formato del backend
+   * Convierte datos del formulario al formato del backend.
+   *
+   * Opciones:
+   * - isEdit: en edición NO se envía `published` salvo acción explícita
+   *   (editar no cambia el estado de publicación).
+   * - isDraft: fija el borrador según la acción; si no llega, se envía el
+   *   valor cargado en el formulario.
+   * - published: publicación explícita (p. ej. «Publicar vivienda»).
+   *
+   * Los opcionales vacíos se envían como '' (no se omiten): el backend los
+   * guarda como NULL, así vaciar un campo en edición sí se guarda.
    */
-  toVivienda(formData) {
+  toVivienda(formData, { isEdit = false, isDraft, published } = {}) {
+    const text = (value) => String(value ?? '').trim();
+
     // Convertir precio de manera segura
     let price = 0;
-    if (formData.price && formData.price.trim() !== '') {
-      const parsedPrice = parseFloat(formData.price);
+    const rawPrice = text(formData.price);
+    if (rawPrice !== '') {
+      const parsedPrice = parseFloat(rawPrice);
       if (!isNaN(parsedPrice) && parsedPrice > 0) {
         price = Math.round(parsedPrice); // Redondear a entero
       }
     }
 
+    const squaredMeters = parseInt(text(formData.squaredMeters), 10);
+    // Quill deja '<p><br></p>' al vaciar el editor: se normaliza a ''
+    const description = text(formData.description);
+
     const data = {
-      name: formData.name.trim(),
+      name: text(formData.name),
       price: price,
-      shortDescription: formData.shortDescription?.trim() || undefined,
-      description: formData.description?.trim() || undefined,
-      rooms: parseInt(formData.rooms) || 0,
-      bathRooms: parseInt(formData.bathRooms) || 0,
-      garage: parseInt(formData.garage) || 0,
-      squaredMeters: parseInt(formData.squaredMeters) || undefined,
-      provincia: formData.provincia?.trim() || undefined,
-      poblacion: formData.poblacion?.trim() || undefined,
-      calle: formData.calle?.trim() || undefined,
-      numero: formData.numero?.trim() || undefined,
+      shortDescription: text(formData.shortDescription),
+      description: isRichTextEmpty(description) ? '' : description,
+      rooms: parseInt(formData.rooms, 10) || 0,
+      bathRooms: parseInt(formData.bathRooms, 10) || 0,
+      garage: parseInt(formData.garage, 10) || 0,
+      squaredMeters: Number.isNaN(squaredMeters) ? '' : squaredMeters,
+      provincia: text(formData.provincia),
+      poblacion: text(formData.poblacion),
+      calle: text(formData.calle),
+      numero: text(formData.numero),
       tipoInmueble: formData.tipoInmueble || undefined,
-      tipoVivienda: formData.tipoVivienda || undefined,
-      estado: formData.estado || undefined,
-      planta: formData.planta || undefined,
-      tipoAnuncio: formData.tipoAnuncio || undefined,
+      tipoVivienda: formData.tipoVivienda || '',
+      estado: formData.estado || '',
+      planta: formData.planta || '',
+      tipoAnuncio: formData.tipoAnuncio || '',
       estadoVenta: formData.estadoVenta || EstadoVenta.DISPONIBLE,
       caracteristicas: Array.isArray(formData.caracteristicas) ? formData.caracteristicas : [],
-      published: Boolean(formData.published),
-      isDraft: Boolean(formData.isDraft)
+      isDraft: isDraft ?? Boolean(formData.isDraft)
     };
+
+    if (published !== undefined) {
+      data.published = Boolean(published);
+    } else if (!isEdit) {
+      data.published = Boolean(formData.published);
+    }
 
     // Limpiar campos undefined para enviar solo lo necesario
     Object.keys(data).forEach(key => {
@@ -164,10 +215,38 @@ export const ViviendaFormModel = {
   /**
    * Convierte datos del formulario al formato del backend (alias)
    */
-  toBackendFormat(formData) {
-    return this.toVivienda(formData);
+  toBackendFormat(formData, options) {
+    return this.toVivienda(formData, options);
   }
 };
+
+/**
+ * Regla para enteros opcionales (habitaciones, m²…) con un tope generoso que
+ * no bloquee datos reales (terrenos, naves, edificios importados).
+ */
+const optionalIntegerRule = ({ max, invalid, negative, tooHigh }) => ({
+  required: false,
+  min: 0,
+  max,
+  validate: (value) => {
+    if (value === undefined || value === null || String(value).trim() === '') return null;
+    const numValue = parseInt(value, 10);
+    if (isNaN(numValue)) return invalid;
+    if (numValue < 0) return negative;
+    if (numValue > max) return tooHigh;
+    return null;
+  }
+});
+
+// Longitud máxima de un texto opcional
+const maxLengthRule = (maxLength, message) => ({
+  required: false,
+  maxLength,
+  validate: (value) => {
+    if (value && String(value).length > maxLength) return message;
+    return null;
+  }
+});
 
 /**
  * Reglas de validación del formulario (sincronizadas con backend)
@@ -178,9 +257,10 @@ export const ValidationRules = {
     minLength: 5,
     maxLength: 200,
     validate: (value) => {
-      if (!value || value.trim().length === 0) return 'El nombre es obligatorio';
-      if (value.trim().length < 5) return 'El nombre debe tener al menos 5 caracteres';
-      if (value.trim().length > 200) return 'El nombre no puede exceder 200 caracteres';
+      const name = String(value ?? '').trim();
+      if (name.length === 0) return 'El nombre es obligatorio';
+      if (name.length < 5) return 'El nombre debe tener al menos 5 caracteres';
+      if (name.length > 200) return 'El nombre no puede exceder 200 caracteres';
       return null;
     }
   },
@@ -189,124 +269,68 @@ export const ValidationRules = {
     required: true,
     min: 0,
     validate: (value) => {
-      if (!value || value.toString().trim() === '') return 'El precio es obligatorio';
+      if (value === undefined || value === null || String(value).trim() === '') return 'El precio es obligatorio';
       const numValue = parseFloat(value);
       if (isNaN(numValue)) return 'El precio debe ser un número válido';
-      if (numValue < 0) return 'El precio no puede ser negativo';
+      // El backend rechaza precio 0 (también en borradores)
+      if (numValue <= 0) return 'El precio debe ser mayor que 0';
       if (numValue > 99999999) return 'El precio es demasiado alto';
       return null;
     }
   },
 
-  shortDescription: {
-    required: false,
-    maxLength: 300,
-    validate: (value) => {
-      if (value && value.length > 300) return 'La descripción corta no puede exceder 300 caracteres';
-      return null;
-    }
-  },
+  shortDescription: maxLengthRule(
+    SHORT_DESCRIPTION_MAX,
+    `La descripción breve no puede exceder ${SHORT_DESCRIPTION_MAX} caracteres`
+  ),
 
+  // Se mide el texto visible, no el HTML de Quill (el marcado no cuenta)
   description: {
     required: false,
-    maxLength: 2000,
+    maxLength: DESCRIPTION_MAX,
     validate: (value) => {
-      if (value && value.length > 2000) return 'La descripción no puede exceder 2000 caracteres';
+      if (htmlToPlainText(value).length > DESCRIPTION_MAX) {
+        return `La descripción no puede exceder ${DESCRIPTION_MAX} caracteres`;
+      }
       return null;
     }
   },
 
-  rooms: {
-    required: false,
-    min: 0,
-    max: 50,
-    validate: (value) => {
-      if (!value || value === '') return null;
-      const numValue = parseInt(value);
-      if (isNaN(numValue)) return 'Las habitaciones deben ser un número válido';
-      if (numValue < 0) return 'Las habitaciones no pueden ser negativas';
-      if (numValue > 50) return 'Número de habitaciones demasiado alto';
-      return null;
-    }
-  },
+  rooms: optionalIntegerRule({
+    max: 999,
+    invalid: 'Las habitaciones deben ser un número válido',
+    negative: 'Las habitaciones no pueden ser negativas',
+    tooHigh: 'Número de habitaciones demasiado alto (máximo 999)'
+  }),
 
-  bathRooms: {
-    required: false,
-    min: 0,
-    max: 20,
-    validate: (value) => {
-      if (!value || value === '') return null;
-      const numValue = parseInt(value);
-      if (isNaN(numValue)) return 'Los baños deben ser un número válido';
-      if (numValue < 0) return 'Los baños no pueden ser negativos';
-      if (numValue > 20) return 'Número de baños demasiado alto';
-      return null;
-    }
-  },
+  bathRooms: optionalIntegerRule({
+    max: 999,
+    invalid: 'Los baños deben ser un número válido',
+    negative: 'Los baños no pueden ser negativos',
+    tooHigh: 'Número de baños demasiado alto (máximo 999)'
+  }),
 
-  garage: {
-    required: false,
-    min: 0,
-    max: 10,
-    validate: (value) => {
-      if (!value || value === '') return null;
-      const numValue = parseInt(value);
-      if (isNaN(numValue)) return 'Los garajes deben ser un número válido';
-      if (numValue < 0) return 'Los garajes no pueden ser negativos';
-      if (numValue > 10) return 'Número de garajes demasiado alto';
-      return null;
-    }
-  },
+  garage: optionalIntegerRule({
+    max: 999,
+    invalid: 'Los garajes deben ser un número válido',
+    negative: 'Los garajes no pueden ser negativos',
+    tooHigh: 'Número de garajes demasiado alto (máximo 999)'
+  }),
 
-  squaredMeters: {
-    required: false,
-    min: 0,
-    max: 10000,
-    validate: (value) => {
-      if (!value || value === '') return null;
-      const numValue = parseInt(value);
-      if (isNaN(numValue)) return 'Los metros cuadrados deben ser un número válido';
-      if (numValue < 0) return 'Los metros cuadrados no pueden ser negativos';
-      if (numValue > 10000) return 'Metros cuadrados demasiado altos';
-      return null;
-    }
-  },
+  squaredMeters: optionalIntegerRule({
+    max: 10000000,
+    invalid: 'Los metros cuadrados deben ser un número válido',
+    negative: 'Los metros cuadrados no pueden ser negativos',
+    tooHigh: 'Metros cuadrados demasiado altos (máximo 10.000.000)'
+  }),
 
-  provincia: {
-    required: false,
-    maxLength: 100,
-    validate: (value) => {
-      if (value && value.length > 100) return 'La provincia no puede exceder 100 caracteres';
-      return null;
-    }
-  },
+  provincia: maxLengthRule(100, 'La provincia no puede exceder 100 caracteres'),
 
-  poblacion: {
-    required: false,
-    maxLength: 100,
-    validate: (value) => {
-      if (value && value.length > 100) return 'La población no puede exceder 100 caracteres';
-      return null;
-    }
-  },
+  poblacion: maxLengthRule(100, 'La población no puede exceder 100 caracteres'),
 
-  calle: {
-    required: false,
-    maxLength: 100,
-    validate: (value) => {
-      if (value && value.length > 100) return 'La calle no puede exceder 100 caracteres';
-      return null;
-    }
-  },
+  calle: maxLengthRule(100, 'La calle no puede exceder 100 caracteres'),
 
-  numero: {
-    required: false,
-    maxLength: 20,
-    validate: (value) => {
-      if (value && value.length > 20) return 'El número no puede exceder 20 caracteres';
-      return null;
-    }
-  }
+  numero: maxLengthRule(20, 'El número no puede exceder 20 caracteres')
 };
 
 /**

@@ -381,29 +381,28 @@ class ViviendaRepository {
   }
   
   /**
-   * Actualiza una vivienda existente
+   * Actualiza una vivienda existente.
+   * Persiste published/isDraft TAL COMO LLEGAN: la regla de publicación la
+   * resuelve quien llama (propertyService.updateProperty con
+   * resolvePublicationState; la sincronización JSON conserva los existentes).
+   * FechaPublicacion no se reinicia al editar: si queda publicada se conserva la
+   * fecha previa (o ahora si no tenía) y si queda sin publicar se limpia.
    */
   async update(id, viviendaData) {
     try {
       const caracteristicasJson = JSON.stringify(viviendaData.caracteristicas || []);
-      
-      // Lógica de publicación automática para actualizaciones:
-      // - Si es borrador (isDraft=true), no publicar
-      // - Si no es borrador y estado es "Disponible", publicar automáticamente
-      // - Si no es borrador y hay checkbox published, respetar checkbox
-      const isDraft = Boolean(viviendaData.isDraft);
-      const autoPublish = !isDraft && viviendaData.estadoVenta === 'Disponible';
-      const shouldPublish = isDraft ? false : (autoPublish || viviendaData.published);
-      
-      const fechaPublicacion = shouldPublish ? new Date().toISOString() : null;
-      
+      const published = viviendaData.published ? 1 : 0;
+      const isDraft = viviendaData.isDraft ? 1 : 0;
+
       await executeQuery(`
         UPDATE Vivienda SET
           Name = ?, ShortDescription = ?, Description = ?, Price = ?, Rooms = ?,
           BathRooms = ?, Garage = ?, SquaredMeters = ?, Provincia = ?, Poblacion = ?,
           Calle = ?, Numero = ?, TipoInmueble = ?, TipoVivienda = ?, Estado = ?,
           Planta = ?, TipoAnuncio = ?, EstadoVenta = ?, Caracteristicas = ?,
-          Published = ?, FechaPublicacion = ?, ComisionGanada = ?, CaptadoPor = ?,
+          Published = ?,
+          FechaPublicacion = CASE WHEN ? = 1 THEN COALESCE(FechaPublicacion, ?) ELSE NULL END,
+          ComisionGanada = ?, CaptadoPor = ?,
           PorcentajeCaptacion = ?, FechaCaptacion = ?, IsDraft = ?,
           TelefonoContacto = ?, NombreContacto = ?, UrlReferencia = ?, Observaciones = ?,
           UpdatedAt = CURRENT_TIMESTAMP
@@ -415,10 +414,10 @@ class ViviendaRepository {
         viviendaData.poblacion, viviendaData.calle, viviendaData.numero,
         viviendaData.tipoInmueble, viviendaData.tipoVivienda, viviendaData.estado,
         viviendaData.planta, viviendaData.tipoAnuncio, viviendaData.estadoVenta,
-        caracteristicasJson, shouldPublish ? 1 : 0, fechaPublicacion,
+        caracteristicasJson, published, published, new Date().toISOString(),
         Number(viviendaData.comisionGanada) || 0.0, viviendaData.captadoPor || null,
         Number(viviendaData.porcentajeCaptacion) || 0.0, viviendaData.fechaCaptacion || null,
-        isDraft ? 1 : 0,
+        isDraft,
         viviendaData.telefonoContacto || null, viviendaData.nombreContacto || null,
         viviendaData.urlReferencia || null, viviendaData.observaciones || null,
         id
@@ -445,19 +444,22 @@ class ViviendaRepository {
   }
   
   /**
-   * Actualiza solo el estado de publicación
+   * Actualiza solo el estado de publicación.
+   * Publicar saca la vivienda de borrador y conserva la FechaPublicacion previa
+   * (misma regla que update); despublicar la limpia.
    */
   async updatePublishStatus(id, published) {
     try {
-      const fechaPublicacion = published ? new Date().toISOString() : null;
-      
+      const publishedFlag = published ? 1 : 0;
+
       await executeQuery(`
         UPDATE Vivienda SET 
           Published = ?, 
-          FechaPublicacion = ?,
+          IsDraft = CASE WHEN ? = 1 THEN 0 ELSE IsDraft END,
+          FechaPublicacion = CASE WHEN ? = 1 THEN COALESCE(FechaPublicacion, ?) ELSE NULL END,
           UpdatedAt = CURRENT_TIMESTAMP
         WHERE Id = ?
-      `, [published ? 1 : 0, fechaPublicacion, id]);
+      `, [publishedFlag, publishedFlag, publishedFlag, new Date().toISOString(), id]);
       
       return await this.findById(id);
     } catch (error) {
@@ -574,20 +576,23 @@ class ViviendaRepository {
   }
 
   /**
-   * Obtiene las ventas mensuales (propiedades vendidas/cerradas)
+   * Obtiene las ventas mensuales (propiedades vendidas/cerradas).
+   * El mes de venta se aproxima con UpdatedAt (última modificación, normalmente
+   * el cambio a Vendida): FechaPublicacion ya no se reinicia al editar y queda
+   * NULL si la vivienda vendida se despublica, así que no sirve para esto.
    */
   async getMonthlySales() {
     try {
       const query = `
         SELECT 
-          strftime('%Y-%m', FechaPublicacion) as month,
+          strftime('%Y-%m', UpdatedAt) as month,
           COUNT(*) as sales,
           SUM(Price) as revenue
         FROM Vivienda
         WHERE EstadoVenta IN ('Vendida', 'Cerrada')
-          AND FechaPublicacion IS NOT NULL
-          AND FechaPublicacion >= date('now', '-12 months')
-        GROUP BY strftime('%Y-%m', FechaPublicacion)
+          AND UpdatedAt IS NOT NULL
+          AND UpdatedAt >= date('now', '-12 months')
+        GROUP BY strftime('%Y-%m', UpdatedAt)
         ORDER BY month ASC
       `;
       
