@@ -34,9 +34,10 @@ class PropertyService {
    * Obtiene lista de propiedades con filtros y paginación
    * @param {Object} filters - Filtros de búsqueda
    * @param {Function|null} getAccessToken - Opcional (panel admin): envía el Bearer
+   * @param {{signal?: AbortSignal}} options - Opcional: señal para cancelar la petición
    * @returns {Promise<Object>} Respuesta con propiedades y paginación
    */
-  async getProperties(filters = {}, getAccessToken = null) {
+  async getProperties(filters = {}, getAccessToken = null, { signal } = {}) {
     try {
       // Transformar filtros al formato esperado por el backend
       const cleanFilters = DataTransformers.transformFiltersToAPI(filters);
@@ -53,7 +54,8 @@ class PropertyService {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: await publicGetHeaders(getAccessToken)
+        headers: await publicGetHeaders(getAccessToken),
+        signal
       });
       
       if (!response.ok) {
@@ -63,7 +65,10 @@ class PropertyService {
       
       return await response.json();
     } catch (error) {
-      console.error('PropertyService.getProperties error:', error);
+      // Cancelada a propósito (llegó otra petición más reciente): no es un error
+      if (error.name !== 'AbortError') {
+        console.error('PropertyService.getProperties error:', error);
+      }
       throw error;
     }
   }
@@ -71,9 +76,10 @@ class PropertyService {
   /**
    * Busca propiedades con filtros avanzados (POST)
    * @param {Object} filters - Filtros de búsqueda avanzada
+   * @param {{signal?: AbortSignal}} options - Opcional: señal para cancelar la petición
    * @returns {Promise<Object>} Respuesta con propiedades encontradas
    */
-  async searchProperties(filters) {
+  async searchProperties(filters, { signal } = {}) {
     try {
       const cleanFilters = DataTransformers.transformFiltersToAPI(filters);
       
@@ -82,7 +88,8 @@ class PropertyService {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(cleanFilters)
+        body: JSON.stringify(cleanFilters),
+        signal
       });
       
       if (!response.ok) {
@@ -92,7 +99,9 @@ class PropertyService {
       
       return await response.json();
     } catch (error) {
-      console.error('PropertyService.searchProperties error:', error);
+      if (error.name !== 'AbortError') {
+        console.error('PropertyService.searchProperties error:', error);
+      }
       throw error;
     }
   }

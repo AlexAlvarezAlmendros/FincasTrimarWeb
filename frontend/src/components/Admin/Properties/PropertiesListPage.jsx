@@ -1,9 +1,56 @@
-import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useViviendas } from '../../../hooks/useViviendas.js';
 import propertyService from '../../../services/propertyService.js';
+import Pagination from '../../common/Pagination';
 import './PropertiesListPage.css';
+
+// Paginación y filtros del listado
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
+const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_SORT = 'fechaPublicacion_desc';
+const ESTADO_OPTIONS = ['Disponible', 'Reservada', 'Vendida'];
+const SORT_OPTIONS = ['fechaPublicacion_desc', 'fechaPublicacion_asc', 'price_desc', 'price_asc'];
+// Mismo tope que el backend (normalizePagination): más allá, página fuera de rango
+const MAX_PAGE = 100000;
+
+/**
+ * Filtros del listado a partir de la query string (?page=2&q=…). La URL conserva
+ * la página y los filtros al recargar y al volver desde la edición de una vivienda.
+ * Lo que no es válido cae en los valores por defecto.
+ */
+export const filtersFromSearch = (search) => {
+  const params = new URLSearchParams(search);
+  const page = Number.parseInt(params.get('page'), 10);
+  const pageSize = Number.parseInt(params.get('pageSize'), 10);
+  const drafts = params.get('published') === 'false';
+  const estadoVenta = params.get('estadoVenta');
+  const sortBy = params.get('sortBy');
+
+  return {
+    q: params.get('q') || '',
+    published: !drafts,
+    includeDrafts: drafts,
+    estadoVenta: ESTADO_OPTIONS.includes(estadoVenta) ? estadoVenta : '',
+    sortBy: SORT_OPTIONS.includes(sortBy) ? sortBy : DEFAULT_SORT,
+    page: Number.isFinite(page) && page >= 1 ? Math.min(page, MAX_PAGE) : 1,
+    pageSize: PAGE_SIZE_OPTIONS.includes(pageSize) ? pageSize : DEFAULT_PAGE_SIZE
+  };
+};
+
+/** Query string de los filtros (solo lo que difiere de los valores por defecto). */
+export const searchFromFilters = (filters) => {
+  const params = new URLSearchParams();
+  if (filters.q) params.set('q', filters.q);
+  if (filters.published === false) params.set('published', 'false');
+  if (filters.estadoVenta) params.set('estadoVenta', filters.estadoVenta);
+  if (filters.sortBy && filters.sortBy !== DEFAULT_SORT) params.set('sortBy', filters.sortBy);
+  if (filters.page > 1) params.set('page', String(filters.page));
+  if (filters.pageSize && filters.pageSize !== DEFAULT_PAGE_SIZE) params.set('pageSize', String(filters.pageSize));
+  const query = params.toString();
+  return query ? `?${query}` : '';
+};
 
 // Componente de filtros
 const PropertyFilters = ({ filters, onFiltersChange }) => {
@@ -55,7 +102,7 @@ const PropertyFilters = ({ filters, onFiltersChange }) => {
 
         <div className="filter-group">
           <select
-            value={filters.sortBy || 'fechaPublicacion_desc'}
+            value={filters.sortBy || DEFAULT_SORT}
             onChange={(e) => handleFilterChange('sortBy', e.target.value)}
             className="filter-select"
           >
@@ -81,6 +128,7 @@ const PropertiesTable = ({
   onDelete
 }) => {
   const [actionConfirm, setActionConfirm] = useState(null);
+  const location = useLocation();
 
   const getStatusBadge = (property) => {
     const statusConfig = {
@@ -260,6 +308,7 @@ const PropertiesTable = ({
                   </Link>
                   <Link 
                     to={`/admin/viviendas/${property.id}/edit`}
+                    state={{ listSearch: location.search }}
                     className="action-btn action-btn--edit"
                     title="Editar"
                   >
@@ -381,7 +430,13 @@ const PropertiesTable = ({
 // Componente principal
 const PropertiesListPage = () => {
   const { getAccessTokenSilently } = useAuth0();
-  
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Filtros iniciales desde la URL (solo en el primer render; luego manda el hook)
+  const [initialFilters] = useState(() => filtersFromSearch(location.search));
+  const listTopRef = useRef(null);
+
   // Usar el hook real para obtener datos de la BBDD
   const {
     viviendas: properties,
@@ -390,13 +445,10 @@ const PropertiesListPage = () => {
     pagination,
     filters,
     updateFilters,
+    goToPage,
     refreshViviendas
   } = useViviendas(
-    {
-      published: true, // Solo propiedades publicadas para esta vista
-      pageSize: 10,
-      page: 1
-    },
+    initialFilters,
     {
       enableCache: false, // Deshabilitamos cache para el admin para tener datos frescos
       autoFetch: true,
@@ -484,9 +536,66 @@ const PropertiesListPage = () => {
     }
   }, [refreshViviendas, getAccessTokenSilently]);
 
-  // Función para manejar cambios en filtros
+  // Función para manejar cambios en filtros: debounce solo al teclear en el
+  // buscador; los selects cargan en el acto (la cabecera no mezcla el filtro
+  // nuevo con el total anterior durante medio segundo)
   const handleFiltersChange = useCallback((newFilters) => {
-    updateFilters(newFilters, { debounce: true, resetPagination: true });
+    updateFilters(newFilters, { debounce: 'q' in newFilters, resetPagination: true });
+  }, [updateFilters]);
+
+  // Filtros → URL (replace: cambiar de página no llena el historial)
+  const lastSearchRef = useRef(location.search);
+  useEffect(() => {
+    const next = searchFromFilters(filters);
+    if (next !== lastSearchRef.current) {
+      lastSearchRef.current = next;
+      navigate({ search: next }, { replace: true });
+    }
+  }, [filters, navigate]);
+
+  // URL → filtros cuando cambia desde fuera (enlace «Todas las viviendas» del
+  // menú estando en otra página, atrás/adelante del navegador)
+  useEffect(() => {
+    if (location.search === lastSearchRef.current) return;
+    const fromUrl = filtersFromSearch(location.search);
+    // La misma consulta escrita de otra forma (al entrar con ?page=1&pageSize=10,
+    // mientras el efecto anterior la reescribe a su forma canónica) no es un cambio
+    if (searchFromFilters(fromUrl) === searchFromFilters(filters)) return;
+    lastSearchRef.current = location.search;
+    updateFilters(fromUrl, { resetPagination: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+  // Página fuera de rango (se borró la última vivienda de la última página, o
+  // ?page=99 en la URL): ir a la última página con resultados. Una sola vez por
+  // respuesta: si la petición de corrección falla, `pagination` no cambia y no
+  // se reintenta en bucle
+  const correctedPaginationRef = useRef(null);
+  useEffect(() => {
+    const lastPage = Math.max(1, pagination.totalPages || 0);
+    if (loading || properties.length > 0 || pagination.page <= lastPage) return;
+    if (correctedPaginationRef.current === pagination) return;
+    correctedPaginationRef.current = pagination;
+    goToPage(lastPage);
+  }, [loading, properties.length, pagination, goToPage]);
+
+  // Al cambiar de página se sube al inicio del listado cuando ya han llegado las
+  // filas: mientras carga, la tabla se sustituye por el spinner y el documento
+  // encoge, así que un scroll inmediato se quedaba a medio camino
+  const pendingScrollRef = useRef(false);
+  useEffect(() => {
+    if (loading || !pendingScrollRef.current) return;
+    pendingScrollRef.current = false;
+    listTopRef.current?.scrollIntoView({ block: 'start' });
+  }, [loading]);
+
+  const handlePageChange = useCallback((page) => {
+    pendingScrollRef.current = true;
+    goToPage(page);
+  }, [goToPage]);
+
+  const handlePageSizeChange = useCallback((pageSize) => {
+    updateFilters({ pageSize }, { resetPagination: true });
   }, [updateFilters]);
 
   return (
@@ -517,15 +626,15 @@ const PropertiesListPage = () => {
       </div>
 
       <div className="content-section">
-        <div className="results-header">
+        <div className="results-header" ref={listTopRef}>
           <div className="results-count">
             {loading ? (
               <span>Cargando...</span>
             ) : (
               <span>
-                {pagination.totalItems} {pagination.totalItems === 1 ? 'vivienda' : 'viviendas'}
+                {pagination.total || 0} {pagination.total === 1 ? 'vivienda' : 'viviendas'}
                 {filters.published === false ? ' en borrador' : ' publicadas'}
-                {filters.search && ` para "${filters.search}"`}
+                {filters.q && ` para "${filters.q}"`}
               </span>
             )}
           </div>
@@ -539,6 +648,20 @@ const PropertiesListPage = () => {
           onPublish={publishProperty}
           onUnpublish={unpublishProperty}
           onDelete={deleteProperty}
+        />
+
+        <Pagination
+          // Mientras carga, lo pedido (el selector no vuelve al tamaño anterior);
+          // después, lo que describe las filas mostradas
+          page={(loading ? filters.page : pagination.page) || filters.page || 1}
+          pageSize={(loading ? filters.pageSize : pagination.pageSize) || filters.pageSize || DEFAULT_PAGE_SIZE}
+          total={pagination.total || 0}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
+          itemLabel="viviendas"
+          disabled={loading}
+          className="properties-pagination"
         />
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useCreateViviendaSimple } from '../../../hooks/useCreateViviendaSimple.js';
 import { useImageManager } from '../../../hooks/useImageManager.js';
@@ -63,6 +63,13 @@ const focusField = (field) => {
 
 const PropertyCreatePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  // El listado pasa su query (?page=3&q=…) al abrir la edición: se vuelve a la misma página
+  const listSearch = location.state?.listSearch;
+  const listUrl = `/admin/viviendas${typeof listSearch === 'string' && listSearch.startsWith('?') ? listSearch : ''}`;
+  // Si se llegó desde el listado, se vuelve atrás en el historial (a esa misma
+  // entrada) para no apilar la edición: el «Atrás» siguiente no reabre el formulario
+  const goToList = () => (typeof listSearch === 'string' ? navigate(-1) : navigate(listUrl));
   const { id } = useParams();
 
   // Determinar si estamos en modo edición
@@ -455,7 +462,7 @@ const PropertyCreatePage = () => {
 
     if (isEditing) {
       // En modo edición, volver al listado
-      navigate('/admin/viviendas');
+      goToList();
     } else {
       // En modo creación, resetear para crear otra vivienda
       baselineRef.current = ViviendaFormModel.create();
@@ -532,7 +539,7 @@ const PropertyCreatePage = () => {
           <Button
             variant="secondary"
             icon="arrow-left"
-            onClick={() => navigate('/admin/viviendas')}
+            onClick={goToList}
           >
             Volver al listado
           </Button>
@@ -692,7 +699,7 @@ const PropertyCreatePage = () => {
               <Button
                 variant="secondary"
                 icon="xmark"
-                onClick={() => navigate('/admin/viviendas')}
+                onClick={goToList}
                 disabled={isBusy}
               >
                 Cancelar

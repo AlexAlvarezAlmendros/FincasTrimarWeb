@@ -1,0 +1,134 @@
+/* Paginación reutilizable (componente common/Pagination)
+ * Radio --radius-xs y no --radius-pill: los botones de página son controles
+ * cuadrados, como los filtros del panel admin y la paginación del listado público.
+ * El foco usa el anillo global de index.css (*:focus-visible). */
+.pagination-ui {
+  /* Alto/ancho mínimo de botones y selector (32px en móvil pequeño) */
+  --pagination-control-size: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) 0 0;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-600);
+}
+
+.pagination-ui__summary {
+  margin: 0;
+}
+
+.pagination-ui__summary strong {
+  color: var(--color-neutral-800);
+  font-weight: var(--font-weight-semibold);
+}
+
+.pagination-ui__pages {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pagination-ui__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--pagination-control-size);
+  height: var(--pagination-control-size);
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-xs);
+  background: var(--color-neutral-0);
+  color: var(--color-neutral-700);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.pagination-ui__btn:hover:not([aria-disabled='true']) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* aria-disabled en lugar de disabled: el botón sigue pudiendo tener el foco */
+.pagination-ui__btn[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-ui__btn--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-neutral-0);
+  cursor: default;
+}
+
+.pagination-ui__btn--active:hover:not([aria-disabled='true']) {
+  color: var(--color-neutral-0);
+}
+
+.pagination-ui__gap {
+  min-width: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-neutral-400);
+}
+
+.pagination-ui__size {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.pagination-ui__select {
+  height: var(--pagination-control-size);
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-xs);
+  background: var(--color-neutral-0);
+  color: var(--color-neutral-700);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.pagination-ui__select[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .pagination-ui {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .pagination-ui__pages {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .pagination-ui__size {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  /* En pantallas estrechas sobran primera/última: quedan anterior/siguiente y números */
+  .pagination-ui__pages li:first-child,
+  .pagination-ui__pages li:last-child {
+    display: none;
+  }
+
+  .pagination-ui {
+    --pagination-control-size: 32px;
+  }
+}
