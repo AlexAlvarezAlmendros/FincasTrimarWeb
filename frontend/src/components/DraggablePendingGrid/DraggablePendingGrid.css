@@ -79,12 +79,12 @@
   transform: translateY(-2px);
 }
 
+/* Sin z-index: con el auto-scroll la tarjeta origen pasa bajo la cabecera sticky */
 .draggable-pending-item.dragging {
   opacity: 0.5;
   transform: rotate(5deg) scale(1.05);
   cursor: grabbing;
   border-color: var(--color-primary);
-  z-index: 1000;
 }
 
 .draggable-pending-item:active {
@@ -94,7 +94,6 @@
 .pending-image-container {
   position: relative;
   width: 100%;
-  height: 150px;
 }
 
 .pending-image {
@@ -112,8 +111,16 @@
   transition: opacity 0.2s ease;
 }
 
-.draggable-pending-item:hover .pending-overlay {
+.draggable-pending-item:hover .pending-overlay,
+.draggable-pending-item:focus-within .pending-overlay {
   opacity: 1;
+}
+
+/* Sin hover (táctil): la papelera siempre visible */
+@media (hover: none) {
+  .pending-overlay {
+    opacity: 1;
+  }
 }
 
 .btn-remove-pending {
@@ -207,10 +214,6 @@
     gap: var(--spacing-sm);
   }
   
-  .pending-image-container {
-    height: 120px;
-  }
-  
   .pending-image {
     height: 90px;
   }
@@ -233,11 +236,6 @@
   outline-offset: 2px;
 }
 
-.draggable-pending-item[aria-grabbed="true"] {
-  border-color: var(--color-primary);
-  box-shadow: 0 4px 12px rgba(58, 141, 255, 0.3);
-}
-
 /* Animaciones */
 @keyframes pendingItemEnter {
   from {
@@ -254,17 +252,57 @@
   animation: pendingItemEnter 0.3s ease-out;
 }
 
-/* Indicador de zona de drop */
-.draggable-pending-item.drop-target {
-  border-color: var(--color-primary);
-  background: rgba(58, 141, 255, 0.05);
-}
-
-.draggable-pending-item.drop-target::after {
+/* Indicador de posición de inserción: barra en el lado donde caerá la imagen */
+.draggable-pending-item.drop-before::after,
+.draggable-pending-item.drop-after::after {
   content: '';
   position: absolute;
-  inset: 0;
-  border: 2px dashed var(--color-primary);
-  border-radius: var(--radius-md);
-  background: rgba(58, 141, 255, 0.1);
+  top: 0;
+  bottom: 0;
+  width: var(--spacing-xs);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  z-index: 11;
+  pointer-events: none;
+}
+
+.draggable-pending-item.drop-before::after {
+  left: 0;
+}
+
+.draggable-pending-item.drop-after::after {
+  right: 0;
+}
+
+/* Botones mover (teclado / táctil) */
+.pending-move-controls {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-sm);
+  background: var(--color-neutral-50);
+}
+
+.pending-move-controls .btn-move {
+  width: var(--spacing-2xl);
+  height: var(--spacing-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-xs);
+  background: var(--color-neutral-0);
+  color: var(--color-neutral-700);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.pending-move-controls .btn-move:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pending-move-controls .btn-move:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

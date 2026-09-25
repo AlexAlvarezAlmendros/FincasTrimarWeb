@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import DraggableImageGrid from '../../../DraggableImageGrid/DraggableImageGrid';
 import DraggablePendingGrid from '../../../DraggablePendingGrid/DraggablePendingGrid';
+import { isFileDrag } from '../../../../utils/reorder.js';
 import './ImageUploadManager.css';
 
 /**
@@ -20,12 +21,53 @@ const ImageUploadManager = ({
   uploadPendingFiles,
   clearError,
   isProcessing = false,
+  isReordering = false,
   reorderImages,
   reorderPendingFiles,
   isReadOnly = false 
 }) => {
   const fileInputRef = useRef(null);
+  const rootRef = useRef(null);
+  const alertRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
+  const [alertInView, setAlertInView] = useState(true);
+
+  // Con muchas imágenes el aviso de arriba puede quedar fuera de pantalla (p.ej.
+  // al fallar una reordenación cerca del final): entonces se muestra una copia flotante.
+  useEffect(() => {
+    const el = alertRef.current;
+    if (!error || !el || typeof IntersectionObserver === 'undefined') {
+      setAlertInView(true);
+      return undefined;
+    }
+    const headerHeight = getComputedStyle(document.documentElement)
+      .getPropertyValue('--header-height').trim() || '0px';
+    const observer = new IntersectionObserver(
+      ([entry]) => setAlertInView(entry.isIntersecting),
+      { rootMargin: `-${headerHeight} 0px 0px 0px` }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [error]);
+
+  // Mientras la sección está montada, un fichero soltado fuera de ella no debe
+  // abrirse en el navegador (se abandonaría el formulario y las imágenes
+  // pendientes). Solo se neutraliza: la sección es la única que acepta ficheros.
+  useEffect(() => {
+    if (isReadOnly) return undefined;
+    const neutralize = (e) => {
+      if (e.defaultPrevented || !isFileDrag(e)) return;
+      if (rootRef.current?.contains(e.target)) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+    };
+    window.addEventListener('dragover', neutralize);
+    window.addEventListener('drop', neutralize);
+    return () => {
+      window.removeEventListener('dragover', neutralize);
+      window.removeEventListener('drop', neutralize);
+    };
+  }, [isReadOnly]);
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -39,17 +81,23 @@ const ImageUploadManager = ({
     }
   };
 
+  // Toda la sección acepta ficheros del escritorio (no solo la upload-zone), pero
+  // solo 'Files': la reordenación interna de imágenes pasa sin tocarse.
   const handleDragOver = (e) => {
+    if (!isFileDrag(e)) return;
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
     setDragOver(true);
   };
 
   const handleDragLeave = (e) => {
-    e.preventDefault();
+    // Ignorar el paso sobre hijos: evita el parpadeo del resaltado
+    if (e.currentTarget.contains(e.relatedTarget)) return;
     setDragOver(false);
   };
 
   const handleDrop = (e) => {
+    if (!isFileDrag(e)) return;
     e.preventDefault();
     setDragOver(false);
     
@@ -64,7 +112,14 @@ const ImageUploadManager = ({
   };
 
   return (
-    <div className="image-upload-manager">
+    <div
+      ref={rootRef}
+      className="image-upload-manager"
+      onDragEnter={isReadOnly ? undefined : handleDragOver}
+      onDragOver={isReadOnly ? undefined : handleDragOver}
+      onDragLeave={isReadOnly ? undefined : handleDragLeave}
+      onDrop={isReadOnly ? undefined : handleDrop}
+    >
       <div className="section-header">
         <h3>Imágenes de la vivienda</h3>
         <div className="image-counter">
@@ -73,9 +128,15 @@ const ImageUploadManager = ({
       </div>
 
       {error && (
-        <div className="alert alert-error">
+        <div ref={alertRef} className="alert alert-error" role="alert">
           <span>{error}</span>
-          <button type="button" onClick={clearError} className="alert-close">×</button>
+          <button type="button" onClick={clearError} className="alert-close" aria-label="Cerrar aviso">×</button>
+        </div>
+      )}
+      {error && !alertInView && (
+        <div className="alert alert-error alert-floating">
+          <span>{error}</span>
+          <button type="button" onClick={clearError} className="alert-close" aria-label="Cerrar aviso">×</button>
         </div>
       )}
 
@@ -83,9 +144,6 @@ const ImageUploadManager = ({
       {!isReadOnly && (
         <div 
           className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
           onClick={triggerFileSelect}
         >
           <div className="upload-icon">
@@ -126,6 +184,7 @@ const ImageUploadManager = ({
           pendingFiles={pendingFiles}
           onRemove={removePendingFile}
           onReorder={reorderPendingFiles}
+          hasSavedImages={images.length > 0}
           title="Archivos pendientes de subir"
         />
       )}
@@ -137,6 +196,7 @@ const ImageUploadManager = ({
           onRemove={removeImage}
           onReorder={reorderImages}
           isReadOnly={isReadOnly}
+          isSaving={isReordering}
           title="Imágenes guardadas"
         />
       )}

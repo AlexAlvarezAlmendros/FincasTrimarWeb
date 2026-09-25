@@ -36,6 +36,14 @@
   font-weight: var(--font-weight-medium, 500);
 }
 
+/* Guardado del orden en curso (en línea, sin bloquear la página) */
+.grid-saving {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--color-neutral-500);
+}
+
 .images-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -57,6 +65,8 @@
   box-shadow: var(--shadow-md, 0 6px 16px rgba(0,0,0,0.08));
   z-index: 1001;
   animation: slideIn 0.3s ease-out;
+  /* Está sobre la zona de auto-scroll superior: no debe capturar eventos */
+  pointer-events: none;
 }
 
 .drag-feedback i {
