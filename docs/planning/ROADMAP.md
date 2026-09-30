@@ -1,6 +1,6 @@
 # FincasTrimarWeb — Project Roadmap
 
-> Last updated: 2026-09-25
+> Last updated: 2026-09-30
 
 Portal inmobiliario ya funcional. El roadmap prioriza **hardening → limpieza → calidad → producto**.
 

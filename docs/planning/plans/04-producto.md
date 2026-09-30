@@ -1,6 +1,6 @@
 # Plan 04 — Producto
 
-> Fase: 4 de 4 | Status: 🔄 In Progress | Started: 2026-07-15 | Last updated: 2026-09-25
+> Fase: 4 de 4 | Status: 🔄 In Progress | Started: 2026-07-15 | Last updated: 2026-09-30
 > Milestone: Backlog de features y mejoras UX/SEO
 
 ## Dependencias
@@ -34,6 +34,15 @@
 | 3.2 | Filtros del listado sin efecto: el backend ignora `estadoVenta` y `sortBy`, «Más antiguas» no existe; contador lee `totalItems` (backend devuelve `total`); cabecera lee `search` en vez de `q` | ✅ Done | Listas blancas y saneado de filtros en `propertyService.searchProperties` (común a GET y POST /search); los select ya no esperan el debounce |
 | 3.3 | Orden determinista para paginar (desempate en `ORDER BY`) y `page`/`pageSize` acotados en la API (una consulta por vivienda de la página) | ✅ Done | Desempate `CreatedAt, Id` en el sentido del orden; `pageSize` 1–50 y `page` 1–100000 (antes un page enorme daba 500) |
 
+### Formato de las descripciones importadas
+| # | Tarea | Status | Notas |
+|---|-------|--------|-------|
+| 5.1 | El import (`/api/v1/json/import`) formatea la descripción: párrafos, listas y subtítulos en HTML compatible con Quill; repara el texto «pegado» que manda el bot (sin saltos de línea); quita «Leer comentario completo»; escapa HTML. Descripción corta desde la primera línea | ✅ Done | `utils/descriptionFormatter.js` (20 tests). La reparación de texto pegado solo se aplica si no hay ningún salto de línea; no parte números, unidades («90m2»), abreviaturas ni siglas. HTML verificado en Quill (21/22 idénticos; el otro solo fusiona dos listas seguidas) |
+| 5.2 | Script para reformatear las descripciones que ya hay en la BD (simulación por defecto, copia de seguridad y restauración) | 🔄 In Progress | Script hecho y probado (`npm run db:reformat-descriptions`). **Falta ejecutarlo en producción** tras desplegar el backend. Solo toca descripciones de un único bloque; la corta solo se regenera si salía de la descripción |
+| 5.3 | Estilos de la descripción en la ficha: sin sangría de primera línea (choca con listas y subtítulos) | ✅ Done | Además, en móvil (≤768px) alineado a la izquierda: justificado dejaba huecos grandes |
+| 5.4 | (Repo HomeScrapper) El scraper de la agencia conserva los saltos de línea de la descripción y no captura el botón «Leer comentario completo» | ✅ Done | Rama `fix/descripcion-con-formato` de HomeScrapper (2346 tests OK). Pendiente de subir y desplegar en la máquina del bot; con él, cada ejecución diaria reescribe las descripciones con el texto original |
+| 5.5 | La API pública (`GET /viviendas`) devuelve campos internos: `observaciones`, `telefonoContacto`, `nombreContacto`, `comisionGanada`, `captadoPor`, `porcentajeCaptacion` | ⬜ Ready | Detectado al revisar las descripciones. Hoy ninguna vivienda publicada los tiene rellenos salvo `observaciones`, pero se filtrarían en cuanto se rellenen. Encaja con 2.4 y la Fase 1 |
+
 ## Completion log
 | Date | Task | Notes |
 |------|------|-------|
@@ -41,3 +50,4 @@
 | 2026-07-15 | 1.1 | API `/api/v1/json` restaurada tras el rebase sobre la Fase 5 (que la había retirado como huérfana del panel): rutas + controller remontados en app.js antes del checkJwt global (auth dual X-API-Key/JWT Admin). Smoke test HTTP: 200 con key, 401 sin key. El import externo va solo por API, sin UI en el panel. |
 | 2026-09-25 | 2.1, 2.2, 2.3 | Repaso de la edición de viviendas (investigación con verificación adversarial + 3 implementadores + revisión + crítica final). Verificado con build, E2E Playwright con drags reales de Blink (34/34 a 1440×900 y 390×844, también con `.admin-content` como contenedor de scroll), E2E del formulario con la API interceptada y tests de backend sobre SQLite local (47 + 17 OK). Pendiente: recorrido manual en Chrome/Firefox reales con Auth0 + Turso. Hallazgos preexistentes anotados como 2.4–2.8 |
 | 2026-09-25 | 3.1, 3.2, 3.3 | Paginación del listado del admin. Verificado con E2E Playwright sobre `Admin.jsx` real y API simulada (153/154; el único fallo es una expectativa obsoleta del halo de foco, sustituido por el anillo global con contraste 3,09:1), suite del revisor 16/16, humo de Home/Listado públicos con el hook compartido y backend en SQLite local (98 + 47 + 11 OK). Preexistente fuera de alcance: `imageCount` del listado es un stub |
+| 2026-09-30 | 5.1, 5.3, 5.4 | Descripciones importadas con formato. Causa raíz en el bot (HomeScrapper): `get_text(strip=True)` + `limpiar_texto` perdían los saltos y el selector cogía el botón «Leer comentario completo». Web: formateador en el import + reparación heurística del texto pegado, probado sobre las 22 descripciones publicadas, import E2E en SQLite local (creación y actualización), capturas en escritorio y móvil, ida y vuelta por Quill y build del frontend. Contenido de origen a revisar en Idealista: «Piso en venta en Òdena» incluye tres variantes de ChatGPT («2. Versión corta para redes sociales…») y «Piso en venta en Centro» (Vidreres) tiene un «[X]%» sin rellenar |
