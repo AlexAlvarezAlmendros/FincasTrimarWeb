@@ -317,11 +317,6 @@
   color: var(--color-neutral-700);
   margin-bottom: var(--spacing-md);
   text-align: justify;
-  text-indent: 2em;
-}
-
-.detalle-description-content p:first-of-type {
-  text-indent: 0;
 }
 
 .detalle-description-content p:last-child {
@@ -336,14 +331,11 @@
   max-width: 600px;
 }
 
+/* Sin sangría: las descripciones llevan subtítulos y listas que deben alinearse
+   con los párrafos */
 .detalle-html-content p {
   margin-bottom: var(--spacing-md);
   text-align: justify;
-  text-indent: 2em;
-}
-
-.detalle-html-content p:first-of-type {
-  text-indent: 0;
 }
 
 .detalle-html-content p:last-child {
@@ -1067,6 +1059,12 @@
   .detalle-contact-form-container,
   .detalle-similar-properties {
     padding: var(--spacing-lg);
+  }
+
+  /* Justificado en una columna estrecha deja huecos grandes entre palabras */
+  .detalle-description-content p,
+  .detalle-html-content p {
+    text-align: left;
   }
 
   .detalle-main-image {
