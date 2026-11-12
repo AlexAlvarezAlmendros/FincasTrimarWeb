@@ -11,7 +11,8 @@ class ViviendaRepository {
    * Obtiene viviendas con filtros y paginación
    */
   async findAll({ 
-    q, minPrice, maxPrice, rooms, bathRooms, tipoInmueble, tipoVivienda,
+    q, minPrice, maxPrice, rooms, bathRooms, garage, squaredMeters, tipoInmueble, tipoVivienda,
+    tipoAnuncio, estado,
     provincia, poblacion, estadoVenta, captadoPor, sinCaptador, sortBy, published = true, page = 1, pageSize = 20, includeDrafts = false 
   } = {}) {
     try {
@@ -72,6 +73,28 @@ class ViviendaRepository {
         params.push(tipoVivienda);
       }
       
+      if (tipoAnuncio) {
+        conditions.push('TipoAnuncio = ?');
+        params.push(tipoAnuncio);
+      }
+
+      // Estado de conservación (obra nueva, buen estado, a reformar)
+      if (estado) {
+        conditions.push('Estado = ?');
+        params.push(estado);
+      }
+
+      // Mínimos, como habitaciones y baños
+      if (garage !== undefined) {
+        conditions.push('Garage >= ?');
+        params.push(garage);
+      }
+
+      if (squaredMeters !== undefined) {
+        conditions.push('SquaredMeters >= ?');
+        params.push(squaredMeters);
+      }
+
       if (provincia) {
         conditions.push('Provincia = ?');
         params.push(provincia);

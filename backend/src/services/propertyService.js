@@ -11,6 +11,8 @@ const MAX_PAGE = 100000;
 
 // Valores admitidos en los filtros del listado (lo desconocido se ignora)
 const ESTADOS_VENTA = ['Pendiente', 'Contactada', 'Captada', 'Rechazada', 'Disponible', 'Reservada', 'Vendida', 'Cerrada'];
+const TIPOS_ANUNCIO = ['Venta', 'Alquiler'];
+const ESTADOS_CONSERVACION = ['ObraNueva', 'BuenEstado', 'AReformar'];
 const SORT_OPTIONS = [
   'fechaPublicacion_desc', 'fechaPublicacion_asc', 'price_desc', 'price_asc',
   'name_asc', 'name_desc', 'fechaCaptacion_desc', 'fechaCaptacion_asc'
@@ -98,6 +100,10 @@ class PropertyService {
         bathRooms: numberFilter(filters.bathRooms),
         tipoInmueble: textFilter(filters.tipoInmueble),
         tipoVivienda: textFilter(filters.tipoVivienda),
+        tipoAnuncio: TIPOS_ANUNCIO.includes(filters.tipoAnuncio) ? filters.tipoAnuncio : undefined,
+        estado: ESTADOS_CONSERVACION.includes(filters.estado) ? filters.estado : undefined,
+        garage: numberFilter(filters.garage),
+        squaredMeters: numberFilter(filters.squaredMeters),
         provincia: textFilter(filters.provincia),
         poblacion: textFilter(filters.poblacion),
         estadoVenta: ESTADOS_VENTA.includes(filters.estadoVenta) ? filters.estadoVenta : undefined,
