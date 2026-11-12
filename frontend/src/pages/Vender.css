@@ -357,10 +357,6 @@
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 0 16px;
-  }
-  
   .vender-heroSection {
     padding: 60px 0 100px 0;
   }
@@ -631,4 +627,63 @@
   font-weight: 400;
   margin-top: 4px;
   line-height: 1.4;
+}
+/* ==============================================
+   Hero adaptable
+   La foto tiene el cielo liso a la izquierda y el edificio a la derecha.
+   - Escritorio: el texto se limita a la mitad izquierda, fuera del edificio.
+   - Tablet y móvil: el texto va centrado arriba, sobre el cielo, y el edificio
+     se ancla abajo a la derecha (el color de fondo prolonga el cielo).
+============================================== */
+.vender-heroSection {
+  background-color: #EBF1F9;
+  background-position: right center;
+}
+
+.vender-heroTitle {
+  font-size: var(--font-size-h1);
+}
+
+@media (min-width: 1025px) {
+  .vender-heroText {
+    max-width: min(600px, 42%);
+  }
+}
+
+@media (max-width: 1024px) {
+  /* La foto, más pequeña y abajo; un degradado del color del cielo funde su
+     borde superior con el fondo */
+  .vender-heroSection {
+    background-image:
+      linear-gradient(to bottom, #EBF1F9 34%, rgba(235, 241, 249, 0) 58%),
+      url('/img/VenderImage.png');
+    background-size: 100% 100%, auto 68%;
+    background-position: left top, right bottom;
+  }
+
+  .vender-heroContent {
+    flex-direction: column;
+    justify-content: flex-start;
+    min-height: 380px;
+    text-align: center;
+  }
+
+  .vender-heroText {
+    max-width: 560px;
+  }
+}
+
+@media (max-width: 768px) {
+  .vender-heroSection {
+    min-height: 0;
+    padding-top: var(--spacing-2xl);
+    background-image:
+      linear-gradient(to bottom, #EBF1F9 42%, rgba(235, 241, 249, 0) 66%),
+      url('/img/VenderImage.png');
+    background-size: 100% 100%, auto 60%;
+  }
+
+  .vender-heroTitle {
+    font-size: var(--font-size-h1);
+  }
 }

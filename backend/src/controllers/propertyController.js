@@ -21,6 +21,10 @@ const propertyController = {
         bathRooms: req.query.bathRooms ? parseInt(req.query.bathRooms) : undefined,
         tipoInmueble: req.query.tipoInmueble,
         tipoVivienda: req.query.tipoVivienda,
+        tipoAnuncio: req.query.tipoAnuncio,
+        estado: req.query.estado,
+        garage: req.query.garage ? parseInt(req.query.garage) : undefined,
+        squaredMeters: req.query.squaredMeters ? parseInt(req.query.squaredMeters) : undefined,
         provincia: req.query.provincia,
         poblacion: req.query.poblacion,
         // estadoVenta/sortBy (listas blancas), los demás filtros y la paginación se

@@ -1,117 +1,117 @@
-import styles from './PropertyCard.module.css';
+import { useId, useState } from 'react';
+import PropTypes from 'prop-types';
+import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  formatPropertyPrice,
+  getPriceAriaLabel,
+  getPriceSuffix,
+  getPropertyLocation,
+  getPropertySpecs,
+  getPropertyTags,
+  getSaleStatus,
+} from '../../utils/propertyDisplay';
+import './PropertyCard.css';
 
-const PropertyCard = ({ property, onImageClick, onDetailsClick }) => {
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price);
-  };
+/**
+ * Tarjeta de inmueble para listados: foto, precio, título, ubicación y datos.
+ * Toda la tarjeta es un enlace real a la ficha (se puede abrir en otra pestaña).
+ */
+const PropertyCard = ({ property, headingLevel = 'h3' }) => {
+  const titleId = useId();
+  const [imageFailed, setImageFailed] = useState(false);
+  const Heading = headingLevel;
 
-  const handleImageClick = () => {
-    if (onImageClick) {
-      onImageClick(property.images || []);
-    }
-  };
-
-  const handleDetailsClick = (e) => {
-    e.preventDefault();
-    if (onDetailsClick) {
-      onDetailsClick(property.id);
-    }
-  };
-
-  const handleCardClick = (e) => {
-    // Evitar navegación si se hace clic en la imagen (para galería)
-    if (e.target.closest('.property-card__image-container')) {
-      return;
-    }
-    handleDetailsClick(e);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleDetailsClick(e);
-    }
-  };
-
-  // Función para obtener el badge de estado
-  const getStatusBadge = () => {
-    if (property.estadoVenta === 'Reservada') {
-      return (        <div className={styles['propertyCard-statusBadge']} data-status="reserved">
-          🔒 Reservada
-        </div>
-      );
-    }
-    if (property.estadoVenta === 'Vendida') {
-      return (
-        <div className={styles['propertyCard-statusBadge']} data-status="sold">
-          ✅ Vendida
-        </div>
-      );
-    }
-    return null;
-  };
+  const specs = getPropertySpecs(property);
+  const tags = getPropertyTags(property, { compact: true });
+  const status = getSaleStatus(property);
+  const location = getPropertyLocation(property);
+  const showImage = property.mainImage && !imageFailed;
 
   return (
-    <article 
-      className={styles.propertyCard} 
-      onClick={handleCardClick}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      role="button"
-      aria-label={`Ver detalles de ${property.name}`}
+    <article
+      className={`property-card${status ? ` property-card--${status.key}` : ''}`}
+      aria-labelledby={titleId}
     >
-      <div className={styles['propertyCard-imageContainer']}>
-        {getStatusBadge()}
-        <img 
-          src={property.mainImage || '/placeholder-house.jpg'} 
-          alt={property.name}
-          className={styles['propertyCard-image']}
-          onClick={handleImageClick}
-          loading="lazy"
-        />
-        {property.images?.length > 1 && (
-          <span className={styles['propertyCard-imageCount']}>
-            Ver todas las imágenes
+      <div className="property-card__media">
+        {showImage ? (
+          <img
+            src={property.mainImage}
+            alt=""
+            className="property-card__image"
+            loading="lazy"
+            decoding="async"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="property-card__placeholder" aria-hidden="true">
+            <FontAwesomeIcon icon="fa-solid fa-house" />
+            <span>Sin foto</span>
+          </div>
+        )}
+
+        {status && (
+          <span className="property-card__status" data-status={status.key}>
+            <FontAwesomeIcon icon={`fa-solid fa-${status.icon}`} aria-hidden="true" />
+            {status.label}
           </span>
         )}
       </div>
-      
-      <div className={styles['propertyCard-content']}>
-        <header>
-          <h3 className={styles['propertyCard-title']}>{property.name}</h3>
-          <p className={styles['propertyCard-description']}>{property.shortDescription}</p>
-        </header>
-        
-        <div className={styles['propertyCard-specsGrid']}>
-          {property.rooms > 0 && <span>{property.rooms} Habitaciones</span>}
-          {property.garage > 0 && <span>{property.garage} Garajes</span>}
-          <span>{property.squaredMeters} M²</span>
-          {property.bathRooms > 0 && <span>{property.bathRooms} Baños</span>}
-        </div>
-        
-        <div className={styles['propertyCard-tags']}>
-          <span className={`${styles['propertyCard-chip']} ${styles['propertyCard-chipGreen']}`}>{property.tipoInmueble}</span>
-          <span className={`${styles['propertyCard-chip']} ${styles['propertyCard-chipYellow']}`}>{property.tipoVivienda}</span>
-          <span className={`${styles['propertyCard-chip']} ${styles['propertyCard-chipPurple']}`}>{property.tipoAnuncio}</span>
-        </div>
-        
-        <footer className={styles['propertyCard-footer']}>
-          <button 
-            className={styles['propertyCard-priceBtn']}
-            onClick={handleDetailsClick}
-            aria-label={`Ver detalles de ${property.name}`}
-          >
-            <span className={styles['propertyCard-price']}>
-              {formatPrice(property.price)}
-            </span>
-          </button>
-        </footer>
+
+      <div className="property-card__body">
+        <p className="property-card__price" aria-label={getPriceAriaLabel(property)}>
+          {formatPropertyPrice(property.price)}
+          {getPriceSuffix(property) && (
+            <span className="property-card__price-suffix">{getPriceSuffix(property)}</span>
+          )}
+        </p>
+
+        <Heading className="property-card__title" id={titleId}>
+          <Link to={`/viviendas/${property.id}`} className="property-card__link">
+            {property.name}
+          </Link>
+        </Heading>
+
+        {location && (
+          <p className="property-card__location">
+            <FontAwesomeIcon icon="fa-solid fa-location-dot" aria-hidden="true" />
+            <span>{location}</span>
+          </p>
+        )}
+
+        {specs.length > 0 && (
+          <ul className="property-card__specs">
+            {specs.map((spec) => (
+              <li key={spec.key} aria-label={`${spec.value} ${spec.label}`}>
+                <FontAwesomeIcon icon={`fa-solid fa-${spec.icon}`} aria-hidden="true" />
+                <span aria-hidden="true">
+                  <strong>{spec.value}</strong> {spec.unit}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {tags.length > 0 && (
+          <div className="property-card__tags">
+            {tags.map((tag) => (
+              <span key={tag.key} className={`chip chip--${tag.color}`}>{tag.label}</span>
+            ))}
+          </div>
+        )}
       </div>
     </article>
   );
+};
+
+PropertyCard.propTypes = {
+  property: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string,
+    price: PropTypes.number,
+    mainImage: PropTypes.string,
+  }).isRequired,
+  headingLevel: PropTypes.oneOf(['h2', 'h3', 'h4']),
 };
 
 export default PropertyCard;

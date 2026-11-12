@@ -1,12 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useVivienda, useSimilarViviendas } from '../hooks/useViviendas.js';
 import useContactForm from '../hooks/useContactForm.js';
 import SEO from '../components/SEO';
 import GoogleMapEmbed from '../components/GoogleMapEmbed/GoogleMapEmbed.jsx';
 import SafeHtmlRenderer from '../components/SafeHtmlRenderer/SafeHtmlRenderer.jsx';
+import PropertyCard from '../components/PropertyCard/PropertyCard';
+import ImageLightbox from '../components/ImageLightbox';
 import { generatePropertySchema, generateBreadcrumbSchema } from '../utils/structuredData';
+import { CONTACT, whatsappLink } from '../config/contact';
+import {
+  formatPropertyPrice,
+  getEstadoLabel,
+  getPlantaLabel,
+  getPriceAriaLabel,
+  getPricePerMeter,
+  getPriceSuffix,
+  getPropertyFeatures,
+  getPropertyLocation,
+  getPropertySpecs,
+  getPropertyTags,
+  getSaleStatus,
+} from '../utils/propertyDisplay';
 import './Detalle.css';
+
+// Fotos del carrusel de cabecera (el resto se ven en la rejilla y en el visor)
+const HERO_IMAGES = 8;
+const GALLERY_STEP = 12;
+// En pantallas estrechas la rejilla empieza con menos fotos (ya hay carrusel arriba)
+const initialGalleryCount = () =>
+  (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches ? 6 : GALLERY_STEP);
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+// Altura (px) a partir de la cual la descripción se pliega con «Leer más»
+const DESCRIPTION_COLLAPSED_HEIGHT = 340;
 
 export default function Detalle() {
   const { id } = useParams();
@@ -22,7 +49,7 @@ export default function Detalle() {
   const { 
     similarViviendas: similarProperties, 
     isLoading: loadingSimilar 
-  } = useSimilarViviendas(id, 2);
+  } = useSimilarViviendas(id, 3);
 
   // Hook para formulario de contacto
   const {
@@ -65,11 +92,33 @@ export default function Detalle() {
   const [errorMessage, setErrorMessage] = useState('');
 
   // Estados locales para UI
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showLightbox, setShowLightbox] = useState(false);
-  const [showPhoneNumber, setShowPhoneNumber] = useState(false);
-  const [lightboxImgLoaded, setLightboxImgLoaded] = useState(true);
-  const [visibleGalleryCount, setVisibleGalleryCount] = useState(9);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [visibleGalleryCount, setVisibleGalleryCount] = useState(initialGalleryCount);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [descriptionIsLong, setDescriptionIsLong] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState('');
+  const descriptionRef = useRef(null);
+  const heroTrackRef = useRef(null);
+
+  // Al cambiar de inmueble (p. ej. desde «similares») la ficha empieza de cero
+  useEffect(() => {
+    setLightboxIndex(null);
+    setVisibleGalleryCount(initialGalleryCount());
+    setHeroIndex(0);
+    setDescriptionExpanded(false);
+    setShowSuccess(false);
+    setShowError(false);
+    setImagenes([]);
+    if (heroTrackRef.current) heroTrackRef.current.scrollLeft = 0;
+  }, [id]);
+
+  // La descripción solo se pliega si de verdad es larga
+  useEffect(() => {
+    const element = descriptionRef.current;
+    if (!element) return;
+    setDescriptionIsLong(element.scrollHeight > DESCRIPTION_COLLAPSED_HEIGHT + 120);
+  }, [property?.description]);
 
   // Actualizar información cuando cambia la propiedad
   React.useEffect(() => {
@@ -181,63 +230,80 @@ ${infoVivienda}`;
     }
   };
 
-  const openLightbox = (index) => {
-    setCurrentImageIndex(index);
-    setLightboxImgLoaded(false);
-    setShowLightbox(true);
+  const openLightbox = (index) => setLightboxIndex(index);
+
+  // Carrusel de cabecera (móvil): qué foto se está viendo
+  const handleHeroScroll = (e) => {
+    const track = e.currentTarget;
+    if (!track.clientWidth) return;
+    setHeroIndex(Math.round(track.scrollLeft / track.clientWidth));
   };
 
-  const closeLightbox = () => {
-    setShowLightbox(false);
-  };
-
-  const nextImage = () => {
-    setLightboxImgLoaded(false);
-    setCurrentImageIndex((prev) => 
-      prev === imagenes.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  const prevImage = () => {
-    setLightboxImgLoaded(false);
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? imagenes.length - 1 : prev - 1
-    );
-  };
-
-  // Fade-in handler para imágenes lazy: añade clase CSS al cargar
-  const handleImageLoad = (e) => {
-    e.currentTarget.classList.add('detalle-img--loaded');
+  const handleShare = async () => {
+    const shareData = { title: property?.name, url: window.location.href };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await navigator.clipboard.writeText(shareData.url);
+      setShareFeedback('Enlace copiado');
+    } catch (error) {
+      // Compartir cancelado por el usuario: no es un error
+      if (error?.name !== 'AbortError') setShareFeedback('No se pudo copiar el enlace');
+    }
+    setTimeout(() => setShareFeedback(''), 2500);
   };
 
   // Estados de carga y error
   if (loadingProperty) {
     return (
-      <div className="detalle-loading-container">
-        <div className="detalle-loading-spinner"></div>
-        <p>Cargando vivienda...</p>
+      <div className="detalle">
+        <div className="container detalle-skeleton" aria-busy="true" aria-label="Cargando vivienda">
+          <div className="detalle-skeleton__block detalle-skeleton__gallery" />
+          <div className="detalle-skeleton__block detalle-skeleton__title" />
+          <div className="detalle-skeleton__block detalle-skeleton__text" />
+        </div>
       </div>
     );
   }
 
   if (errorProperty || !property) {
     return (
-      <div className="detalle-error-container">
-        <h1>Vivienda no encontrada</h1>
-        <p>
-          {propertyError || 'La vivienda que buscas no existe o ha sido eliminada.'}
-        </p>
-        <Link to="/viviendas" className="detalle-back-link">Volver al listado</Link>
+      <div className="detalle">
+        <div className="container detalle-not-found">
+          <div className="state-box">
+            <h1>Vivienda no encontrada</h1>
+            <p>La vivienda que buscas no existe o ya no está disponible.</p>
+            <Link to="/viviendas" className="btn btn--primary">Ver todas las viviendas</Link>
+          </div>
+        </div>
       </div>
     );
   }
+
+  const specs = getPropertySpecs(property);
+  const tags = getPropertyTags(property);
+  const status = getSaleStatus(property);
+  const features = getPropertyFeatures(property);
+  const location = getPropertyLocation(property, { withStreet: true });
+  const pricePerMeter = getPricePerMeter(property);
+  const priceSuffix = getPriceSuffix(property);
+  const heroImages = imagenes.slice(0, HERO_IMAGES);
+  const whatsappUrl = whatsappLink(`Hola, me interesa este inmueble: ${property.name} ${window.location.href}`);
+
+  // Datos de ficha sin icono propio: planta y estado de conservación
+  const extraFacts = [
+    property.planta && { key: 'planta', icon: 'stairs', value: getPlantaLabel(property.planta), label: 'Planta' },
+    property.estado && { key: 'estado', icon: 'tag', value: getEstadoLabel(property.estado), label: 'Estado' },
+  ].filter(Boolean);
 
   return (
     <div className="detalle">
       <SEO
         title={property.name}
         description={property.shortDescription || property.description?.substring(0, 160)}
-        keywords={`${property.tipoVivienda} ${property.tipoAnuncio} ${property.poblacion}, ${property.rooms} habitaciones, ${property.squaredMeters}m2, inmobiliaria Igualada`}
+        keywords={`${property.tipoVivienda || property.tipoInmueble || ''} ${property.tipoAnuncio || ''} ${property.poblacion || ''}, ${property.rooms} habitaciones, ${property.squaredMeters}m2, inmobiliaria Igualada`}
         image={imagenes?.[0]?.url}
         type="product"
         structuredData={[
@@ -249,409 +315,432 @@ ${infoVivienda}`;
           ])
         ]}
       />
-      
+
       <div className="container">
-        {/* Breadcrumb */}
-        <nav className="detalle-breadcrumb">
+        {/* Migas de pan */}
+        <nav className="detalle-breadcrumb" aria-label="Migas de pan">
           <Link to="/">Inicio</Link>
-          <span>›</span>
+          <span aria-hidden="true">›</span>
           <Link to="/viviendas">Viviendas</Link>
-          <span>›</span>
-          <span>{property.name}</span>
+          <span aria-hidden="true">›</span>
+          <span className="detalle-breadcrumb__current" aria-current="page">{property.name}</span>
         </nav>
 
-        {/* Hero Gallery */}
-        <section className="detalle-hero-gallery">
-          <div className="detalle-main-image detalle-img-skeleton" onClick={() => openLightbox(0)}>
-            <img 
-              src={imagenes && imagenes.length > 0 
-                ? imagenes[0].url 
-                : '/api/placeholder/800/600'} 
-              alt={property.name}
-              fetchpriority="high"
-              decoding="async"
-              onLoad={(e) => {
-                e.currentTarget.classList.add('detalle-img--loaded');
-                e.currentTarget.parentElement.classList.remove('detalle-img-skeleton');
-              }}
-            />
-            <div className="detalle-view-all-images">
-              {imagenes && imagenes.length > 1 
-                ? `Ver todas las imágenes (${imagenes.length})` 
-                : 'Ver imagen'}
+        {/* Fotos de cabecera: mosaico en escritorio, carrusel deslizable en móvil */}
+        <section className="detalle-hero" aria-label="Fotos del inmueble">
+          {heroImages.length > 0 ? (
+            <>
+              <div
+                className={`detalle-hero__track detalle-hero__track--${Math.min(heroImages.length, 3)}`}
+                ref={heroTrackRef}
+                onScroll={handleHeroScroll}
+              >
+                {heroImages.map((imagen, index) => (
+                  <button
+                    type="button"
+                    key={imagen.id || imagen.url}
+                    className="detalle-hero__item"
+                    onClick={() => openLightbox(index)}
+                    aria-label={`Ver foto ${index + 1} de ${imagenes.length} a pantalla completa`}
+                  >
+                    <img
+                      src={imagen.url}
+                      alt={index === 0 ? property.name : ''}
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      fetchpriority={index === 0 ? 'high' : undefined}
+                      decoding="async"
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {status && (
+                <span className="detalle-hero__status" data-status={status.key}>
+                  <FontAwesomeIcon icon={`fa-solid fa-${status.icon}`} aria-hidden="true" />
+                  {status.label}
+                </span>
+              )}
+
+              {heroImages.length > 1 && (
+                <span className="detalle-hero__counter" aria-hidden="true">
+                  {Math.min(heroIndex + 1, heroImages.length)} / {imagenes.length}
+                </span>
+              )}
+
+              <button type="button" className="detalle-hero__all" onClick={() => openLightbox(0)}>
+                <FontAwesomeIcon icon="fa-solid fa-images" aria-hidden="true" />
+                {imagenes.length > 1 ? `Ver las ${imagenes.length} fotos` : 'Ver foto'}
+              </button>
+            </>
+          ) : (
+            <div className={`detalle-hero__empty${loadingImages ? ' detalle-hero__empty--loading' : ''}`}>
+              {!loadingImages && (
+                <>
+                  <FontAwesomeIcon icon="fa-solid fa-house" aria-hidden="true" />
+                  <span>Este inmueble aún no tiene fotos</span>
+                </>
+              )}
             </div>
-          </div>
+          )}
         </section>
 
-        {/* Property Header */}
-        <section className="detalle-property-header">
-          <div className="detalle-property-main-info">
-            <h1 className="detalle-property-title">{property.name}</h1>
-            <p className="detalle-property-lead">{property.shortDescription}</p>
-            
-            <div className="detalle-property-tags">
-              <span className="detalle-chip detalle-chip-green">{property.tipoInmueble}</span>
-              <span className="detalle-chip detalle-chip-yellow">{property.tipoVivienda}</span>
-              <span className="detalle-chip detalle-chip-purple">{property.tipoAnuncio}</span>
-            </div>
-            
-            <div className="detalle-property-price-specs">
-              <div className="detalle-price-section">
-                <span className="detalle-price-detalle" aria-label={`Precio: ${property.price.toLocaleString('es-ES')} euros`}>
-                  {property.price.toLocaleString('es-ES')}
-                </span>
+        <div className="detalle-layout">
+          <div className="detalle-main">
+            {/* Cabecera: qué es, dónde está y cuánto cuesta */}
+            <header className="detalle-card detalle-header">
+              <div className="detalle-header__tags">
+                {tags.map((tag) => (
+                  <span key={tag.key} className={`chip chip--${tag.color}`}>{tag.label}</span>
+                ))}
+                {status && (
+                  <span className="chip detalle-header__status" data-status={status.key}>
+                    <FontAwesomeIcon icon={`fa-solid fa-${status.icon}`} aria-hidden="true" />
+                    {status.label}
+                  </span>
+                )}
               </div>
-              
-              <div className="detalle-specs-grid-detalle">
-                {property.rooms > 0 && (
-                  <div className="detalle-spec">
-                    <span className="detalle-spec-value">{property.rooms}</span>
-                    <span className="detalle-spec-label">Habitaciones</span>
-                  </div>
-                )}
-                {property.bathRooms > 0 && (
-                  <div className="detalle-spec">
-                    <span className="detalle-spec-value">{property.bathRooms}</span>
-                    <span className="detalle-spec-label">Baños</span>
-                  </div>
-                )}
-                <div className="detalle-spec">
-                  <span className="detalle-spec-value">{property.squaredMeters}</span>
-                  <span className="detalle-spec-label">M²</span>
+
+              <h1 className="detalle-header__title">{property.name}</h1>
+
+              {location && (
+                <p className="detalle-header__location">
+                  <FontAwesomeIcon icon="fa-solid fa-location-dot" aria-hidden="true" />
+                  <a href="#ubicacion">{location}</a>
+                </p>
+              )}
+
+              <div className="detalle-header__price-row">
+                <p className="detalle-header__price" aria-label={getPriceAriaLabel(property)}>
+                  {formatPropertyPrice(property.price)}
+                  {priceSuffix && <span className="detalle-header__price-suffix">{priceSuffix}</span>}
+                </p>
+                {pricePerMeter && <span className="detalle-header__price-meter">{pricePerMeter}</span>}
+
+                <div className="detalle-header__share">
+                  <span className="detalle-header__share-feedback" role="status">{shareFeedback}</span>
+                  <button type="button" className="detalle-header__share-button" onClick={handleShare}>
+                    <FontAwesomeIcon icon="fa-solid fa-share-nodes" aria-hidden="true" />
+                    Compartir
+                  </button>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        <div className="detalle-content-grid">
-          <main className="detalle-main-content-detalle">
-            {/* Description */}
-            <section className="detalle-description-section">
-              <h2>Descripción</h2>
-              <SafeHtmlRenderer 
-                content={property.description}
-                className="detalle-description-content detalle-html-content"
-              />
-            </section>
+              {(specs.length > 0 || extraFacts.length > 0) && (
+                <ul className="detalle-specs">
+                  {specs.map((spec) => (
+                    <li key={spec.key} className="detalle-specs__item">
+                      <FontAwesomeIcon icon={`fa-solid fa-${spec.icon}`} aria-hidden="true" />
+                      <span className="detalle-specs__text">
+                        <strong>{spec.value}{spec.key === 'meters' ? ' m²' : ''}</strong>
+                        <span>{spec.key === 'meters' ? 'Superficie' : capitalize(spec.label)}</span>
+                      </span>
+                    </li>
+                  ))}
+                  {extraFacts.map((fact) => (
+                    <li key={fact.key} className="detalle-specs__item">
+                      <FontAwesomeIcon icon={`fa-solid fa-${fact.icon}`} aria-hidden="true" />
+                      <span className="detalle-specs__text">
+                        <strong>{fact.value}</strong>
+                        <span>{fact.label}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </header>
+
+            {/* Descripción */}
+            {property.description && (
+              <section className="detalle-card" aria-labelledby="detalle-descripcion">
+                <h2 id="detalle-descripcion">Descripción</h2>
+                <div
+                  ref={descriptionRef}
+                  className={`detalle-description${descriptionIsLong && !descriptionExpanded ? ' detalle-description--collapsed' : ''}`}
+                  style={descriptionIsLong && !descriptionExpanded ? { maxHeight: DESCRIPTION_COLLAPSED_HEIGHT } : undefined}
+                >
+                  <SafeHtmlRenderer
+                    content={property.description}
+                    className="detalle-html-content"
+                  />
+                </div>
+                {descriptionIsLong && (
+                  <button
+                    type="button"
+                    className="detalle-description__toggle"
+                    onClick={() => setDescriptionExpanded((expanded) => !expanded)}
+                    aria-expanded={descriptionExpanded}
+                  >
+                    {descriptionExpanded ? 'Leer menos' : 'Leer la descripción completa'}
+                    <FontAwesomeIcon
+                      icon="fa-solid fa-chevron-down"
+                      className={descriptionExpanded ? 'detalle-description__chevron--up' : ''}
+                      aria-hidden="true"
+                    />
+                  </button>
+                )}
+              </section>
+            )}
 
             {/* Características */}
-            {property.caracteristicas && property.caracteristicas.length > 0 && (
-              <section className="detalle-features-section">
-                <h3>Características principales</h3>
-                <ul className="detalle-features-list">
-                  {property.caracteristicas.map((feature, index) => (
-                    <li key={index}>
-                      {typeof feature === 'object' ? feature.name || feature.caracteristica : feature}
+            {features.length > 0 && (
+              <section className="detalle-card" aria-labelledby="detalle-caracteristicas">
+                <h2 id="detalle-caracteristicas">Características</h2>
+                <ul className="detalle-features">
+                  {features.map((feature) => (
+                    <li key={feature.key}>
+                      <FontAwesomeIcon icon={`fa-solid fa-${feature.icon}`} aria-hidden="true" />
+                      {feature.label}
                     </li>
                   ))}
                 </ul>
               </section>
             )}
 
-            {/* Distribución - Solo mostrar si existe */}
+            {/* Distribución - Solo si existe */}
             {property.distribucion && (
-              <section className="detalle-distribution-section">
-                <h3>Distribución</h3>
-                <SafeHtmlRenderer 
-                  content={property.distribucion}
-                  className="detalle-html-content"
-                  tag="div"
-                />
+              <section className="detalle-card" aria-labelledby="detalle-distribucion">
+                <h2 id="detalle-distribucion">Distribución</h2>
+                <SafeHtmlRenderer content={property.distribucion} className="detalle-html-content" />
               </section>
             )}
 
-            {/* Destacado - Solo mostrar si existe */}
+            {/* Destacado - Solo si existe */}
             {property.destacado && (
-              <section className="detalle-highlight-section">
-                <h3>Extra destacado</h3>
-                <SafeHtmlRenderer 
-                  content={property.destacado}
-                  className="detalle-highlight-text detalle-html-content"
-                  tag="div"
-                />
+              <section className="detalle-card detalle-card--highlight" aria-labelledby="detalle-destacado">
+                <h2 id="detalle-destacado">Extra destacado</h2>
+                <SafeHtmlRenderer content={property.destacado} className="detalle-html-content" />
               </section>
             )}
 
             {/* Ubicación */}
-            <section className="detalle-location-section">
-              <h3>Ubicación</h3>
-              <div className="detalle-location-map">
+            {location && (
+              <section className="detalle-card" id="ubicacion" aria-labelledby="detalle-ubicacion">
+                <h2 id="detalle-ubicacion">Ubicación</h2>
                 <GoogleMapEmbed
                   calle={property.calle}
                   numero={property.numero}
                   poblacion={property.poblacion}
                   provincia={property.provincia}
-                  height="400px"
-                  className="detalle-property-map"
+                  height="clamp(240px, 45vw, 400px)"
+                  className="detalle-map"
                 />
-              </div>
-            </section>
+              </section>
+            )}
 
-            {/* Gallery - Solo mostrar si hay imágenes */}
-            {imagenes && imagenes.length > 0 && (
-              <section className="detalle-gallery-section">
-                <h3>Imágenes</h3>
-                <div className="detalle-image-grid-detalle">
+            {/* Todas las fotos */}
+            {imagenes.length > 1 && (
+              <section className="detalle-card" aria-labelledby="detalle-fotos">
+                <h2 id="detalle-fotos">Fotos ({imagenes.length})</h2>
+                <div className="detalle-gallery">
                   {imagenes.slice(0, visibleGalleryCount).map((imagen, index) => (
-                    <div
-                      key={imagen.Id || index}
-                      className="detalle-gallery-item detalle-img-skeleton"
+                    <button
+                      type="button"
+                      key={imagen.id || imagen.url}
+                      className="detalle-gallery__item"
                       onClick={() => openLightbox(index)}
+                      aria-label={`Ver foto ${index + 1} a pantalla completa`}
                     >
-                      <img 
-                        src={imagen.url} 
-                        alt={`${property.name} - Imagen ${index + 1}`} 
+                      <img
+                        src={imagen.url}
+                        alt={`${property.name} - Imagen ${index + 1}`}
                         loading="lazy"
                         decoding="async"
-                        onLoad={(e) => {
-                          e.currentTarget.classList.add('detalle-img--loaded');
-                          e.currentTarget.parentElement.classList.remove('detalle-img-skeleton');
-                        }}
                       />
-                    </div>
+                    </button>
                   ))}
                 </div>
                 {imagenes.length > visibleGalleryCount && (
                   <button
-                    className="detalle-load-more-btn"
-                    onClick={() => setVisibleGalleryCount((prev) => prev + 9)}
+                    type="button"
+                    className="btn btn--secondary detalle-gallery__more"
+                    onClick={() => setVisibleGalleryCount((prev) => prev + GALLERY_STEP)}
                   >
-                    Ver más imágenes ({imagenes.length - visibleGalleryCount} restantes)
+                    Ver más fotos ({imagenes.length - visibleGalleryCount})
                   </button>
                 )}
               </section>
             )}
 
-            {/* Plano - Solo mostrar si existe */}
+            {/* Plano - Solo si existe */}
             {property.planoUrl && (
-              <section className="detalle-floorplan-section">
-                <h3>Plano de la vivienda</h3>
-                <div className="detalle-floorplan">
-                  <img 
-                    src={property.planoUrl} 
-                    alt="Plano con distribución y medidas aproximadas" 
-                  />
-                </div>
+              <section className="detalle-card" aria-labelledby="detalle-plano">
+                <h2 id="detalle-plano">Plano de la vivienda</h2>
+                <img
+                  className="detalle-floorplan"
+                  src={property.planoUrl}
+                  alt="Plano con distribución y medidas aproximadas"
+                  loading="lazy"
+                />
               </section>
             )}
-          </main>
+          </div>
 
-          <aside className="detalle-sidebar">
-            {/* Contact Form */}
-            <div className="detalle-contact-form-container">
-              <h3>Agenda una visita</h3>
-              
-              {/* Mensajes de estado */}
-              {showSuccess && (
-                <div className="detalle-success-message" style={{
-                  background: '#d4edda',
-                  color: '#155724',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  marginBottom: '16px',
-                  border: '1px solid #c3e6cb'
-                }}>
-                  ¡Gracias! Hemos recibido tu solicitud de visita. Te responderemos lo antes posible.
-                </div>
-              )}
-              
-              {showError && (
-                <div className="detalle-error-message" style={{
-                  background: '#f8d7da',
-                  color: '#721c24',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  marginBottom: '16px',
-                  border: '1px solid #f5c6cb'
-                }}>
-                  {errorMessage}
-                </div>
-              )}
-              
-              <form onSubmit={handleContactFormSubmit} className="detalle-contact-form">
-                <div className="detalle-form-group">
-                  <textarea
-                    placeholder="¿Estás interesado en agendar una visita para este inmueble?"
-                    value={formData.descripcion}
-                    onChange={(e) => updateField('descripcion', e.target.value)}
-                    rows="3"
-                    required
-                    disabled={isSubmitting}
-                    className={errors.descripcion ? 'error' : ''}
-                  />
-                  {errors.descripcion && <div className="detalle-field-error">{errors.descripcion}</div>}
-                </div>
-                
-                <div className="detalle-form-group">
-                  <input
-                    type="text"
-                    placeholder="Tu nombre *"
-                    value={formData.nombre}
-                    onChange={(e) => updateField('nombre', e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                    className={errors.nombre ? 'error' : ''}
-                  />
-                  {errors.nombre && <div className="detalle-field-error">{errors.nombre}</div>}
-                </div>
-                
-                <div className="detalle-form-group">
-                  <input
-                    type="email"
-                    placeholder="Tu Email *"
-                    value={formData.email}
-                    onChange={(e) => updateField('email', e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                    className={errors.email ? 'error' : ''}
-                  />
-                  {errors.email && <div className="detalle-field-error">{errors.email}</div>}
-                </div>
-                
-                <div className="detalle-form-group">
-                  <input
-                    type="tel"
-                    placeholder="Tu Teléfono"
-                    value={formData.telefono}
-                    onChange={(e) => updateField('telefono', e.target.value)}
-                    disabled={isSubmitting}
-                    className={errors.telefono ? 'error' : ''}
-                  />
-                  {errors.telefono && <div className="detalle-field-error">{errors.telefono}</div>}
-                </div>
-                
-                <button 
-                  type="submit" 
-                  className="detalle-submit-button"
-                  disabled={isSubmitting}
-                  style={isSubmitting ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
-                >
-                  {isSubmitting ? 'Enviando...' : 'AGENDAR VISITA'}
-                </button>
+          {/* Contacto: columna fija en escritorio, bloque al final en móvil */}
+          <aside className="detalle-aside" id="contacto" aria-labelledby="detalle-contacto">
+            <div className="detalle-card detalle-contact">
+              <h2 id="detalle-contacto">
+                {status?.key === 'sold' ? '¿Buscas algo parecido?' : '¿Te interesa este inmueble?'}
+              </h2>
+              <p className="detalle-contact__intro">
+                Llámanos o escríbenos y te lo enseñamos sin compromiso.
+              </p>
 
-                {/* Mensaje de error al final del formulario */}
-                {showError && (
-                  <div className="detalle-form-error-message" style={{
-                    background: '#f8d7da',
-                    color: '#721c24',
-                    padding: '16px',
-                    borderRadius: '12px',
-                    marginTop: '16px',
-                    border: '1px solid #f5c6cb',
-                    textAlign: 'center',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}>
-                    <div style={{ marginBottom: '8px', fontSize: '16px' }}>❌ Error al enviar</div>
-                    <div>{errorMessage}</div>
-                  </div>
-                )}
-              </form>
-              
-              {/* Botón y número de teléfono */}
-              <div className="detalle-phone-section">
-                <button 
-                  className="detalle-phone-toggle-button"
-                  onClick={() => setShowPhoneNumber(!showPhoneNumber)}
-                  type="button"
-                >
-                  {showPhoneNumber ? 'Ocultar número de teléfono' : 'Mostrar número de teléfono'}
-                </button>
-                
-                {showPhoneNumber && (
-                  <div className="detalle-phone-display">
-                    <p className="detalle-phone-text">O si prefieres, llámanos directamente al:</p>
-                    <a href="tel:+34615840273" className="detalle-phone-number">
-                      615 84 02 73
-                    </a>
-                  </div>
-                )}
+              <div className="detalle-contact__direct">
+                <a href={CONTACT.phoneHref} className="btn btn--primary btn--lg">
+                  <FontAwesomeIcon icon="fa-solid fa-phone" aria-hidden="true" />
+                  {CONTACT.phoneDisplay}
+                </a>
+                <a href={whatsappUrl} className="btn btn--whatsapp btn--lg" target="_blank" rel="noopener noreferrer">
+                  <FontAwesomeIcon icon="fa-brands fa-whatsapp" aria-hidden="true" />
+                  WhatsApp
+                </a>
               </div>
+
+              <p className="detalle-contact__divider"><span>o pide una visita</span></p>
+
+              {showSuccess ? (
+                <div className="detalle-contact__success" role="status">
+                  <FontAwesomeIcon icon="fa-solid fa-circle-check" aria-hidden="true" />
+                  <p>
+                    <strong>¡Gracias! Hemos recibido tu solicitud.</strong>
+                    Te responderemos lo antes posible.
+                  </p>
+                  <button type="button" className="detalle-contact__again" onClick={() => setShowSuccess(false)}>
+                    Enviar otro mensaje
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleContactFormSubmit} className="detalle-form" aria-label="Agenda una visita">
+                  <div className="detalle-form__field">
+                    <label htmlFor="visita-nombre">Nombre <span aria-hidden="true">*</span></label>
+                    <input
+                      id="visita-nombre"
+                      type="text"
+                      autoComplete="name"
+                      value={formData.nombre}
+                      onChange={(e) => updateField('nombre', e.target.value)}
+                      required
+                      aria-required="true"
+                      aria-invalid={Boolean(errors.nombre)}
+                      disabled={isSubmitting}
+                    />
+                    {errors.nombre && <p className="detalle-form__error">{errors.nombre}</p>}
+                  </div>
+
+                  <div className="detalle-form__field">
+                    <label htmlFor="visita-email">Email <span aria-hidden="true">*</span></label>
+                    <input
+                      id="visita-email"
+                      type="email"
+                      autoComplete="email"
+                      inputMode="email"
+                      value={formData.email}
+                      onChange={(e) => updateField('email', e.target.value)}
+                      required
+                      aria-required="true"
+                      aria-invalid={Boolean(errors.email)}
+                      disabled={isSubmitting}
+                    />
+                    {errors.email && <p className="detalle-form__error">{errors.email}</p>}
+                  </div>
+
+                  <div className="detalle-form__field">
+                    <label htmlFor="visita-telefono">Teléfono</label>
+                    <input
+                      id="visita-telefono"
+                      type="tel"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      value={formData.telefono}
+                      onChange={(e) => updateField('telefono', e.target.value)}
+                      aria-invalid={Boolean(errors.telefono)}
+                      disabled={isSubmitting}
+                    />
+                    {errors.telefono && <p className="detalle-form__error">{errors.telefono}</p>}
+                  </div>
+
+                  <div className="detalle-form__field">
+                    <label htmlFor="visita-mensaje">Mensaje <span className="detalle-form__optional">(opcional)</span></label>
+                    <textarea
+                      id="visita-mensaje"
+                      rows="3"
+                      placeholder="Me gustaría visitar este inmueble…"
+                      value={formData.descripcion}
+                      onChange={(e) => updateField('descripcion', e.target.value)}
+                      aria-invalid={Boolean(errors.descripcion)}
+                      disabled={isSubmitting}
+                    />
+                    {errors.descripcion && <p className="detalle-form__error">{errors.descripcion}</p>}
+                  </div>
+
+                  {showError && (
+                    <p className="detalle-form__alert" role="alert">{errorMessage}</p>
+                  )}
+
+                  <button type="submit" className="btn btn--primary btn--lg btn--block" disabled={isSubmitting}>
+                    {isSubmitting ? 'Enviando…' : 'Agendar visita'}
+                  </button>
+
+                  <p className="detalle-form__legal">
+                    Al enviar aceptas nuestra <Link to="/politica-privacidad">política de privacidad</Link>.
+                  </p>
+                </form>
+              )}
             </div>
           </aside>
         </div>
 
-        {/* Similar Properties */}
+        {/* Inmuebles similares */}
         {!loadingSimilar && similarProperties && similarProperties.length > 0 && (
-          <section className="detalle-similar-properties">
-            <div className="detalle-section-header">
-              <h3>Inmuebles similares</h3>
-              <Link to="/viviendas" className="detalle-view-more-link">VER MÁS</Link>
+          <section className="detalle-similar" aria-labelledby="detalle-similares">
+            <div className="detalle-similar__header">
+              <h2 id="detalle-similares">Inmuebles similares</h2>
+              <Link to="/viviendas" className="detalle-similar__more">
+                Ver más
+                <FontAwesomeIcon icon="fa-solid fa-arrow-right" aria-hidden="true" />
+              </Link>
             </div>
-            
-            <div className="detalle-similar-grid">
+
+            <div className="property-grid">
               {similarProperties.map((similar) => (
-                <article key={similar.id} className="detalle-similar-card">
-                  <Link to={`/viviendas/${similar.id}`}>
-                    <div className="detalle-similar-image">
-                      <img 
-                        src={similar.imagenes && similar.imagenes.length > 0 
-                          ? similar.imagenes[0].URL 
-                          : '/api/placeholder/300/200'} 
-                        alt={similar.name} 
-                        loading="lazy" 
-                      />
-                    </div>
-                    
-                    <div className="detalle-similar-info">
-                      <h4 className="detalle-similar-title">{similar.name}</h4>
-                      <div className="detalle-similar-specs">
-                        {similar.rooms > 0 && <span>{similar.rooms} hab</span>}
-                        <span>{similar.squaredMeters} m²</span>
-                        {similar.bathRooms > 0 && <span>{similar.bathRooms} baños</span>}
-                        {similar.garage > 0 && <span>{similar.garage} garajes</span>}
-                      </div>
-                      <div className="detalle-similar-price">
-                        {similar.price.toLocaleString('es-ES')} €
-                      </div>
-                    </div>
-                  </Link>
-                </article>
+                <PropertyCard key={similar.id} property={similar} />
               ))}
-            </div>
-          </section>
-        )}
-        
-        {loadingSimilar && (
-          <section className="detalle-similar-properties">
-            <div className="detalle-section-header">
-              <h3>Inmuebles similares</h3>
-            </div>
-            <div className="detalle-loading-similar">
-              <p>Cargando propiedades similares...</p>
             </div>
           </section>
         )}
       </div>
 
-      {/* Lightbox */}
-      {showLightbox && imagenes.length > 0 && (
-        <div className="detalle-lightbox" onClick={closeLightbox}>
-          <div className="detalle-lightbox-content" onClick={(e) => e.stopPropagation()}>
-            <button className="detalle-lightbox-close" onClick={closeLightbox}>×</button>
-            {imagenes.length > 1 && (
-              <>
-                <button className="detalle-lightbox-prev" onClick={prevImage}>‹</button>
-                <button className="detalle-lightbox-next" onClick={nextImage}>›</button>
-              </>
-            )}
-            {!lightboxImgLoaded && (
-              <div className="detalle-lightbox-spinner-overlay">
-                <div className="detalle-lightbox-spinner" />
-              </div>
-            )}
-            <img 
-              src={imagenes[currentImageIndex]?.url || '/api/placeholder/800/600'} 
-              alt={`${property.name} - Imagen ${currentImageIndex + 1}`}
-              style={{ opacity: lightboxImgLoaded ? 1 : 0 }}
-              onLoad={() => setLightboxImgLoaded(true)}
-            />
-            <div className="detalle-lightbox-counter">
-              {currentImageIndex + 1} / {imagenes.length}
-            </div>
-          </div>
+      {/* Barra de acción fija (móvil y tablet): el contacto siempre a mano */}
+      <div className="detalle-actionbar">
+        <div className="detalle-actionbar__price">
+          <strong>{formatPropertyPrice(property.price)}{priceSuffix}</strong>
+          {specs.length > 0 && (
+            <span>{specs.map((spec) => `${spec.value} ${spec.unit}`).join(' · ')}</span>
+          )}
         </div>
+        <a href={CONTACT.phoneHref} className="detalle-actionbar__button detalle-actionbar__button--call" aria-label={`Llamar al ${CONTACT.phoneDisplay}`}>
+          <FontAwesomeIcon icon="fa-solid fa-phone" aria-hidden="true" />
+          <span>Llamar</span>
+        </a>
+        <a href={whatsappUrl} className="detalle-actionbar__button detalle-actionbar__button--whatsapp" target="_blank" rel="noopener noreferrer" aria-label="Escribir por WhatsApp">
+          <FontAwesomeIcon icon="fa-brands fa-whatsapp" aria-hidden="true" />
+          <span>WhatsApp</span>
+        </a>
+        <a href="#contacto" className="detalle-actionbar__button detalle-actionbar__button--visit">
+          <FontAwesomeIcon icon="fa-solid fa-calendar-alt" aria-hidden="true" />
+          <span>Visita</span>
+        </a>
+      </div>
+
+      {/* Visor de fotos */}
+      {lightboxIndex !== null && imagenes.length > 0 && (
+        <ImageLightbox
+          images={imagenes}
+          index={lightboxIndex}
+          onIndexChange={setLightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          altPrefix={property.name}
+        />
       )}
     </div>
   );

@@ -1,109 +1,38 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
 import CustomSelect from '../components/CustomSelect/CustomSelect';
 import LocationAutocomplete from '../components/LocationAutocomplete/LocationAutocomplete';
 import SEO from '../components/SEO';
 import { useViviendas } from '../hooks/useViviendas';
 import { generateOrganizationSchema, generateSearchActionSchema, generateItemListSchema } from '../utils/structuredData';
+import { EMPTY_FORM, TYPE_OPTIONS, searchParamsFromForm } from '../utils/propertyFilters';
 import './Home.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+const RECENT_COUNT = 6;
 
 export default function Home() {
   const navigate = useNavigate();
-  const [searchFilters, setSearchFilters] = useState({
-    location: '',
-    type: 'all',
-    operation: 'Venta' // COMPRA/ALQUILER
-  });
+  const [search, setSearch] = useState({ location: '', type: '', operation: 'Venta' });
 
-  // Hook para obtener las viviendas más recientes
-  const {
-    viviendas,
-    isLoading,
-    isError,
-    error
-  } = useViviendas(
-    {
-      published: true,
-      pageSize: 6
-    },
-    {
-      enableCache: true,
-      autoFetch: true,
-      onError: (error) => {
-        console.error('Error loading recent properties:', error);
-      }
-    }
+  // Las viviendas más recientes
+  const { viviendas, isLoading, isError, isSuccess, refreshViviendas } = useViviendas(
+    { published: true, pageSize: RECENT_COUNT },
+    { enableCache: true, autoFetch: true }
   );
 
-  const handleFilterChange = (field, value) => {
-    setSearchFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const setField = (field, value) => setSearch((prev) => ({ ...prev, [field]: value }));
 
   const handleSearch = (e) => {
     e.preventDefault();
-    
-    // Construir query params para el listado
-    const params = new URLSearchParams();
-    
-    if (searchFilters.location && searchFilters.location.trim()) {
-      params.append('q', searchFilters.location.trim());
-    }
-    
-    if (searchFilters.type && searchFilters.type !== 'all') {
-      params.append('tipo', searchFilters.type);
-    }
-    
-    if (searchFilters.operation) {
-      params.append('tipoAnuncio', searchFilters.operation);
-    }
-    
-    // Navegar al listado con los filtros
-    const queryString = params.toString();
-    navigate(`/viviendas${queryString ? `?${queryString}` : ''}`);
+    const query = searchParamsFromForm({ ...EMPTY_FORM, ...search }).toString();
+    navigate(`/viviendas${query ? `?${query}` : ''}`);
   };
-
-  const handleTabChange = (operation) => {
-    setSearchFilters(prev => ({
-      ...prev,
-      operation: operation === 'COMPRA' ? 'Venta' : 'Alquiler'
-    }));
-  };
-
-  const handleImageClick = (images) => {
-    // TODO: Implementar galería de imágenes
-    console.log('Opening image gallery:', images);
-  };
-
-  const handleDetailsClick = (propertyId) => {
-    navigate(`/viviendas/${propertyId}`);
-  };
-
-  // Opciones para el select de tipo de vivienda
-  const typeOptions = [
-    { value: 'all', label: 'Tipo de vivienda' },
-    { value: 'Piso', label: 'Piso' },
-    { value: 'Casa', label: 'Casa' },
-    { value: 'Chalet', label: 'Chalet' },
-    { value: 'Ático', label: 'Ático' },
-    { value: 'Dúplex', label: 'Dúplex' },
-    { value: 'Loft', label: 'Loft' },
-    { value: 'Villa', label: 'Villa' },
-  ];
 
   // Datos estructurados para SEO
-  const organizationSchema = generateOrganizationSchema();
-  const searchActionSchema = generateSearchActionSchema();
-  const itemListSchema = viviendas?.length > 0 ? generateItemListSchema(viviendas) : null;
-
-  // Combinar esquemas
-  const structuredData = itemListSchema 
-    ? [organizationSchema, searchActionSchema, itemListSchema]
-    : [organizationSchema, searchActionSchema];
+  const structuredData = [generateOrganizationSchema(), generateSearchActionSchema()];
+  if (viviendas?.length > 0) structuredData.push(generateItemListSchema(viviendas));
 
   return (
     <div className="home">
@@ -114,134 +43,135 @@ export default function Home() {
         type="website"
         structuredData={structuredData}
       />
-      
-      {/* Hero Section */}
-      <section className="hero">
-        <div className="hero-content">
-          <div className="hero-text">
-            <h1 className="hero-title">
-              La mejor forma de encontrar tu vivienda
-            </h1>
-            <p className="hero-subtitle">
+
+      {/* Hero con buscador */}
+      <section className="home-hero">
+        <div className="container home-hero__inner">
+          <div className="home-hero__text">
+            <h1 className="home-hero__title">La mejor forma de encontrar tu vivienda</h1>
+            <p className="home-hero__subtitle">
               Ofrecemos el servicio completo de venta, <strong>compra o alquiler de tu vivienda</strong>
             </p>
           </div>
-        </div>
 
-        {/* Search Bar */}
-        <div className="search-container">
-          <form className="search-bar" onSubmit={handleSearch}>
-            <div className="search-tabs">
-              <button 
-                type="button" 
-                className={`tab ${searchFilters.operation === 'Venta' ? 'active' : ''}`}
-                onClick={() => handleTabChange('COMPRA')}
-              >
-                COMPRA
-              </button>
-              <button 
-                type="button" 
-                className={`tab ${searchFilters.operation === 'Alquiler' ? 'active' : ''}`}
-                onClick={() => handleTabChange('ALQUILER')}
-              >
-                ALQUILER
-              </button>
-              <button 
-                type="button" 
-                className="tab tab-vender"
-                onClick={() => navigate('/vender')}
-              >
-                VENDER
-              </button>
+          <form className="home-search" onSubmit={handleSearch} aria-label="Buscador de viviendas">
+            <div className="home-search__tabs">
+              <div className="home-search__operations" role="group" aria-label="Tipo de operación">
+                <button
+                  type="button"
+                  className={`home-search__tab${search.operation === 'Venta' ? ' home-search__tab--active' : ''}`}
+                  aria-pressed={search.operation === 'Venta'}
+                  onClick={() => setField('operation', 'Venta')}
+                >
+                  Compra
+                </button>
+                <button
+                  type="button"
+                  className={`home-search__tab${search.operation === 'Alquiler' ? ' home-search__tab--active' : ''}`}
+                  aria-pressed={search.operation === 'Alquiler'}
+                  onClick={() => setField('operation', 'Alquiler')}
+                >
+                  Alquiler
+                </button>
+              </div>
+              <Link to="/vender" className="home-search__tab home-search__tab--link">
+                Vender
+                <FontAwesomeIcon icon="fa-solid fa-arrow-right" aria-hidden="true" />
+              </Link>
             </div>
-            
-            <div className="search-fields">
-              <div className="search-field">
-                <div className="field-icon"><FontAwesomeIcon icon="fa-solid fa-location-dot" /></div>
+
+            <div className="home-search__fields">
+              <div className="home-search__field">
+                <FontAwesomeIcon icon="fa-solid fa-location-dot" className="home-search__icon" aria-hidden="true" />
                 <LocationAutocomplete
-                  value={searchFilters.location}
-                  onChange={(value) => handleFilterChange('location', value)}
-                  placeholder="Ubicación"
+                  value={search.location}
+                  onChange={(value) => setField('location', value)}
+                  placeholder="¿Dónde? Población o zona"
                 />
               </div>
-              
-              <div className="search-field">
+
+              <div className="home-search__field">
+                <FontAwesomeIcon icon="fa-solid fa-house" className="home-search__icon" aria-hidden="true" />
                 <CustomSelect
-                  value={searchFilters.type}
-                  onChange={(value) => handleFilterChange('type', value)}
-                  options={typeOptions}
-                  placeholder="Tipo de vivienda"
+                  value={search.type}
+                  onChange={(value) => setField('type', value)}
+                  options={TYPE_OPTIONS}
+                  placeholder="Todos los tipos"
                 />
               </div>
-              
-              <button type="submit" className="search-button">
-                <span><FontAwesomeIcon icon="fa-solid fa-magnifying-glass" /></span>
+
+              <button type="submit" className="home-search__submit">
+                <FontAwesomeIcon icon="fa-solid fa-magnifying-glass" aria-hidden="true" />
+                <span>Buscar</span>
               </button>
             </div>
           </form>
         </div>
       </section>
 
-      {/* Recent Properties Section */}
-      <section className="recent-properties">
+      {/* Añadidas recientemente */}
+      <section className="home-recent">
         <div className="container">
-          <div className="section-header">
+          <div className="home-section-header">
             <h2>Añadidas recientemente</h2>
-            <Link to="/viviendas" className="view-all-link">VER TODO</Link>
+            <Link to="/viviendas" className="home-view-all">
+              Ver todo
+              <FontAwesomeIcon icon="fa-solid fa-arrow-right" aria-hidden="true" />
+            </Link>
           </div>
-          
-          {/* Loading state */}
-          {isLoading && (
-            <div className="loading-state">
-              <div className="loading-spinner"></div>
-              <p>Cargando viviendas...</p>
+
+          {(isLoading || (!isSuccess && !isError)) && (
+            <div className="property-grid" aria-busy="true" aria-label="Cargando viviendas">
+              {Array.from({ length: RECENT_COUNT }, (_, index) => (
+                <div key={index} className="property-card-skeleton" aria-hidden="true" />
+              ))}
             </div>
           )}
-          
-          {/* Error state */}
+
           {isError && (
-            <div className="error-state">
-              <p>Error al cargar las viviendas: {error}</p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="retry-button"
-              >
+            <div className="state-box state-box--error" role="alert">
+              <p>No hemos podido cargar las viviendas. Comprueba tu conexión e inténtalo de nuevo.</p>
+              <button type="button" onClick={() => refreshViviendas()} className="btn btn--primary">
                 Reintentar
               </button>
             </div>
           )}
-          
-          {/* Properties grid */}
-          {!isLoading && !isError && (
-            <div className="properties-grid">
-              {viviendas.length > 0 ? (
-                viviendas.map((property) => (
-                  <PropertyCard
-                    key={property.id}
-                    property={property}
-                    onImageClick={handleImageClick}
-                    onDetailsClick={handleDetailsClick}
-                  />
-                ))
-              ) : (
-                <div className="empty-state">
-                  <p>No hay viviendas disponibles en este momento.</p>
-                </div>
-              )}
+
+          {isSuccess && (
+            viviendas.length > 0 ? (
+              <div className="property-grid">
+                {viviendas.map((property) => (
+                  <PropertyCard key={property.id} property={property} />
+                ))}
+              </div>
+            ) : (
+              <div className="state-box">
+                <p>No hay viviendas disponibles en este momento.</p>
+              </div>
+            )
+          )}
+
+          {isSuccess && viviendas.length > 0 && (
+            <div className="home-recent__more">
+              <Link to="/viviendas" className="btn btn--secondary btn--lg">
+                Ver todas las viviendas
+              </Link>
             </div>
           )}
         </div>
       </section>
 
-      {/* Sell Promotion Section */}
-      <section className="sell-promotion">
-          <div className="promotion-content">
-            <div className="promotion-text">
+      {/* Banda «Vende tu inmueble» */}
+      <section className="home-sell">
+        <div className="container">
+          <div className="home-sell__card">
+            <div className="home-sell__text">
               <h2>Vende tu inmueble hoy mismo</h2>
               <p>Ofrecemos el mejor servicio para la venta de tu propiedad con garantías de éxito.</p>
-              <Link to="/vender" className="cta-button">CONTÁCTANOS</Link>
+              <Link to="/vender" className="btn btn--primary btn--lg">Contáctanos</Link>
             </div>
           </div>
+        </div>
       </section>
     </div>
   );

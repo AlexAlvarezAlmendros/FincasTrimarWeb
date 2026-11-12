@@ -1,6 +1,6 @@
 # FincasTrimarWeb — Project Roadmap
 
-> Last updated: 2026-09-30
+> Last updated: 2026-11-12
 
 Portal inmobiliario ya funcional. El roadmap prioriza **hardening → limpieza → calidad → producto**.
 
@@ -21,6 +21,9 @@ Portal inmobiliario ya funcional. El roadmap prioriza **hardening → limpieza �
 (la Fase 5 la había retirado como huérfana del panel) y admite tipos de inmueble
 no-vivienda (Terreno, Local/Comercio, Nave…). El panel sigue simplificado: el import
 externo va por API key, no por UI.
+Además, la web pública se ha rediseñado para adaptarse a cualquier pantalla
+(plan 04, tareas 6.1–6.6): tarjetas, listado con filtros en la URL y ficha con
+contacto siempre a mano.
 (Fase 1 — Seguridad sigue siendo la prioridad estructural pendiente.)
 
 ## Dependency graph
