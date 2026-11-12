@@ -10,14 +10,16 @@ import './Layout.css';
 const Layout = () => {
   return (
     <div className="layout">
+      <a href="#contenido" className="skip-link">Saltar al contenido</a>
+
       {/* Header fijo en la parte superior */}
       <Header />
-      
+
       {/* Contenido principal con scroll */}
-      <main className="main-content">
+      <main className="main-content" id="contenido">
         <Outlet />
       </main>
-      
+
       {/* Footer */}
       <Footer />
     </div>
