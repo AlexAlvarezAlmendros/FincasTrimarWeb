@@ -1,0 +1,122 @@
+/* Visor de fotos a pantalla completa */
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.96);
+  color: var(--color-neutral-0);
+  touch-action: pan-y;
+}
+
+.image-lightbox__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.image-lightbox__counter {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.image-lightbox__stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 0 var(--spacing-sm) var(--spacing-lg);
+}
+
+.image-lightbox__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-xs);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.image-lightbox__image--loaded {
+  opacity: 1;
+}
+
+.image-lightbox__spinner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--color-neutral-0);
+  border-radius: 50%;
+  animation: image-lightbox-spin 0.8s linear infinite;
+}
+
+@keyframes image-lightbox-spin {
+  to { transform: rotate(360deg); }
+}
+
+.image-lightbox__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-neutral-0);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.image-lightbox__button:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.image-lightbox__button:focus-visible {
+  outline: 2px solid var(--color-neutral-0);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+.image-lightbox__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.image-lightbox__nav--prev {
+  left: var(--spacing-lg);
+}
+
+.image-lightbox__nav--next {
+  right: var(--spacing-lg);
+}
+
+/* Móvil: las flechas bajan para no tapar la foto (también se puede deslizar) */
+@media (max-width: 640px) {
+  .image-lightbox__stage {
+    padding-bottom: 80px;
+  }
+
+  .image-lightbox__nav {
+    top: auto;
+    bottom: var(--spacing-lg);
+    transform: none;
+  }
+
+  .image-lightbox__nav--prev {
+    left: calc(50% - 60px);
+  }
+
+  .image-lightbox__nav--next {
+    right: calc(50% - 60px);
+  }
+}
